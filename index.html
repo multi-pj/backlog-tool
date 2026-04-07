@@ -126,8 +126,8 @@ th.s0,th.s1,th.s2,th.s3{z-index:5}
 .tw::-webkit-scrollbar-thumb{background:#b0bec5;border-radius:4px}
 
 /* ===== Today column ===== */
-th.today-th{background:#e65100!important;color:#fff!important}
-td.today-cell{outline:2px solid #e65100!important;outline-offset:-2px}
+th.today-th{background:#ffa726!important;color:#fff!important}
+td.today-cell{outline:2px solid #ffa726!important;outline-offset:-2px}
 
 /* ===== Drag over ===== */
 .file-label.drag-over{border-color:#1a3a5c;background:#e8f0fe;color:#1a3a5c;border-style:solid}
@@ -560,7 +560,7 @@ function renderGantt() {
         <td class="s0 sticky-bg" style="left:${left[4]}px;text-align:center;color:#9e9e9e;font-weight:400;font-size:11px">合計</td>
         ${vcols.map(c => {
           const daySum = r2(tasks.reduce((s, r) => s + (r.daily[c.col] || 0), 0));
-          const todayStyle = c.ds===TODAY ? 'outline:2px solid #e65100;outline-offset:-2px;' : '';
+          const todayStyle = c.ds===TODAY ? 'outline:2px solid #ffa726;outline-offset:-2px;' : '';
           return daySum > 0
             ? `<td style="background:#e8eef8;${todayStyle}color:#546e7a;font-weight:700;font-size:11px;text-align:center">${daySum.toFixed(2)}</td>`
             : `<td style="background:#e8eef8;${todayStyle}"></td>`;
@@ -624,7 +624,7 @@ function renderWorkload() {
           const tc = c.ds===TODAY ? ' today-cell' : '';
           if (h===0) return `<td class="wl-cell${tc}" style="background:#f5f5f5"></td>`;
           const remStr = rem >= 0 ? `残${rem.toFixed(1)}` : `<span style="color:#c62828;font-weight:700">超${Math.abs(rem).toFixed(1)}</span>`;
-          return `<td class="wl-cell${tc}" style="background:${bg};${c.ds===TODAY?'outline:2px solid #e65100;outline-offset:-2px;':''}" title="${c.ds}  ${h}h稼働 / 残${rem}h">
+          return `<td class="wl-cell${tc}" style="background:${bg};${c.ds===TODAY?'outline:2px solid #ffa726;outline-offset:-2px;':''}" title="${c.ds}  ${h}h稼働 / 残${rem}h">
             <div class="wl-hours ${overCap?'wl-over':''}">${h.toFixed(2)}</div>
             <div class="wl-remain">${remStr}</div>
           </td>`;
