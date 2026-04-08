@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Backlog 稼働分析</title>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx-js-style.min.js"></script>
+<!-- xlsx-js-style は downloadFile() 内で動的ロード -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ja.js"></script>
@@ -909,24 +909,48 @@ function wlColor(h, cap) {
 // ================================================================
 // Excel ダウンロード（xlsx-js-style でスタイル付き出力）
 // ================================================================
+const XS_URLS = [
+  'https://unpkg.com/xlsx-js-style@1.2.0/dist/xlsx-js-style.min.js',
+  'https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx-js-style.min.js',
+  'https://unpkg.com/xlsx-js-style/dist/xlsx-js-style.min.js',
+  'https://cdn.jsdelivr.net/npm/xlsx-js-style/dist/xlsx-js-style.min.js',
+];
+
+function loadXlsxStyle(cb) {
+  if (window.XLSXStyle) { cb(null); return; }
+  let idx = 0;
+  function tryNext() {
+    if (idx >= XS_URLS.length) { cb(new Error('xlsx-js-style の読み込みに失敗しました')); return; }
+    const s = document.createElement('script');
+    s.src = XS_URLS[idx++];
+    s.onload  = () => window.XLSXStyle ? cb(null) : tryNext();
+    s.onerror = tryNext;
+    document.head.appendChild(s);
+  }
+  tryNext();
+}
+
 function downloadFile() {
   if (!allRows.length) return;
-  setLoad(true, 'Excelを生成中...');
-  setTimeout(() => {
-    try {
-      const XS = window.XLSXStyle;
-      if (!XS) { toast('xlsx-js-style が読み込まれていません', true); return; }
-      const wb = XS.utils.book_new();
-      XS.utils.book_append_sheet(wb, buildGanttSheet(XS),    '日別稼働表');
-      XS.utils.book_append_sheet(wb, buildWorkloadSheet(XS), 'ワークロード');
-      const d   = new Date();
-      const pfx = `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`;
-      const name = `${pfx}_日別稼働表_ワークロード.xlsx`;
-      XS.writeFile(wb, name, { bookType:'xlsx', cellStyles:true });
-      toast('ダウンロード完了: ' + name, false);
-    } catch(e) { toast('エラー: '+e.message, true); console.error(e); }
-    finally { setLoad(false); }
-  }, 30);
+  setLoad(true, 'スタイルライブラリを準備中...');
+  loadXlsxStyle(err => {
+    if (err) { setLoad(false); toast(err.message, true); return; }
+    setLoad(true, 'Excelを生成中...');
+    setTimeout(() => {
+      try {
+        const XS = window.XLSXStyle;
+        const wb = XS.utils.book_new();
+        XS.utils.book_append_sheet(wb, buildGanttSheet(XS),    '日別稼働表');
+        XS.utils.book_append_sheet(wb, buildWorkloadSheet(XS), 'ワークロード');
+        const d   = new Date();
+        const pfx = `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`;
+        const name = `${pfx}_日別稼働表_ワークロード.xlsx`;
+        XS.writeFile(wb, name, { bookType:'xlsx', cellStyles:true });
+        toast('ダウンロード完了: ' + name, false);
+      } catch(e) { toast('エラー: '+e.message, true); console.error(e); }
+      finally { setLoad(false); }
+    }, 30);
+  });
 }
 
 // ================================================================
