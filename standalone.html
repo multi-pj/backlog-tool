@@ -234,12 +234,13 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <div class="filter-bar" style="padding:0">
-          <label>担当者:</label><select id="fA" onchange="renderCurrent()"><option value="">全員</option></select>
           <span id="ganttFilters" style="display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <label>Job No.:</label><select id="fJ" onchange="renderCurrent()"><option value="">全て</option></select>
             <label>種別:</label><select id="fC" onchange="renderCurrent()"><option value="">全て</option></select>
             <label>状態:</label><select id="fS" onchange="renderCurrent()"><option value="">全て</option></select>
             <input type="text" id="fT" placeholder="件名で検索" oninput="renderCurrent()" style="min-width:150px">
           </span>
+          <label>担当者:</label><select id="fA" onchange="renderCurrent()"><option value="">全員</option></select>
         </div>
       </div>
     </div>
@@ -327,7 +328,8 @@ document.getElementById('fileInput').addEventListener('change', function() {
 
 function clearData() {
   // 状態リセット
-  allRows=[]; allCols=[]; allMonths=[]; allWorkload={}; processedWb=null; origFileName=''; activeMonth='';
+  allRows=[]; allCols=[]; allMonths=[]; allWorkload={}; processedWb=null; origFileName=''; activeMonth=''; ganttSortDir=0;
+  document.getElementById('fJ').innerHTML='<option value="">全て</option>';
   // ファイル入力・日付リセット
   document.getElementById('fileInput').value='';
   document.getElementById('fileName').textContent='Backlog 課題一覧（xlsx）を選択してください';
@@ -380,6 +382,7 @@ function processFile() {
       fillSel('fC', [...new Set(allRows.map(r=>r.cat))].sort());
       fillSel('fA', [...new Set(allRows.map(r=>r.assignee))].sort());
       fillSel('fS', [...new Set(allRows.map(r=>r.status))].sort());
+      fillJobNoSel();
 
       // 月ナビ（デフォルト=全月、renderGantt側で5ヶ月に制限）
       buildMonthNav();
@@ -593,6 +596,7 @@ function renderGantt() {
   const fs = document.getElementById('fS').value;
   const fc = document.getElementById('fC').value;
   const ft = document.getElementById('fT').value.toLowerCase();
+  const fj = document.getElementById('fJ').value; // '' | 親番号 | '__blank__'
   // 表示列：選択月 or 本日±3ヶ月
   let vcols;
   const todayMode = activeMonth === '';
@@ -631,6 +635,8 @@ function renderGantt() {
     if (fs && r.status!==fs) return false;
     if (fc && r.cat!==fc) return false;
     if (ft && !r.key.toLowerCase().includes(ft) && !(r.jobNo||'').toLowerCase().includes(ft) && !r.title.toLowerCase().includes(ft)) return false;
+    if (fj === '__blank__') { if (r.jobNo) return false; }
+    else if (fj) { if (r.jobNo !== fj && !r.jobNo.startsWith(fj + '-')) return false; }
     // ガント列に値のないタスクは月フィルターにかかわらず常に表示
     if (activeMonth && r.weekdayCount > 0 && !vcols.some(c=>(r.daily[c.col]||0)>0)) return false;
     return true;
@@ -642,15 +648,39 @@ function renderGantt() {
   if (!rows.length) {
     html = `<tr><td colspan="${vcols.length+5}" class="empty-state">条件に一致するデータがありません</td></tr>`;
   } else {
-    Object.entries(byPerson).sort().forEach(([name, tasksRaw]) => {
-      // Job No. ソート（空白は常に末尾）
-      const tasks = ganttSortDir === 0 ? tasksRaw : [...tasksRaw].sort((a, b) => {
-        const aE = !a.jobNo, bE = !b.jobNo;
-        if (aE && bE) return 0;
-        if (aE) return 1;
-        if (bE) return -1;
-        return ganttSortDir * (parseFloat(a.jobNo) - parseFloat(b.jobNo));
+    // 担当者グループを並び替え：fj選択時は親番号を持つ担当者を先頭に
+    let personEntries = Object.entries(byPerson).sort((a, b) => a[0].localeCompare(b[0]));
+    if (fj && fj !== '__blank__') {
+      personEntries.sort((a, b) => {
+        const aHasParent = a[1].some(t => t.jobNo === fj);
+        const bHasParent = b[1].some(t => t.jobNo === fj);
+        if (aHasParent && !bHasParent) return -1;
+        if (!aHasParent && bHasParent) return 1;
+        return a[0].localeCompare(b[0]);
       });
+    }
+
+    personEntries.forEach(([name, tasksRaw]) => {
+      // タスクソート：fj選択時は親番号→子番号順、それ以外はganttSortDir
+      let tasks;
+      if (fj && fj !== '__blank__') {
+        tasks = [...tasksRaw].sort((a, b) => {
+          const aP = a.jobNo === fj, bP = b.jobNo === fj;
+          if (aP && !bP) return -1;
+          if (!aP && bP) return 1;
+          return (a.jobNo||'').localeCompare(b.jobNo||'');
+        });
+      } else if (ganttSortDir !== 0) {
+        tasks = [...tasksRaw].sort((a, b) => {
+          const aE = !a.jobNo, bE = !b.jobNo;
+          if (aE && bE) return 0;
+          if (aE) return 1;
+          if (bE) return -1;
+          return ganttSortDir * (parseFloat(a.jobNo) - parseFloat(b.jobNo));
+        });
+      } else {
+        tasks = tasksRaw;
+      }
       const personTotal = r2(tasks.reduce((s,r)=>s+r.newWeekdayValue*r.weekdayCount,0));
       html += `<tr class="ag-row">
         <td colspan="4" class="s0 sticky-bg" style="left:0">👤 ${esc(name)}
@@ -843,6 +873,24 @@ function fillSel(id, items) {
   const el=document.getElementById(id), first=el.options[0];
   el.innerHTML=''; el.appendChild(first);
   items.forEach(v=>{ const o=document.createElement('option'); o.value=o.textContent=v; el.appendChild(o); });
+}
+
+function fillJobNoSel() {
+  const sel = document.getElementById('fJ');
+  const parents = new Set();
+  let hasBlank = false;
+  allRows.forEach(r => {
+    if (!r.jobNo) { hasBlank = true; return; }
+    // 親番号 = ハイフン前の部分（例: "123-001" → "123"、"123" → "123"）
+    parents.add(r.jobNo.split('-')[0]);
+  });
+  const sorted = [...parents].sort((a, b) => {
+    const na = parseFloat(a), nb = parseFloat(b);
+    return (!isNaN(na) && !isNaN(nb)) ? na - nb : a.localeCompare(b);
+  });
+  sel.innerHTML = '<option value="">全て</option>' +
+    sorted.map(p => `<option value="${esc(p)}">${esc(p)}</option>`).join('') +
+    (hasBlank ? '<option value="__blank__">（空白）</option>' : '');
 }
 function badge(s) {
   const map={'処理中':'b0','完了':'b1','未対応':'b2','処理済み':'b3','レビュー待ち':'b4'};
