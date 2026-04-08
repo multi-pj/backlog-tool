@@ -234,10 +234,12 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <div class="filter-bar" style="padding:0">
-          <label>種別:</label><select id="fC" onchange="renderCurrent()"><option value="">全て</option></select>
           <label>担当者:</label><select id="fA" onchange="renderCurrent()"><option value="">全員</option></select>
-          <label>状態:</label><select id="fS" onchange="renderCurrent()"><option value="">全て</option></select>
-          <input type="text" id="fT" placeholder="キー / 件名で検索" oninput="renderCurrent()" style="min-width:150px">
+          <span id="ganttFilters" style="display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <label>種別:</label><select id="fC" onchange="renderCurrent()"><option value="">全て</option></select>
+            <label>状態:</label><select id="fS" onchange="renderCurrent()"><option value="">全て</option></select>
+            <input type="text" id="fT" placeholder="件名で検索" oninput="renderCurrent()" style="min-width:150px">
+          </span>
         </div>
       </div>
     </div>
@@ -305,6 +307,12 @@ function isGray(ds) {
 let allRows = [], allCols = [], allMonths = [], allWorkload = {};
 let processedWb = null, origFileName = '', CAPACITY = 7;
 let activeTab = 'gantt', activeMonth = '';
+let ganttSortDir = 0; // 0=none 1=asc -1=desc
+
+function toggleJobSort() {
+  ganttSortDir = ganttSortDir === 0 ? 1 : ganttSortDir === 1 ? -1 : 0;
+  renderGantt();
+}
 const TODAY = new Date().toISOString().slice(0,10);
 
 // ================================================================
@@ -516,7 +524,8 @@ function switchTab(name, btn) {
   activeTab = name;
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  document.getElementById('wlLegend').style.display = name==='workload' ? 'flex' : 'none';
+  document.getElementById('wlLegend').style.display    = name==='workload' ? 'flex'  : 'none';
+  document.getElementById('ganttFilters').style.display = name==='workload' ? 'none'  : 'inline-flex';
   renderCurrent();
 }
 
@@ -605,7 +614,7 @@ function renderGantt() {
 
   document.getElementById('tHead').innerHTML = `
     <tr>
-      <th class="info-th s0 sticky-bg" style="left:${left[0]}px;min-width:${STICKY_W[0]}px" rowspan="2">Job No.</th>
+      <th class="info-th s0 sticky-bg" style="left:${left[0]}px;min-width:${STICKY_W[0]}px;cursor:pointer;user-select:none" rowspan="2" onclick="toggleJobSort()" title="Job No. でソート">Job No. <span style="font-size:10px;opacity:.8">${ganttSortDir===1?'▲':ganttSortDir===-1?'▼':'⇅'}</span></th>
       <th class="info-th s0 sticky-bg" style="left:${left[1]}px;min-width:${STICKY_W[1]}px" rowspan="2">種別</th>
       <th class="info-th s1 sticky-bg" style="left:${left[2]}px;min-width:${STICKY_W[2]}px" rowspan="2">件名</th>
       <th class="info-th s2 sticky-bg" style="left:${left[3]}px;min-width:${STICKY_W[3]}px" rowspan="2">状態</th>
@@ -633,7 +642,15 @@ function renderGantt() {
   if (!rows.length) {
     html = `<tr><td colspan="${vcols.length+5}" class="empty-state">条件に一致するデータがありません</td></tr>`;
   } else {
-    Object.entries(byPerson).sort().forEach(([name, tasks]) => {
+    Object.entries(byPerson).sort().forEach(([name, tasksRaw]) => {
+      // Job No. ソート（空白は常に末尾）
+      const tasks = ganttSortDir === 0 ? tasksRaw : [...tasksRaw].sort((a, b) => {
+        const aE = !a.jobNo, bE = !b.jobNo;
+        if (aE && bE) return 0;
+        if (aE) return 1;
+        if (bE) return -1;
+        return ganttSortDir * (parseFloat(a.jobNo) - parseFloat(b.jobNo));
+      });
       const personTotal = r2(tasks.reduce((s,r)=>s+r.newWeekdayValue*r.weekdayCount,0));
       html += `<tr class="ag-row">
         <td colspan="4" class="s0 sticky-bg" style="left:0">👤 ${esc(name)}
@@ -653,7 +670,7 @@ function renderGantt() {
         const total = r2(row.newWeekdayValue * row.weekdayCount);
         html += `<tr>
           <td class="info-td s0 sticky-bg" style="left:${left[0]}px"><code style="font-size:10px;color:#607d8b">${esc(row.jobNo||'')}</code></td>
-          <td class="info-td s0 sticky-bg" style="left:${left[1]}px;max-width:${STICKY_W[1]}px;overflow:hidden;text-overflow:ellipsis;font-size:11px;color:#607d8b">${esc(row.cat)}</td>
+          <td class="info-td s0 sticky-bg tip-cell" style="left:${left[1]}px;max-width:${STICKY_W[1]}px;overflow:hidden;text-overflow:ellipsis;font-size:11px;color:#607d8b;cursor:default" data-tip="${esc(row.cat)}">${esc(trunc(row.cat,10))}</td>
           <td class="info-td s1 sticky-bg tip-cell" style="left:${left[2]}px;max-width:${STICKY_W[2]}px;overflow:hidden;text-overflow:ellipsis;cursor:default" data-tip="${esc(row.title)}">${esc(trunc(row.title,22))}</td>
           <td class="info-td s2 sticky-bg" style="left:${left[3]}px">${badge(row.status)}</td>
           <td class="info-td s3 sticky-bg" style="left:${left[4]}px;text-align:right;font-weight:700;color:#1a3a5c">${total.toFixed(2)}</td>
