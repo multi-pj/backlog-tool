@@ -1114,7 +1114,7 @@ fpStartDate = flatpickr('#startDateInput', {
   dateFormat: 'Y-m-d',
   altInput: true,
   altFormat: 'Y/m/d',
-  locale: 'ja',
+  locale: Object.assign({}, flatpickr.l10ns.ja, { firstDayOfWeek: 1 }), // 日本語 + 月曜始まり
   allowInput: true,
   disableMobile: true,
   onReady(_d, _s, instance) {
