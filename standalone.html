@@ -215,7 +215,7 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 <div class="stats-row" id="statsRow" style="display:none">
   <div class="stat"><div class="lbl">タスク数</div><div class="val" id="sTasks">-</div></div>
   <div class="stat"><div class="lbl">担当者数</div><div class="val" id="sPeople">-</div></div>
-  <div class="stat"><div class="lbl">予定時間 合計</div><div class="val" id="sGray">-</div></div>
+  <div class="stat"><div class="lbl">実績時間 合計</div><div class="val" id="sGray">-</div></div>
   <div class="stat"><div class="lbl">按分済 平日合計</div><div class="val" id="sWd">-</div></div>
 </div>
 
@@ -239,6 +239,9 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
       </div>
     </div>
     <div class="month-nav" id="monthNav"></div>
+    <div id="scrollHint" style="display:none;font-size:11px;color:#b0bec5;padding:0 4px 8px;letter-spacing:.3px">
+      💡 Shift + マウスホイールで横スクロールできます
+    </div>
   </div>
 
   <!-- Legend for workload tab -->
@@ -356,7 +359,7 @@ function processFile() {
       updateMonthNav();
 
       // 統計
-      const tEst  = allRows.reduce((s,r)=>s+r.estHours, 0);
+      const tEst  = allRows.reduce((s,r)=>s+r.actHours, 0);
       const tWd   = allRows.reduce((s,r)=>s+r.newWeekdayValue*r.weekdayCount, 0);
       document.getElementById('sTasks').textContent  = allRows.length;
       document.getElementById('sPeople').textContent = [...new Set(allRows.map(r=>r.assignee))].length;
@@ -514,7 +517,7 @@ function buildMonthNav() {
   // 全表示ボタン
   const allBtn = document.createElement('button');
   allBtn.className = 'month-btn' + (activeMonth==='' ? ' active' : '');
-  allBtn.textContent = '最新5ヶ月';
+  allBtn.textContent = '本日';
   allBtn.onclick = () => { activeMonth=''; updateMonthNav(); renderCurrent(); };
   nav.appendChild(allBtn);
 
@@ -560,11 +563,17 @@ function renderGantt() {
   const fs = document.getElementById('fS').value;
   const fc = document.getElementById('fC').value;
   const ft = document.getElementById('fT').value.toLowerCase();
-  // 表示月：選択月 or デフォルト5ヶ月
-  const showMonths = activeMonth
-    ? new Set([activeMonth])
-    : new Set(allMonths.slice(0, 5));
-  const vcols = allCols.filter(c => showMonths.has(c.mo));
+  // 表示列：選択月 or 本日±3ヶ月
+  let vcols;
+  const todayMode = activeMonth === '';
+  if (activeMonth) {
+    vcols = allCols.filter(c => c.mo === activeMonth);
+  } else {
+    const dFrom = new Date(TODAY + 'T12:00:00'); dFrom.setMonth(dFrom.getMonth() - 3);
+    const dTo   = new Date(TODAY + 'T12:00:00'); dTo.setMonth(dTo.getMonth() + 3);
+    vcols = allCols.filter(c => c.ds >= dFrom.toISOString().slice(0,10) && c.ds <= dTo.toISOString().slice(0,10));
+  }
+  document.getElementById('scrollHint').style.display = todayMode ? 'block' : 'none';
 
   // 月グループヘッダー
   const mGroups = buildMonthGroups(vcols);
@@ -640,6 +649,16 @@ function renderGantt() {
   }
 
   document.getElementById('tBody').innerHTML = html;
+
+  // 本日モードは本日列の先頭までスクロール
+  if (todayMode) {
+    const todayIdx = vcols.findIndex(c => c.ds === TODAY);
+    if (todayIdx >= 0) {
+      requestAnimationFrame(() => {
+        document.getElementById('tableWrap').scrollLeft = todayIdx * 44;
+      });
+    }
+  }
 }
 
 // ================================================================
@@ -647,10 +666,16 @@ function renderGantt() {
 // ================================================================
 function renderWorkload() {
   const fa    = document.getElementById('fA').value;
-  const showMonths = activeMonth
-    ? new Set([activeMonth])
-    : new Set(allMonths.slice(0, 5));
-  const vcols = allCols.filter(c => showMonths.has(c.mo));
+  const todayMode = activeMonth === '';
+  let vcols;
+  if (activeMonth) {
+    vcols = allCols.filter(c => c.mo === activeMonth);
+  } else {
+    const dFrom = new Date(TODAY + 'T12:00:00'); dFrom.setMonth(dFrom.getMonth() - 3);
+    const dTo   = new Date(TODAY + 'T12:00:00'); dTo.setMonth(dTo.getMonth() + 3);
+    vcols = allCols.filter(c => c.ds >= dFrom.toISOString().slice(0,10) && c.ds <= dTo.toISOString().slice(0,10));
+  }
+  document.getElementById('scrollHint').style.display = todayMode ? 'block' : 'none';
   const mGroups = buildMonthGroups(vcols);
   const people  = Object.keys(allWorkload).sort().filter(p => !fa || p===fa);
 
