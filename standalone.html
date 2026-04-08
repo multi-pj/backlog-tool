@@ -320,9 +320,10 @@ document.getElementById('fileInput').addEventListener('change', function() {
 function clearData() {
   // 状態リセット
   allRows=[]; allCols=[]; allMonths=[]; allWorkload={}; processedWb=null; origFileName=''; activeMonth='';
-  // ファイル入力リセット
+  // ファイル入力・日付リセット
   document.getElementById('fileInput').value='';
   document.getElementById('fileName').textContent='Backlog 課題一覧（xlsx）を選択してください';
+  document.getElementById('startDateInput').value='';
   // ボタン状態
   document.getElementById('runBtn').disabled=true;
   document.getElementById('dlBtn').disabled=true;
