@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Backlog 稼働分析</title>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI','Meiryo',Arial,sans-serif;background:#f0f2f5;color:#333;font-size:13px}
@@ -13,6 +15,24 @@ body{font-family:'Segoe UI','Meiryo',Arial,sans-serif;background:#f0f2f5;color:#
 header{background:#1a3a5c;color:#fff;padding:14px 24px;display:flex;align-items:center;gap:10px}
 header h1{font-size:17px;font-weight:600}
 header span{font-size:11px;opacity:.7}
+.btn-logout{margin-left:auto;display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;padding:6px 14px;border-radius:7px;font-size:12px;cursor:pointer;font-weight:600;transition:background .15s}
+.btn-logout:hover{background:rgba(255,255,255,.22)}
+/* ===== Custom Job No. dropdown ===== */
+.csel{position:relative;display:inline-block;vertical-align:middle}
+.csel-cur{display:inline-flex;align-items:center;gap:4px;padding:4px 24px 4px 8px;border:1px solid #d0dae6;border-radius:6px;background:#fff;cursor:pointer;font-size:13px;white-space:nowrap;min-width:72px;color:#333;position:relative;line-height:1.6}
+.csel-cur::after{content:'▾';position:absolute;right:7px;top:50%;transform:translateY(-50%);color:#90a4ae;font-size:10px;pointer-events:none}
+.csel-cur:hover{border-color:#1a3a5c}
+.csel-open .csel-cur{border-color:#1a3a5c;box-shadow:0 0 0 2px rgba(26,58,92,.15)}
+.csel-list{display:none;position:absolute;top:calc(100% + 3px);left:0;min-width:120px;background:#fff;border:1px solid #d0dae6;border-radius:6px;box-shadow:0 4px 14px rgba(0,0,0,.15);z-index:600;max-height:240px;overflow-y:auto}
+.csel-open .csel-list{display:block}
+.csel-item{padding:6px 14px;font-size:13px;cursor:pointer;white-space:nowrap;color:#333}
+.csel-item:hover{background:#e8f0fe;color:#1a3a5c}
+.csel-item.sel{font-weight:700;color:#1a3a5c;background:#f0f5ff}
+/* ===== Flatpickr overrides ===== */
+#gl-tip{white-space:pre-line}
+.flatpickr-calendar{font-family:'Segoe UI','Meiryo',Arial,sans-serif;font-size:13px}
+.flatpickr-calendar .flatpickr-day.today{border-color:#ffa726}
+.flatpickr-calendar .flatpickr-day.selected,.flatpickr-calendar .flatpickr-day.selected:hover{background:#1a3a5c;border-color:#1a3a5c}
 
 /* ===== Layout ===== */
 .container{max-width:100%;padding:20px}
@@ -178,6 +198,7 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
   </svg>
   <h1>Backlog 稼働分析</h1>
   <span>開始日〜期限日・予定時間から日別按分 / 日別稼働確認 / ワークロード管理</span>
+  <button class="btn-logout" onclick="logout()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>ログアウト</button>
 </header>
 
 <div class="container">
@@ -219,7 +240,7 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
   <div class="stat"><div class="lbl">タスク数</div><div class="val" id="sTasks">-</div></div>
   <div class="stat"><div class="lbl">担当者数</div><div class="val" id="sPeople">-</div></div>
   <div class="stat"><div class="lbl">実績時間 合計</div><div class="val" id="sGray">-</div></div>
-  <div class="stat"><div class="lbl">按分済 平日合計</div><div class="val" id="sWd">-</div></div>
+  <div class="stat"><div class="lbl">按分済 平日予定時間合計</div><div class="val" id="sWd">-</div></div>
 </div>
 
 <!-- Main panel -->
@@ -235,7 +256,11 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <div class="filter-bar" style="padding:0">
           <span id="ganttFilters" style="display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap">
-            <label>Job No.:</label><select id="fJ" onchange="renderCurrent()"><option value="">全て</option></select>
+            <label>Job No.:</label>
+            <div class="csel" id="fJCsel">
+              <div class="csel-cur" id="fJCur" onclick="toggleFJDrop(event)">全て</div>
+              <div class="csel-list" id="fJList"></div>
+            </div>
             <label>種別:</label><select id="fC" onchange="renderCurrent()"><option value="">全て</option></select>
             <label>状態:</label><select id="fS" onchange="renderCurrent()"><option value="">全て</option></select>
             <input type="text" id="fT" placeholder="件名で検索" oninput="renderCurrent()" style="min-width:150px">
@@ -309,10 +334,48 @@ let allRows = [], allCols = [], allMonths = [], allWorkload = {};
 let processedWb = null, origFileName = '', CAPACITY = 7;
 let activeTab = 'gantt', activeMonth = '';
 let ganttSortDir = 0; // 0=none 1=asc -1=desc
+let activeJobNo = '';  // カスタムドロップダウンの選択値
+let jobNoTips   = {};  // { 親番号: ['件名A','[123-001] 件名B',...] }
+let fpStartDate = null; // Flatpickr instance
 
 function toggleJobSort() {
   ganttSortDir = ganttSortDir === 0 ? 1 : ganttSortDir === 1 ? -1 : 0;
   renderGantt();
+}
+
+// ================================================================
+// Job No. カスタムドロップダウン
+// ================================================================
+function toggleFJDrop(e) {
+  e.stopPropagation();
+  document.getElementById('fJCsel').classList.toggle('csel-open');
+}
+
+function selectJobNo(val, lbl) {
+  activeJobNo = val;
+  document.getElementById('fJCur').textContent = lbl || '全て';
+  document.getElementById('fJCsel').classList.remove('csel-open');
+  document.getElementById('fJList').querySelectorAll('.csel-item').forEach(el =>
+    el.classList.toggle('sel', el.dataset.val === val));
+  renderCurrent();
+}
+
+document.addEventListener('click', e => {
+  const wrap = document.getElementById('fJCsel');
+  if (wrap && !wrap.contains(e.target)) {
+    wrap.classList.remove('csel-open');
+    document.getElementById('gl-tip').style.display = 'none';
+  }
+});
+
+// ================================================================
+// ログアウト
+// ================================================================
+function logout() {
+  sessionStorage.removeItem('bl_auth');
+  document.getElementById('pw-overlay').style.display = '';
+  document.getElementById('pw-input').value = '';
+  document.getElementById('pw-err').textContent = '';
 }
 const TODAY = new Date().toISOString().slice(0,10);
 
@@ -329,7 +392,11 @@ document.getElementById('fileInput').addEventListener('change', function() {
 function clearData() {
   // 状態リセット
   allRows=[]; allCols=[]; allMonths=[]; allWorkload={}; processedWb=null; origFileName=''; activeMonth=''; ganttSortDir=0;
-  document.getElementById('fJ').innerHTML='<option value="">全て</option>';
+  activeJobNo='';
+  document.getElementById('fJCur').textContent='全て';
+  document.getElementById('fJList').innerHTML='';
+  document.getElementById('fJCsel').classList.remove('csel-open');
+  if (fpStartDate) fpStartDate.clear();
   // ファイル入力・日付リセット
   document.getElementById('fileInput').value='';
   document.getElementById('fileName').textContent='Backlog 課題一覧（xlsx）を選択してください';
@@ -596,7 +663,7 @@ function renderGantt() {
   const fs = document.getElementById('fS').value;
   const fc = document.getElementById('fC').value;
   const ft = document.getElementById('fT').value.toLowerCase();
-  const fj = document.getElementById('fJ').value; // '' | 親番号 | '__blank__'
+  const fj = activeJobNo; // '' | 親番号 | '__blank__'
   // 表示列：選択月 or 本日±3ヶ月
   let vcols;
   const todayMode = activeMonth === '';
@@ -876,21 +943,65 @@ function fillSel(id, items) {
 }
 
 function fillJobNoSel() {
-  const sel = document.getElementById('fJ');
   const parents = new Set();
   let hasBlank = false;
+  jobNoTips = {};
+
   allRows.forEach(r => {
-    if (!r.jobNo) { hasBlank = true; return; }
-    // 親番号 = ハイフン前の部分（例: "123-001" → "123"、"123" → "123"）
-    parents.add(r.jobNo.split('-')[0]);
+    if (!r.jobNo) {
+      hasBlank = true;
+      if (!jobNoTips['__blank__']) jobNoTips['__blank__'] = [];
+      if (jobNoTips['__blank__'].length < 30 && !jobNoTips['__blank__'].includes(r.title))
+        jobNoTips['__blank__'].push(r.title);
+      return;
+    }
+    const parent = r.jobNo.split('-')[0];
+    parents.add(parent);
+    if (!jobNoTips[parent]) jobNoTips[parent] = [];
+    const line = r.jobNo === parent ? r.title : `[${r.jobNo}] ${r.title}`;
+    if (jobNoTips[parent].length < 30 && !jobNoTips[parent].includes(line))
+      jobNoTips[parent].push(line);
   });
+
   const sorted = [...parents].sort((a, b) => {
     const na = parseFloat(a), nb = parseFloat(b);
     return (!isNaN(na) && !isNaN(nb)) ? na - nb : a.localeCompare(b);
   });
-  sel.innerHTML = '<option value="">全て</option>' +
-    sorted.map(p => `<option value="${esc(p)}">${esc(p)}</option>`).join('') +
-    (hasBlank ? '<option value="__blank__">（空白）</option>' : '');
+  const items = [{ val: '', lbl: '全て' }];
+  sorted.forEach(p => items.push({ val: p, lbl: p }));
+  if (hasBlank) items.push({ val: '__blank__', lbl: '（空白）' });
+
+  const list = document.getElementById('fJList');
+  list.innerHTML = items.map(it =>
+    `<div class="csel-item${it.val===activeJobNo?' sel':''}" data-val="${esc(it.val)}" data-lbl="${esc(it.lbl)}">${esc(it.lbl)}</div>`
+  ).join('');
+
+  // イベント委譲でクリック処理
+  list.onclick = e => {
+    e.stopPropagation();
+    const el = e.target.closest('.csel-item');
+    if (el) selectJobNo(el.dataset.val, el.dataset.lbl);
+  };
+
+  // 件名ツールチップ（マウスオン）
+  const tip = document.getElementById('gl-tip');
+  list.addEventListener('mouseover', e => {
+    const el = e.target.closest('.csel-item[data-val]');
+    if (!el || el.dataset.val === '') return;
+    const lines = jobNoTips[el.dataset.val];
+    if (!lines || !lines.length) return;
+    tip.textContent = lines.join('\n');
+    tip.style.display = 'block';
+    tip.style.left = (e.clientX + 14) + 'px';
+    tip.style.top  = (e.clientY - 10) + 'px';
+  });
+  list.addEventListener('mousemove', e => {
+    if (tip.style.display === 'block') {
+      tip.style.left = (e.clientX + 14) + 'px';
+      tip.style.top  = (e.clientY - 10) + 'px';
+    }
+  });
+  list.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
 }
 function badge(s) {
   const map={'処理中':'b0','完了':'b1','未対応':'b2','処理済み':'b3','レビュー待ち':'b4'};
@@ -986,6 +1097,14 @@ function toast(msg,isErr){
     tip.style.top  = y + 'px';
   }
 })();
+
+// ===== Flatpickr（月曜始まりカレンダー）=====
+fpStartDate = flatpickr('#startDateInput', {
+  dateFormat: 'Y-m-d',
+  locale: { firstDayOfWeek: 1 },
+  allowInput: true,
+  disableMobile: true
+});
 
 // ===== Password =====
 (function(){
