@@ -673,12 +673,15 @@ function renderGantt() {
 
   // 本日モードは本日列の先頭までスクロール
   if (todayMode) {
-    const todayIdx = vcols.findIndex(c => c.ds === TODAY);
-    if (todayIdx >= 0) {
-      requestAnimationFrame(() => {
-        document.getElementById('tableWrap').scrollLeft = todayIdx * 44;
-      });
-    }
+    setTimeout(() => {
+      const tw = document.getElementById('tableWrap');
+      const todayTh   = tw.querySelector('th.today-th');
+      const firstDayTh = tw.querySelector('th.day-th');
+      if (todayTh && firstDayTh) {
+        tw.scrollLeft += todayTh.getBoundingClientRect().left
+                       - firstDayTh.getBoundingClientRect().left - 20;
+      }
+    }, 50);
   }
 }
 
@@ -751,12 +754,15 @@ function renderWorkload() {
 
   // 本日モードは本日列の先頭までスクロール
   if (todayMode) {
-    const todayIdx = vcols.findIndex(c => c.ds === TODAY);
-    if (todayIdx >= 0) {
-      requestAnimationFrame(() => {
-        document.getElementById('tableWrap').scrollLeft = todayIdx * 44;
-      });
-    }
+    setTimeout(() => {
+      const tw = document.getElementById('tableWrap');
+      const todayTh   = tw.querySelector('th.today-th');
+      const firstDayTh = tw.querySelector('th.day-th');
+      if (todayTh && firstDayTh) {
+        tw.scrollLeft += todayTh.getBoundingClientRect().left
+                       - firstDayTh.getBoundingClientRect().left - 20;
+      }
+    }, 50);
   }
 }
 
