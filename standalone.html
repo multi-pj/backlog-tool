@@ -748,6 +748,16 @@ function renderWorkload() {
   }
 
   document.getElementById('tBody').innerHTML = html;
+
+  // 本日モードは本日列の先頭までスクロール
+  if (todayMode) {
+    const todayIdx = vcols.findIndex(c => c.ds === TODAY);
+    if (todayIdx >= 0) {
+      requestAnimationFrame(() => {
+        document.getElementById('tableWrap').scrollLeft = todayIdx * 44;
+      });
+    }
+  }
 }
 
 // ================================================================
