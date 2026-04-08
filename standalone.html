@@ -673,15 +673,20 @@ function renderGantt() {
 
   // 本日モードは本日列の先頭までスクロール
   if (todayMode) {
-    setTimeout(() => {
-      const tw = document.getElementById('tableWrap');
-      const todayTh   = tw.querySelector('th.today-th');
-      const firstDayTh = tw.querySelector('th.day-th');
-      if (todayTh && firstDayTh) {
-        tw.scrollLeft += todayTh.getBoundingClientRect().left
-                       - firstDayTh.getBoundingClientRect().left - 20;
-      }
-    }, 50);
+    const todayIdx = vcols.findIndex(c => c.ds === TODAY);
+    if (todayIdx >= 0) {
+      setTimeout(() => {
+        const tw = document.getElementById('tableWrap');
+        const dayThs = tw.querySelectorAll('th.day-th');
+        if (dayThs[todayIdx]) {
+          // scrollLeft=0 にしてから自然レイアウト位置を取得し絶対設定する
+          tw.scrollLeft = 0;
+          const firstLeft = dayThs[0].getBoundingClientRect().left;
+          const todayLeft = dayThs[todayIdx].getBoundingClientRect().left;
+          tw.scrollLeft = Math.max(0, todayLeft - firstLeft);
+        }
+      }, 50);
+    }
   }
 }
 
@@ -754,15 +759,20 @@ function renderWorkload() {
 
   // 本日モードは本日列の先頭までスクロール
   if (todayMode) {
-    setTimeout(() => {
-      const tw = document.getElementById('tableWrap');
-      const todayTh   = tw.querySelector('th.today-th');
-      const firstDayTh = tw.querySelector('th.day-th');
-      if (todayTh && firstDayTh) {
-        tw.scrollLeft += todayTh.getBoundingClientRect().left
-                       - firstDayTh.getBoundingClientRect().left - 20;
-      }
-    }, 50);
+    const todayIdx = vcols.findIndex(c => c.ds === TODAY);
+    if (todayIdx >= 0) {
+      setTimeout(() => {
+        const tw = document.getElementById('tableWrap');
+        const dayThs = tw.querySelectorAll('th.day-th');
+        if (dayThs[todayIdx]) {
+          // scrollLeft=0 にしてから自然レイアウト位置を取得し絶対設定する
+          tw.scrollLeft = 0;
+          const firstLeft = dayThs[0].getBoundingClientRect().left;
+          const todayLeft = dayThs[todayIdx].getBoundingClientRect().left;
+          tw.scrollLeft = Math.max(0, todayLeft - firstLeft);
+        }
+      }, 50);
+    }
   }
 }
 
