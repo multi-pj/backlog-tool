@@ -1111,12 +1111,23 @@ function toast(msg,isErr){
 
 // ===== Flatpickr（月曜始まりカレンダー）=====
 fpStartDate = flatpickr('#startDateInput', {
-  dateFormat: 'Y-m-d',      // 内部値（既存コードの比較ロジック用）
-  altInput: true,            // 表示用の別inputを生成
-  altFormat: 'Y/m/d',       // ユーザーに見せる形式: 2026/03/01
-  locale: 'ja',             // 日本語表示（月曜始まり含む）
+  dateFormat: 'Y-m-d',
+  altInput: true,
+  altFormat: 'Y/m/d',
+  locale: 'ja',
   allowInput: true,
-  disableMobile: true
+  disableMobile: true,
+  onReady(_d, _s, instance) {
+    const ai = instance.altInput;
+    ai.style.width       = '190px';
+    ai.style.minWidth    = '190px';
+    ai.style.padding     = '6px 8px';
+    ai.style.border      = '1px solid #d0dae6';
+    ai.style.borderRadius = '6px';
+    ai.style.fontSize    = '12px';
+    ai.style.color       = '#333';
+    ai.placeholder       = '表示開始日を選択';
+  }
 });
 
 // ===== Password =====
