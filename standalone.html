@@ -34,6 +34,8 @@ header span{font-size:11px;opacity:.7}
 .flatpickr-calendar{font-family:'Segoe UI','Meiryo',Arial,sans-serif;font-size:13px}
 .flatpickr-calendar .flatpickr-day.today{border-color:#ffa726}
 .flatpickr-calendar .flatpickr-day.selected,.flatpickr-calendar .flatpickr-day.selected:hover{background:#1a3a5c;border-color:#1a3a5c}
+/* altInput のスタイル（元の input は非表示になるため altInput を直接指定）*/
+.flatpickr-input.flatpickr-alt-input{width:190px!important;padding:6px 8px;border:1px solid #d0dae6;border-radius:6px;font-size:12px;color:#333;background:#fff;cursor:pointer}
 
 /* ===== Layout ===== */
 .container{max-width:100%;padding:20px}
@@ -1002,6 +1004,15 @@ function fillJobNoSel() {
     }
   });
   list.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+
+  // 最も幅の広いラベルに合わせて csel-cur の min-width を動的設定
+  const maxLbl = items.reduce((m, it) => it.lbl.length > m.length ? it.lbl : m, '全て');
+  const ruler = document.createElement('span');
+  ruler.style.cssText = 'visibility:hidden;position:fixed;font-size:13px;font-family:"Segoe UI","Meiryo",Arial,sans-serif;white-space:nowrap;padding:4px 24px 4px 8px';
+  ruler.textContent = maxLbl;
+  document.body.appendChild(ruler);
+  document.getElementById('fJCur').style.minWidth = (ruler.offsetWidth + 4) + 'px';
+  document.body.removeChild(ruler);
 }
 function badge(s) {
   const map={'処理中':'b0','完了':'b1','未対応':'b2','処理済み':'b3','レビュー待ち':'b4'};
