@@ -27,10 +27,11 @@ header span{font-size:11px;opacity:.7}
 #fileName{font-size:12px;color:#90a4ae}
 .btn{padding:9px 20px;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:600;transition:opacity .15s}
 .btn:disabled{opacity:.38;cursor:not-allowed}
-.btn-run{background:#1a3a5c;color:#fff}
+.btn-run{background:#1a3a5c;color:#fff;padding:11px 40px;font-size:14px}
 .btn-run:hover:not(:disabled){opacity:.85}
 .btn-dl{background:#27ae60;color:#fff}
 .btn-dl:hover:not(:disabled){opacity:.85}
+.btn-row{display:flex;align-items:center;gap:24px;flex-wrap:wrap;margin-top:14px}
 .note{font-size:11px;color:#90a4ae;margin-top:10px}
 #loading{display:none;align-items:center;gap:9px;font-size:13px;color:#1a3a5c;margin-top:10px}
 .spin{width:18px;height:18px;border:3px solid #d0dae6;border-top-color:#1a3a5c;border-radius:50%;animation:sp .8s linear infinite}
@@ -75,7 +76,7 @@ table{border-collapse:collapse;font-size:12px;white-space:nowrap}
 table th{background:#1a3a5c;color:#fff;padding:0;text-align:center;font-weight:600;position:sticky;top:0;z-index:2}
 table th.month-th{padding:6px 4px;border-right:1px solid #2a4a6c;font-size:11px}
 table th.day-th{padding:4px 2px;border-right:1px solid #2a4a6c;font-size:11px;min-width:44px;line-height:1.3}
-table th.info-th{padding:8px 10px;text-align:left;z-index:4;border-right:1px solid #2a4a6c}
+table th.info-th{padding:8px 10px;text-align:left;z-index:4;border-right:1px solid #2a4a6c;color:#1a3a5c}
 table td{padding:4px 4px;border-bottom:1px solid #edf0f5;border-right:1px solid #f0f2f5;text-align:center;vertical-align:middle}
 table td.info-td{text-align:left;padding:4px 10px;background:#fff;border-right:1px solid #e3e9f0}
 table tbody tr:nth-child(even) td:not(.sticky-bg){background:#fafbff}
@@ -192,17 +193,19 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
     </label>
     <input type="file" id="fileInput" accept=".xlsx">
     <span id="fileName">Backlog 課題一覧（xlsx）を選択してください</span>
-    <button class="btn btn-run" id="runBtn" onclick="processFile()" disabled>分析実行</button>
-    <button class="btn btn-dl"  id="dlBtn"  onclick="downloadFile()" disabled>Excel ダウンロード</button>
     <div class="cap-wrap">
       <label>表示開始日</label>
-      <input type="date" id="startDateInput" style="padding:6px 8px;border:1px solid #d0dae6;border-radius:6px;font-size:12px">
+      <input type="date" id="startDateInput" style="width:160px;padding:6px 8px;border:1px solid #d0dae6;border-radius:6px;font-size:12px">
     </div>
     <div class="cap-wrap">
       <label>1日稼働上限</label>
       <input type="number" id="capInput" value="7" min="1" max="24" step="0.5" onchange="onCapChange()">
       <span>h</span>
     </div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-run" id="runBtn" onclick="processFile()" disabled>分析実行</button>
+    <button class="btn btn-dl"  id="dlBtn"  onclick="downloadFile()" disabled>Excel ダウンロード</button>
   </div>
   <div id="loading"><div class="spin"></div><span id="loadMsg">処理中...</span></div>
   <div class="note">※ Backlogの「課題一覧」Excelをアップロードしてください。開始日〜期限日の平日に予定時間を均等按分して日別稼働を算出します。</div>
@@ -212,8 +215,8 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 <div class="stats-row" id="statsRow" style="display:none">
   <div class="stat"><div class="lbl">タスク数</div><div class="val" id="sTasks">-</div></div>
   <div class="stat"><div class="lbl">担当者数</div><div class="val" id="sPeople">-</div></div>
-  <div class="stat"><div class="lbl">土日祝 合計時間</div><div class="val" id="sGray">-</div></div>
-  <div class="stat"><div class="lbl">按分後 平日合計</div><div class="val" id="sWd">-</div></div>
+  <div class="stat"><div class="lbl">予定時間 合計</div><div class="val" id="sGray">-</div></div>
+  <div class="stat"><div class="lbl">按分済 平日合計</div><div class="val" id="sWd">-</div></div>
 </div>
 
 <!-- Main panel -->
@@ -347,17 +350,17 @@ function processFile() {
       fillSel('fA', [...new Set(allRows.map(r=>r.assignee))].sort());
       fillSel('fS', [...new Set(allRows.map(r=>r.status))].sort());
 
-      // 月ナビ
+      // 月ナビ（デフォルト=全月、renderGantt側で5ヶ月に制限）
       buildMonthNav();
-      activeMonth = allMonths[0] || '';
+      activeMonth = '';
       updateMonthNav();
 
       // 統計
-      const tGray = allRows.reduce((s,r)=>s+r.grayTotal, 0);
+      const tEst  = allRows.reduce((s,r)=>s+r.estHours, 0);
       const tWd   = allRows.reduce((s,r)=>s+r.newWeekdayValue*r.weekdayCount, 0);
       document.getElementById('sTasks').textContent  = allRows.length;
       document.getElementById('sPeople').textContent = [...new Set(allRows.map(r=>r.assignee))].length;
-      document.getElementById('sGray').textContent   = tGray.toFixed(1)+'h';
+      document.getElementById('sGray').textContent   = tEst.toFixed(1)+'h';
       document.getElementById('sWd').textContent     = tWd.toFixed(1)+'h';
 
       document.getElementById('statsRow').style.display = 'flex';
@@ -508,6 +511,13 @@ function buildMonthNav() {
 
   nav.innerHTML = '<span>表示月:</span>';
 
+  // 全表示ボタン
+  const allBtn = document.createElement('button');
+  allBtn.className = 'month-btn' + (activeMonth==='' ? ' active' : '');
+  allBtn.textContent = '最新5ヶ月';
+  allBtn.onclick = () => { activeMonth=''; updateMonthNav(); renderCurrent(); };
+  nav.appendChild(allBtn);
+
   const prev = document.createElement('button');
   prev.className = 'scroll-week-btn';
   prev.textContent = '◀';
@@ -534,7 +544,11 @@ function buildMonthNav() {
 
 function updateMonthNav() {
   document.querySelectorAll('.month-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.month === activeMonth);
+    if (b.dataset.month) {
+      b.classList.toggle('active', b.dataset.month === activeMonth);
+    } else {
+      b.classList.toggle('active', activeMonth === '');
+    }
   });
 }
 
@@ -546,7 +560,11 @@ function renderGantt() {
   const fs = document.getElementById('fS').value;
   const fc = document.getElementById('fC').value;
   const ft = document.getElementById('fT').value.toLowerCase();
-  const vcols = allCols.filter(c => !activeMonth || c.mo === activeMonth);
+  // 表示月：選択月 or デフォルト5ヶ月
+  const showMonths = activeMonth
+    ? new Set([activeMonth])
+    : new Set(allMonths.slice(0, 5));
+  const vcols = allCols.filter(c => showMonths.has(c.mo));
 
   // 月グループヘッダー
   const mGroups = buildMonthGroups(vcols);
@@ -629,7 +647,10 @@ function renderGantt() {
 // ================================================================
 function renderWorkload() {
   const fa    = document.getElementById('fA').value;
-  const vcols = allCols.filter(c => !activeMonth || c.mo === activeMonth);
+  const showMonths = activeMonth
+    ? new Set([activeMonth])
+    : new Set(allMonths.slice(0, 5));
+  const vcols = allCols.filter(c => showMonths.has(c.mo));
   const mGroups = buildMonthGroups(vcols);
   const people  = Object.keys(allWorkload).sort().filter(p => !fa || p===fa);
 
@@ -751,12 +772,12 @@ function toast(msg,isErr){
   t.style.display='block'; setTimeout(()=>t.style.display='none',3500);
 }
 
-// ===== テーブル横スクロール（マウスホイール） =====
+// ===== テーブル横スクロール（Shift+ホイール） =====
 (function(){
   const tw = document.getElementById('tableWrap');
   tw.addEventListener('wheel', e => {
+    if (!e.shiftKey) return;          // 通常ホイール → 縦スクロールをそのまま維持
     if (Math.abs(e.deltaX) > 0) return; // トラックパッド横スクロールはそのまま
-    if (tw.scrollWidth <= tw.clientWidth) return;
     e.preventDefault();
     tw.scrollLeft += e.deltaY;
   }, { passive: false });
