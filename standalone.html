@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Backlog 稼働分析</title>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx-js-style.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ja.js"></script>
@@ -906,161 +907,154 @@ function wlColor(h, cap) {
 }
 
 // ================================================================
-// Excel ダウンロード（分析結果を新規生成）
+// Excel ダウンロード（xlsx-js-style でスタイル付き出力）
 // ================================================================
 function downloadFile() {
   if (!allRows.length) return;
   setLoad(true, 'Excelを生成中...');
   setTimeout(() => {
     try {
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, buildGanttSheet(),    '日別稼働表');
-      XLSX.utils.book_append_sheet(wb, buildWorkloadSheet(), 'ワークロード');
-
+      const XS = window.XLSXStyle;
+      if (!XS) { toast('xlsx-js-style が読み込まれていません', true); return; }
+      const wb = XS.utils.book_new();
+      XS.utils.book_append_sheet(wb, buildGanttSheet(XS),    '日別稼働表');
+      XS.utils.book_append_sheet(wb, buildWorkloadSheet(XS), 'ワークロード');
       const d   = new Date();
       const pfx = `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`;
-      const base = origFileName.replace(/\.xlsx$/i,'');
       const name = `${pfx}_日別稼働表_ワークロード.xlsx`;
-      XLSX.writeFile(wb, name, { bookType:'xlsx', cellStyles:true });
+      XS.writeFile(wb, name, { bookType:'xlsx', cellStyles:true });
       toast('ダウンロード完了: ' + name, false);
-    } catch(e) { toast('エラー: '+e.message, true); }
+    } catch(e) { toast('エラー: '+e.message, true); console.error(e); }
     finally { setLoad(false); }
   }, 30);
 }
 
 // ================================================================
-// Excel スタイルヘルパー
+// Excel スタイル定義（xlsx-js-style 用）
 // ================================================================
-// 担当者ごとのカラーペア [グループ/ラベル行, データ行]（ソフトなパステル）
+// 担当者カラーペア: [グループ行BG, データ行BG]（ソフトなパステル）
 const XL_PALETTE = [
-  ['B8CDE4','DCE9F5'], // blue
-  ['A8D0B2','D0EDD8'], // green
-  ['FAC89A','FDECD8'], // peach
-  ['F0AEBE','F8D8E2'], // rose
-  ['C4B4DC','E8DCFA'], // purple
-  ['9ECDD8','D4EEF4'], // teal
-  ['D4B4DC','F0E0F4'], // lavender
-  ['B4BCDC','DDE0F4'], // indigo
+  ['B3C8DE','D9E9F5'], // blue
+  ['A3C9AD','CEEBD4'], // green
+  ['F5C08A','FDEACC'], // peach
+  ['EDAABB','FAD4DE'], // rose
+  ['BFB0D5','E2D8F0'], // purple
+  ['8EC8D4','CAEAF0'], // teal
+  ['CEB0D4','EDD8F0'], // lavender
+  ['B0B8D4','D8DCF0'], // indigo
 ];
-const XL_HDR1  = '1A3A5C'; // ヘッダー1行目背景
-const XL_HDR2  = '2E547C'; // ヘッダー2行目背景
-const XL_WHITE = 'FFFFFF';
-const XL_TOTAL = 'DDE2EA'; // チーム合計行背景
-const XL_DARK  = '1A3A5C'; // 文字色（濃）
-const XL_MID   = '4A6080'; // 文字色（中）
+const C = {
+  HDR1:'1A3A5C', HDR2:'2A5070',          // ヘッダー背景
+  WHT:'FFFFFF', DRK:'1A3A5C', MID:'3A5070', // 文字色
+  TOT:'D8DDE6',                            // チーム合計背景
+  BDR:'B8C8D8',                            // ボーダー色
+};
 
-function xls(fillRgb, bold, fontRgb, hAlign) {
+// セルスタイルオブジェクト生成
+function xs(bg, bold, fg, align) {
+  const bdr = { style:'thin', color:{ rgb: C.BDR } };
   return {
-    fill: { patternType:'solid', fgColor:{ rgb: fillRgb } },
-    font: { bold:!!bold, color:{ rgb: fontRgb||'333333' }, sz:10, name:'Meiryo' },
-    alignment: { horizontal: hAlign||'left', vertical:'center' },
+    fill: { patternType:'solid', fgColor:{ rgb: bg } },
+    font: { bold:!!bold, color:{ rgb: fg||'333333' }, sz:10, name:'Meiryo UI' },
+    alignment: { horizontal: align||'left', vertical:'center', wrapText:false },
+    border: { top:bdr, bottom:bdr, left:bdr, right:bdr },
   };
 }
-
-// ws の rowIdx 行全列にスタイルを適用
-function xlsRow(ws, rowIdx, nCols, style, numStyle, infoColsCount) {
+// 行全列にスタイルを適用（情報列と数値列で切り替え）
+function xlRow(XS, ws, ri, nCols, sInfo, sNum, splitCol) {
   for (let ci = 0; ci < nCols; ci++) {
-    const addr = XLSX.utils.encode_cell({r:rowIdx, c:ci});
+    const addr = XS.utils.encode_cell({r:ri, c:ci});
     if (!ws[addr]) ws[addr] = {v:'', t:'s'};
-    ws[addr].s = (numStyle && ci >= infoColsCount) ? numStyle : style;
+    ws[addr].s = (sNum && splitCol != null && ci >= splitCol) ? sNum : sInfo;
   }
 }
 
-// ---- 日別稼働表シート生成 ------------------------------------------
-function buildGanttSheet() {
-  const cols   = allCols;
-  const fmtDs  = ds => ds.replace(/-/g,'/');
-  const DAY    = {'0':'日','1':'月','2':'火','3':'水','4':'木','5':'金','6':'土'};
-  const dayJa  = ds => DAY[String(new Date(ds+'T12:00:00').getDay())];
-  const INFO   = 6; // 固定情報列数
-  const nCols  = INFO + cols.length;
+// ---- 日別稼働表シート -------------------------------------------
+function buildGanttSheet(XS) {
+  const cols  = allCols;
+  const fmtDs = ds => ds.replace(/-/g,'/');
+  const DMAP  = {'0':'日','1':'月','2':'火','3':'水','4':'木','5':'金','6':'土'};
+  const dj    = ds => DMAP[String(new Date(ds+'T12:00:00').getDay())];
+  const INFO  = 6;
+  const nCols = INFO + cols.length;
+  const data  = [], metas = [];
 
-  const data     = [];
-  const rowMetas = []; // { style, numStyle, infoCount }
+  // ヘッダー2行
+  data.push(['担当者','Job No.','種別','件名','状態','合計h（予定）',...cols.map(c=>fmtDs(c.ds))]);
+  metas.push({ si: xs(C.HDR1,true,C.WHT,'center'), sn: xs(C.HDR1,true,C.WHT,'center') });
 
-  data.push(['担当者','Job No.','種別','件名','状態','合計h（予定）', ...cols.map(c=>fmtDs(c.ds))]);
-  rowMetas.push({ s: xls(XL_HDR1,true,XL_WHITE,'center') });
+  data.push(['','','','','','',...cols.map(c=>dj(c.ds))]);
+  metas.push({ si: xs(C.HDR2,false,'AACCEE','center'), sn: xs(C.HDR2,false,'AACCEE','center') });
 
-  data.push(['','','','','','', ...cols.map(c=>dayJa(c.ds))]);
-  rowMetas.push({ s: xls(XL_HDR2,false,'CCDDEE','center') });
-
-  let pIdx = 0;
+  let pi = 0;
   Object.entries(groupBy(allRows,'assignee')).sort().forEach(([name, tasks]) => {
-    const pi = pIdx % XL_PALETTE.length;
-    const [groupClr, taskClr] = XL_PALETTE[pi];
+    const [gc, tc] = XL_PALETTE[pi % XL_PALETTE.length];
+    // 担当者グループ行（日別合計付き）
+    const gTotal = r2(tasks.reduce((s,r)=>s+r.newWeekdayValue*r.weekdayCount,0));
+    const dSums  = cols.map(c=>{ const v=r2(tasks.reduce((s,r)=>s+(r.daily[c.col]||0),0)); return v>0?v:''; });
+    data.push([`▼ ${name||'（未設定）'}（${tasks.length}件）`,'','','','',gTotal,...dSums]);
+    metas.push({ si: xs(gc,true,C.DRK,'left'), sn: xs(gc,true,C.DRK,'right'), sp: INFO });
 
-    const groupTotal = r2(tasks.reduce((s,r)=>s+r.newWeekdayValue*r.weekdayCount,0));
-    const daySums    = cols.map(c => { const v=r2(tasks.reduce((s,r)=>s+(r.daily[c.col]||0),0)); return v>0?v:''; });
-    data.push([`▼ ${name}（${tasks.length}件）`,'','','','', groupTotal, ...daySums]);
-    rowMetas.push({ s: xls(groupClr,true,XL_DARK,'left'), numStyle: xls(groupClr,true,XL_DARK,'right'), info: INFO });
-
+    // タスク行
     tasks.forEach(row => {
-      const total = r2(row.newWeekdayValue * row.weekdayCount);
-      data.push(['', row.jobNo||'', row.cat||'', row.title||'', row.status||'', total>0?total:'',
+      const tot = r2(row.newWeekdayValue * row.weekdayCount);
+      data.push(['', row.jobNo||'', row.cat||'', row.title||'', row.status||'', tot>0?tot:'',
         ...cols.map(c=>{ const v=r2(row.daily[c.col]||0); return v>0?v:''; })]);
-      rowMetas.push({ s: xls(taskClr,false,XL_MID,'left'), numStyle: xls(XL_WHITE,false,XL_DARK,'right'), info: INFO });
+      metas.push({ si: xs(tc,false,C.MID,'left'), sn: xs(C.WHT,false,C.DRK,'right'), sp: INFO });
     });
-    pIdx++;
+    pi++;
   });
 
-  const ws = XLSX.utils.aoa_to_sheet(data);
-
-  // スタイル適用
-  rowMetas.forEach((m, ri) => xlsRow(ws, ri, nCols, m.s, m.numStyle||null, m.info||0));
-
-  ws['!cols'] = [{wch:18},{wch:10},{wch:12},{wch:32},{wch:14},{wch:10}, ...cols.map(()=>({wch:8}))];
-  ws['!rows'] = [{hpt:18},{hpt:13}];
+  const ws = XS.utils.aoa_to_sheet(data);
+  metas.forEach((m,ri) => xlRow(XS, ws, ri, nCols, m.si, m.sn, m.sp));
+  ws['!cols'] = [{wch:18},{wch:10},{wch:12},{wch:34},{wch:14},{wch:10},...cols.map(()=>({wch:7}))];
+  ws['!rows'] = new Array(data.length).fill({hpt:16});
+  ws['!rows'][0] = {hpt:20}; ws['!rows'][1] = {hpt:14};
   return ws;
 }
 
-// ---- ワークロードシート生成 ----------------------------------------
-function buildWorkloadSheet() {
+// ---- ワークロードシート -----------------------------------------
+function buildWorkloadSheet(XS) {
   const cols  = allCols;
   const fmtDs = ds => ds.replace(/-/g,'/');
-  const DAY   = {'0':'日','1':'月','2':'火','3':'水','4':'木','5':'金','6':'土'};
-  const dayJa = ds => DAY[String(new Date(ds+'T12:00:00').getDay())];
-  const INFO  = 2; // A=担当者, B=ラベル
+  const DMAP  = {'0':'日','1':'月','2':'火','3':'水','4':'木','5':'金','6':'土'};
+  const dj    = ds => DMAP[String(new Date(ds+'T12:00:00').getDay())];
+  const INFO  = 2;
   const nCols = INFO + cols.length;
+  const data  = [], metas = [];
 
-  const data     = [];
-  const rowMetas = [];
+  data.push(['担当者','',...cols.map(c=>fmtDs(c.ds))]);
+  metas.push({ si: xs(C.HDR1,true,C.WHT,'center'), sn: xs(C.HDR1,true,C.WHT,'center') });
 
-  data.push(['担当者','', ...cols.map(c=>fmtDs(c.ds))]);
-  rowMetas.push({ s: xls(XL_HDR1,true,XL_WHITE,'center') });
+  data.push(['','',...cols.map(c=>dj(c.ds))]);
+  metas.push({ si: xs(C.HDR2,false,'AACCEE','center'), sn: xs(C.HDR2,false,'AACCEE','center') });
 
-  data.push(['','', ...cols.map(c=>dayJa(c.ds))]);
-  rowMetas.push({ s: xls(XL_HDR2,false,'CCDDEE','center') });
-
-  const people = Object.keys(allWorkload).sort();
-  let pIdx = 0;
+  const people = Object.keys(allWorkload).filter(p=>p).sort(); // 空名除外
+  let pi = 0;
   people.forEach(name => {
-    const pd = allWorkload[name] || {};
-    const pi = pIdx % XL_PALETTE.length;
-    const [groupClr, taskClr] = XL_PALETTE[pi];
+    const pd = allWorkload[name]||{};
+    const [gc, tc] = XL_PALETTE[pi % XL_PALETTE.length];
 
-    // 按分予定時間行
-    data.push([name, '按分予定時間', ...cols.map(c=>{ const v=r2(pd[c.col]||0); return v>0?v:''; })]);
-    rowMetas.push({ s: xls(groupClr,true,XL_DARK,'left'), numStyle: xls(groupClr,false,XL_DARK,'right'), info: INFO });
+    data.push([name,'按分予定時間',...cols.map(c=>{ const v=r2(pd[c.col]||0); return v>0?v:''; })]);
+    metas.push({ si: xs(gc,true,C.DRK,'left'), sn: xs(gc,false,C.DRK,'right'), sp: INFO });
 
-    // 稼働可能時間行
-    data.push(['', '稼働可能時間', ...cols.map(c=>{ const h=r2(pd[c.col]||0); return h>0?r2(CAPACITY-h):''; })]);
-    rowMetas.push({ s: xls(taskClr,false,XL_MID,'left'), numStyle: xls(taskClr,false,XL_DARK,'right'), info: INFO });
-
-    pIdx++;
+    data.push(['','稼働可能時間',...cols.map(c=>{ const h=r2(pd[c.col]||0); return h>0?r2(CAPACITY-h):''; })]);
+    metas.push({ si: xs(tc,false,C.MID,'left'), sn: xs(tc,false,C.DRK,'right'), sp: INFO });
+    pi++;
   });
 
-  // チーム合計（1行）
+  // チーム合計
   if (people.length > 1) {
     data.push(['チーム合計','按分予定時間合計',
       ...cols.map(c=>{ const v=r2(people.reduce((s,p)=>s+(allWorkload[p]?.[c.col]||0),0)); return v>0?v:''; })]);
-    rowMetas.push({ s: xls(XL_TOTAL,true,XL_DARK,'left'), numStyle: xls(XL_TOTAL,false,XL_DARK,'right'), info: INFO });
+    metas.push({ si: xs(C.TOT,true,C.DRK,'left'), sn: xs(C.TOT,false,C.DRK,'right'), sp: INFO });
   }
 
-  const ws = XLSX.utils.aoa_to_sheet(data);
-  rowMetas.forEach((m, ri) => xlsRow(ws, ri, nCols, m.s, m.numStyle||null, m.info||0));
-
-  ws['!cols'] = [{wch:18},{wch:16}, ...cols.map(()=>({wch:8}))];
-  ws['!rows'] = [{hpt:18},{hpt:13}];
+  const ws = XS.utils.aoa_to_sheet(data);
+  metas.forEach((m,ri) => xlRow(XS, ws, ri, nCols, m.si, m.sn, m.sp));
+  ws['!cols'] = [{wch:18},{wch:16},...cols.map(()=>({wch:7}))];
+  ws['!rows'] = new Array(data.length).fill({hpt:16});
+  ws['!rows'][0] = {hpt:20}; ws['!rows'][1] = {hpt:14};
   return ws;
 }
 
