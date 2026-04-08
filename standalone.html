@@ -7,6 +7,7 @@
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ja.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI','Meiryo',Arial,sans-serif;background:#f0f2f5;color:#333;font-size:13px}
@@ -218,7 +219,7 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
     <span id="fileName">Backlog 課題一覧（xlsx）を選択してください</span>
     <div class="cap-wrap">
       <label>表示開始日</label>
-      <input type="date" id="startDateInput" style="width:160px;padding:6px 8px;border:1px solid #d0dae6;border-radius:6px;font-size:12px">
+      <input type="date" id="startDateInput" placeholder="表示開始日を選択" style="width:160px;padding:6px 8px;border:1px solid #d0dae6;border-radius:6px;font-size:12px">
     </div>
     <div class="cap-wrap">
       <label>1日稼働上限</label>
@@ -400,7 +401,6 @@ function clearData() {
   // ファイル入力・日付リセット
   document.getElementById('fileInput').value='';
   document.getElementById('fileName').textContent='Backlog 課題一覧（xlsx）を選択してください';
-  document.getElementById('startDateInput').value='';
   // ボタン状態
   document.getElementById('runBtn').disabled=true;
   document.getElementById('dlBtn').disabled=true;
@@ -1100,8 +1100,10 @@ function toast(msg,isErr){
 
 // ===== Flatpickr（月曜始まりカレンダー）=====
 fpStartDate = flatpickr('#startDateInput', {
-  dateFormat: 'Y-m-d',
-  locale: { firstDayOfWeek: 1 },
+  dateFormat: 'Y-m-d',      // 内部値（既存コードの比較ロジック用）
+  altInput: true,            // 表示用の別inputを生成
+  altFormat: 'Y/m/d',       // ユーザーに見せる形式: 2026/03/01
+  locale: 'ja',             // 日本語表示（月曜始まり含む）
   allowInput: true,
   disableMobile: true
 });
