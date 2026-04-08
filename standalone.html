@@ -906,22 +906,112 @@ function wlColor(h, cap) {
 }
 
 // ================================================================
-// Excel ダウンロード
+// Excel ダウンロード（分析結果を新規生成）
 // ================================================================
 function downloadFile() {
-  if (!processedWb) return;
+  if (!allRows.length) return;
   setLoad(true, 'Excelを生成中...');
   setTimeout(() => {
     try {
-      const d    = new Date();
-      const pfx  = `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`;
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, buildGanttSheet(),    '日別稼働表');
+      XLSX.utils.book_append_sheet(wb, buildWorkloadSheet(), 'ワークロード');
+
+      const d   = new Date();
+      const pfx = `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`;
       const base = origFileName.replace(/\.xlsx$/i,'');
       const name = `${pfx}_${base}.xlsx`;
-      XLSX.writeFile(processedWb, name, { bookType:'xlsx', cellStyles:true });
+      XLSX.writeFile(wb, name, { bookType:'xlsx' });
       toast('ダウンロード完了: ' + name, false);
     } catch(e) { toast('エラー: '+e.message, true); }
     finally { setLoad(false); }
   }, 30);
+}
+
+// ---- 日別稼働表シート生成 ----------------------------------------
+function buildGanttSheet() {
+  const cols = allCols;
+  const fmtDs = ds => ds.replace(/-/g,'/');
+  const dayMap = {'0':'日','1':'月','2':'火','3':'水','4':'木','5':'金','6':'土'};
+  const dayJa  = ds => dayMap[String(new Date(ds+'T12:00:00').getDay())];
+
+  // 1行目: 固定列ヘッダー + 日付
+  const row1 = ['担当者','Job No.','種別','件名','状態','合計h（予定）',
+                 ...cols.map(c => fmtDs(c.ds))];
+  // 2行目: 曜日
+  const row2 = ['','','','','','', ...cols.map(c => dayJa(c.ds))];
+
+  const data = [row1, row2];
+
+  Object.entries(groupBy(allRows,'assignee')).sort().forEach(([name, tasks]) => {
+    // 担当者グループ行（日別合計）
+    const groupTotal = r2(tasks.reduce((s,r)=>s+r.newWeekdayValue*r.weekdayCount,0));
+    const daySums = cols.map(c => {
+      const v = r2(tasks.reduce((s,r)=>s+(r.daily[c.col]||0),0));
+      return v > 0 ? v : '';
+    });
+    data.push([`▼ ${name}（${tasks.length}件）`,'','','','', groupTotal, ...daySums]);
+
+    // タスク行
+    tasks.forEach(row => {
+      const total = r2(row.newWeekdayValue * row.weekdayCount);
+      data.push([
+        '',
+        row.jobNo  || '',
+        row.cat    || '',
+        row.title  || '',
+        row.status || '',
+        total > 0  ? total : '',
+        ...cols.map(c => { const v=r2(row.daily[c.col]||0); return v>0?v:''; })
+      ]);
+    });
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [
+    {wch:18},{wch:10},{wch:12},{wch:32},{wch:14},{wch:12},
+    ...cols.map(()=>({wch:8}))
+  ];
+  // 行の高さ（2行目: 曜日ヘッダーを少し縮める）
+  ws['!rows'] = [{hpt:18},{hpt:14}];
+  return ws;
+}
+
+// ---- ワークロードシート生成 ----------------------------------------
+function buildWorkloadSheet() {
+  const cols = allCols;
+  const fmtDs = ds => ds.replace(/-/g,'/');
+  const dayMap = {'0':'日','1':'月','2':'火','3':'水','4':'木','5':'金','6':'土'};
+  const dayJa  = ds => dayMap[String(new Date(ds+'T12:00:00').getDay())];
+
+  const row1 = ['担当者', ...cols.map(c => fmtDs(c.ds))];
+  const row2 = ['',       ...cols.map(c => dayJa(c.ds))];
+  const data = [row1, row2];
+
+  const people = Object.keys(allWorkload).sort();
+  people.forEach(name => {
+    const pd = allWorkload[name] || {};
+    data.push([
+      name,
+      ...cols.map(c => { const v=r2(pd[c.col]||0); return v>0?v:''; })
+    ]);
+  });
+
+  // チーム合計行
+  if (people.length > 1) {
+    data.push([
+      'チーム合計',
+      ...cols.map(c => {
+        const v = r2(people.reduce((s,p)=>s+(allWorkload[p]?.[c.col]||0),0));
+        return v > 0 ? v : '';
+      })
+    ]);
+  }
+
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [{wch:18}, ...cols.map(()=>({wch:8}))];
+  ws['!rows'] = [{hpt:18},{hpt:14}];
+  return ws;
 }
 
 // ================================================================
