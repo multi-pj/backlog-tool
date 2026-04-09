@@ -69,9 +69,13 @@ header span{font-size:11px;opacity:.7}
 
 /* ===== Stats ===== */
 .stats-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:18px}
-.stat{background:#fff;border-radius:10px;padding:14px 20px;box-shadow:0 2px 8px rgba(0,0,0,.07);flex:1;min-width:130px}
-.stat .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#90a4ae;margin-bottom:4px}
-.stat .val{font-size:22px;font-weight:700;color:#1a3a5c}
+.stat{background:#fff;border-radius:10px;padding:14px 20px;box-shadow:0 2px 8px rgba(0,0,0,.07);flex:1;min-width:140px}
+.stat .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#90a4ae;margin-bottom:4px;display:flex;align-items:baseline;gap:5px;flex-wrap:wrap}
+.stat .lbl-sub{font-size:9px;color:#b8c8d8;letter-spacing:0;text-transform:none;white-space:nowrap}
+.stat .val{display:flex;align-items:baseline;gap:2px;flex-wrap:wrap}
+.stat .v-sel{font-size:22px;font-weight:700;color:#1a3a5c}
+.stat .v-sep{font-size:14px;color:#c0d0e0;font-weight:400}
+.stat .v-tot{font-size:14px;font-weight:500;color:#90a4ae}
 
 /* ===== Tabs ===== */
 .tabs{display:flex;gap:0;margin-bottom:0;border-bottom:2px solid #e3e9f0}
@@ -241,10 +245,22 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 
 <!-- Stats -->
 <div class="stats-row" id="statsRow" style="display:none">
-  <div class="stat"><div class="lbl">タスク数</div><div class="val" id="sTasks">-</div></div>
-  <div class="stat"><div class="lbl">担当者数</div><div class="val" id="sPeople">-</div></div>
-  <div class="stat"><div class="lbl">実績時間 合計</div><div class="val" id="sGray">-</div></div>
-  <div class="stat"><div class="lbl">按分済 平日予定時間合計</div><div class="val" id="sWd">-</div></div>
+  <div class="stat">
+    <div class="lbl">タスク数<span class="lbl-sub">選択 / 全体</span></div>
+    <div class="val"><span class="v-sel" id="sTasksSel">-</span><span class="v-sep"> / </span><span class="v-tot" id="sTasksTot">-</span></div>
+  </div>
+  <div class="stat">
+    <div class="lbl">担当者数<span class="lbl-sub">選択 / 全体</span></div>
+    <div class="val"><span class="v-sel" id="sPeopleSel">-</span><span class="v-sep"> / </span><span class="v-tot" id="sPeopleTot">-</span></div>
+  </div>
+  <div class="stat">
+    <div class="lbl">実績時間<span class="lbl-sub">選択期間 / 全体</span></div>
+    <div class="val"><span class="v-sel" id="sGraySel">-</span><span class="v-sep"> / </span><span class="v-tot" id="sGrayTot">-</span></div>
+  </div>
+  <div class="stat">
+    <div class="lbl">按分済時間<span class="lbl-sub">選択期間 / 全体</span></div>
+    <div class="val"><span class="v-sel" id="sWdSel">-</span><span class="v-sep"> / </span><span class="v-tot" id="sWdTot">-</span></div>
+  </div>
 </div>
 
 <!-- Main panel -->
@@ -459,14 +475,6 @@ function processFile() {
       activeMonth = '';
       updateMonthNav();
 
-      // 統計
-      const tEst  = allRows.reduce((s,r)=>s+r.actHours, 0);
-      const tWd   = allRows.reduce((s,r)=>s+r.newWeekdayValue*r.weekdayCount, 0);
-      document.getElementById('sTasks').textContent  = allRows.length;
-      document.getElementById('sPeople').textContent = [...new Set(allRows.map(r=>r.assignee))].length;
-      document.getElementById('sGray').textContent   = tEst.toFixed(1)+'h';
-      document.getElementById('sWd').textContent     = tWd.toFixed(1)+'h';
-
       document.getElementById('statsRow').style.display = 'flex';
       document.getElementById('mainPanel').style.display = 'block';
       document.getElementById('dlBtn').disabled = false;
@@ -605,6 +613,19 @@ function switchTab(name, btn) {
 function renderCurrent() {
   if (activeTab==='gantt') renderGantt();
   else renderWorkload();
+}
+
+// 統計カード更新（選択値 / 全体値）
+function updateStats(sel, tot) {
+  const fh = v => v.toFixed(1)+'h';
+  document.getElementById('sTasksSel').textContent  = sel.tasks;
+  document.getElementById('sTasksTot').textContent  = tot.tasks;
+  document.getElementById('sPeopleSel').textContent = sel.people;
+  document.getElementById('sPeopleTot').textContent = tot.people;
+  document.getElementById('sGraySel').textContent   = fh(sel.actH);
+  document.getElementById('sGrayTot').textContent   = fh(tot.actH);
+  document.getElementById('sWdSel').textContent     = fh(sel.wdH);
+  document.getElementById('sWdTot').textContent     = fh(tot.wdH);
 }
 
 // ================================================================
@@ -788,6 +809,20 @@ function renderGantt() {
 
   document.getElementById('tBody').innerHTML = html;
 
+  // ---- 統計更新（ガントタブ）----
+  {
+    const totActH = allRows.reduce((s,r) => s + r.actHours, 0);
+    const totWdH  = allRows.reduce((s,r) => s + r.newWeekdayValue * r.weekdayCount, 0);
+    const totPpl  = new Set(allRows.map(r => r.assignee)).size;
+    const selActH = rows.reduce((s,r) => s + r.actHours, 0);
+    const selWdH  = rows.reduce((s,r) => s + vcols.reduce((sv,c) => sv + (r.daily[c.col]||0), 0), 0);
+    const selPpl  = new Set(rows.map(r => r.assignee)).size;
+    updateStats(
+      { tasks: rows.length,    people: selPpl, actH: selActH, wdH: selWdH },
+      { tasks: allRows.length, people: totPpl, actH: totActH, wdH: totWdH }
+    );
+  }
+
   // 本日モードは本日列の先頭までスクロール
   if (todayMode) {
     const todayIdx = vcols.findIndex(c => c.ds === TODAY);
@@ -873,6 +908,24 @@ function renderWorkload() {
   }
 
   document.getElementById('tBody').innerHTML = html;
+
+  // ---- 統計更新（ワークロードタブ）----
+  // タスク数は常に全体を表示。担当者・時間は選択された担当者 × 選択期間
+  {
+    const pSet    = new Set(people);
+    const totActH = allRows.reduce((s,r) => s + r.actHours, 0);
+    const totWdH  = allRows.reduce((s,r) => s + r.newWeekdayValue * r.weekdayCount, 0);
+    const totPpl  = new Set(allRows.map(r => r.assignee)).size;
+    const selActH = allRows.filter(r => pSet.has(r.assignee)).reduce((s,r) => s + r.actHours, 0);
+    const selWdH  = people.reduce((s,p) => {
+      const pd = allWorkload[p] || {};
+      return s + vcols.reduce((sv,c) => sv + (pd[c.col]||0), 0);
+    }, 0);
+    updateStats(
+      { tasks: allRows.length, people: people.length, actH: selActH, wdH: selWdH },
+      { tasks: allRows.length, people: totPpl,         actH: totActH, wdH: totWdH }
+    );
+  }
 
   // 本日モードは本日列の先頭までスクロール
   if (todayMode) {
