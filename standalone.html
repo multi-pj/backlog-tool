@@ -814,16 +814,22 @@ function renderGantt() {
     const totActH = allRows.reduce((s,r) => s + r.actHours, 0);
     const totWdH  = allRows.reduce((s,r) => s + r.newWeekdayValue * r.weekdayCount, 0);
     const totPpl  = new Set(allRows.filter(r=>r.assignee).map(r => r.assignee)).size;
-    // 実績時間は期間按分：選択期間内の稼働日数 / タスク総稼働日数 × actHours
-    const selActH = rows.reduce((s,r) => {
-      if (!r.actHours) return s;
-      if (!r.weekdayCount) return s + r.actHours; // 日付なしタスクはそのまま
-      const inPeriod = vcols.filter(c => (r.daily[c.col]||0) > 0).length;
-      if (!inPeriod) return s;
-      return s + r2(r.actHours * inPeriod / r.weekdayCount);
-    }, 0);
-    const selWdH  = rows.reduce((s,r) => s + vcols.reduce((sv,c) => sv + (r.daily[c.col]||0), 0), 0);
     const selPpl  = new Set(rows.filter(r=>r.assignee).map(r => r.assignee)).size;
+    let selActH, selWdH;
+    if (todayMode) {
+      // 本日（全体）モード：期間制限なし → フィルター後タスクの全期間合計
+      selActH = rows.reduce((s,r) => s + r.actHours, 0);
+      selWdH  = rows.reduce((s,r) => s + r.newWeekdayValue * r.weekdayCount, 0);
+    } else {
+      // 月選択モード：その月の稼働日数で按分
+      selActH = rows.reduce((s,r) => {
+        if (!r.actHours) return s;
+        if (!r.weekdayCount) return s + r.actHours;
+        const inPeriod = vcols.filter(c => (r.daily[c.col]||0) > 0).length;
+        return !inPeriod ? s : s + r2(r.actHours * inPeriod / r.weekdayCount);
+      }, 0);
+      selWdH = rows.reduce((s,r) => s + vcols.reduce((sv,c) => sv + (r.daily[c.col]||0), 0), 0);
+    }
     updateStats(
       { tasks: rows.length,    people: selPpl, actH: selActH, wdH: selWdH },
       { tasks: allRows.length, people: totPpl, actH: totActH, wdH: totWdH }
@@ -923,19 +929,26 @@ function renderWorkload() {
     const totActH = allRows.reduce((s,r) => s + r.actHours, 0);
     const totWdH  = allRows.reduce((s,r) => s + r.newWeekdayValue * r.weekdayCount, 0);
     const totPpl  = new Set(allRows.filter(r=>r.assignee).map(r => r.assignee)).size;
-    // 実績時間は期間按分：選択担当者 × 選択期間内の稼働日数比率
-    const selActH = allRows.filter(r => pSet.has(r.assignee)).reduce((s,r) => {
-      if (!r.actHours) return s;
-      if (!r.weekdayCount) return s + r.actHours;
-      const inPeriod = vcols.filter(c => (r.daily[c.col]||0) > 0).length;
-      if (!inPeriod) return s;
-      return s + r2(r.actHours * inPeriod / r.weekdayCount);
-    }, 0);
-    const selWdH  = people.reduce((s,p) => {
-      const pd = allWorkload[p] || {};
-      return s + vcols.reduce((sv,c) => sv + (pd[c.col]||0), 0);
-    }, 0);
-    const selPpl  = people.filter(p => p).length; // 空文字除外
+    const selPpl  = people.filter(p => p).length;
+    const filtRows = allRows.filter(r => pSet.has(r.assignee));
+    let selActH, selWdH;
+    if (todayMode) {
+      // 本日（全体）モード：期間制限なし → 担当者フィルター後の全期間合計
+      selActH = filtRows.reduce((s,r) => s + r.actHours, 0);
+      selWdH  = filtRows.reduce((s,r) => s + r.newWeekdayValue * r.weekdayCount, 0);
+    } else {
+      // 月選択モード：その月の稼働日数で按分
+      selActH = filtRows.reduce((s,r) => {
+        if (!r.actHours) return s;
+        if (!r.weekdayCount) return s + r.actHours;
+        const inPeriod = vcols.filter(c => (r.daily[c.col]||0) > 0).length;
+        return !inPeriod ? s : s + r2(r.actHours * inPeriod / r.weekdayCount);
+      }, 0);
+      selWdH = people.reduce((s,p) => {
+        const pd = allWorkload[p] || {};
+        return s + vcols.reduce((sv,c) => sv + (pd[c.col]||0), 0);
+      }, 0);
+    }
     updateStats(
       { tasks: allRows.length, people: selPpl,  actH: selActH, wdH: selWdH },
       { tasks: allRows.length, people: totPpl,  actH: totActH, wdH: totWdH }
