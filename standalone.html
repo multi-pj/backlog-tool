@@ -4,11 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Backlog 稼働分析</title>
-<!-- xlsx-js-style = SheetJS フォーク（スタイル書き込み対応）、window.XLSX として公開 -->
-<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.min.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ja.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI','Meiryo',Arial,sans-serif;background:#f0f2f5;color:#333;font-size:13px}
@@ -17,26 +13,6 @@ body{font-family:'Segoe UI','Meiryo',Arial,sans-serif;background:#f0f2f5;color:#
 header{background:#1a3a5c;color:#fff;padding:14px 24px;display:flex;align-items:center;gap:10px}
 header h1{font-size:17px;font-weight:600}
 header span{font-size:11px;opacity:.7}
-.btn-logout{margin-left:auto;display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;padding:6px 14px;border-radius:7px;font-size:12px;cursor:pointer;font-weight:600;transition:background .15s}
-.btn-logout:hover{background:rgba(255,255,255,.22)}
-/* ===== Custom Job No. dropdown ===== */
-.csel{position:relative;display:inline-block;vertical-align:middle}
-.csel-cur{display:inline-flex;align-items:center;gap:4px;padding:4px 24px 4px 8px;border:1px solid #d0dae6;border-radius:6px;background:#fff;cursor:pointer;font-size:13px;white-space:nowrap;min-width:72px;color:#333;position:relative;line-height:1.6}
-.csel-cur::after{content:'▾';position:absolute;right:7px;top:50%;transform:translateY(-50%);color:#90a4ae;font-size:10px;pointer-events:none}
-.csel-cur:hover{border-color:#1a3a5c}
-.csel-open .csel-cur{border-color:#1a3a5c;box-shadow:0 0 0 2px rgba(26,58,92,.15)}
-.csel-list{display:none;position:absolute;top:calc(100% + 3px);left:0;min-width:120px;background:#fff;border:1px solid #d0dae6;border-radius:6px;box-shadow:0 4px 14px rgba(0,0,0,.15);z-index:600;max-height:240px;overflow-y:auto}
-.csel-open .csel-list{display:block}
-.csel-item{padding:6px 14px;font-size:13px;cursor:pointer;white-space:nowrap;color:#333}
-.csel-item:hover{background:#e8f0fe;color:#1a3a5c}
-.csel-item.sel{font-weight:700;color:#1a3a5c;background:#f0f5ff}
-/* ===== Flatpickr overrides ===== */
-#gl-tip{white-space:pre-line}
-.flatpickr-calendar{font-family:'Segoe UI','Meiryo',Arial,sans-serif;font-size:13px}
-.flatpickr-calendar .flatpickr-day.today{border-color:#ffa726}
-.flatpickr-calendar .flatpickr-day.selected,.flatpickr-calendar .flatpickr-day.selected:hover{background:#1a3a5c;border-color:#1a3a5c}
-/* altInput のスタイル（元の input は非表示になるため altInput を直接指定）*/
-.flatpickr-input.flatpickr-alt-input{width:190px!important;padding:6px 8px;border:1px solid #d0dae6;border-radius:6px;font-size:12px;color:#333;background:#fff;cursor:pointer}
 
 /* ===== Layout ===== */
 .container{max-width:100%;padding:20px}
@@ -51,13 +27,10 @@ header span{font-size:11px;opacity:.7}
 #fileName{font-size:12px;color:#90a4ae}
 .btn{padding:9px 20px;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:600;transition:opacity .15s}
 .btn:disabled{opacity:.38;cursor:not-allowed}
-.btn-run{background:#1a3a5c;color:#fff;padding:11px 40px;font-size:14px}
+.btn-run{background:#1a3a5c;color:#fff}
 .btn-run:hover:not(:disabled){opacity:.85}
 .btn-dl{background:#27ae60;color:#fff}
 .btn-dl:hover:not(:disabled){opacity:.85}
-.btn-row{display:flex;align-items:center;gap:24px;flex-wrap:wrap;margin-top:14px}
-.btn-clear{background:#f0f0f0;color:#9e9e9e;font-size:11px;padding:6px 14px;margin-left:12px;border-radius:6px;border:1px solid #ddd}
-.btn-clear:hover:not(:disabled){background:#e0e0e0;color:#616161}
 .note{font-size:11px;color:#90a4ae;margin-top:10px}
 #loading{display:none;align-items:center;gap:9px;font-size:13px;color:#1a3a5c;margin-top:10px}
 .spin{width:18px;height:18px;border:3px solid #d0dae6;border-top-color:#1a3a5c;border-radius:50%;animation:sp .8s linear infinite}
@@ -69,13 +42,9 @@ header span{font-size:11px;opacity:.7}
 
 /* ===== Stats ===== */
 .stats-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:18px}
-.stat{background:#fff;border-radius:10px;padding:14px 20px;box-shadow:0 2px 8px rgba(0,0,0,.07);flex:1;min-width:140px}
-.stat .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#90a4ae;margin-bottom:4px;display:flex;align-items:baseline;gap:5px;flex-wrap:wrap}
-.stat .lbl-sub{font-size:9px;color:#7898b8;letter-spacing:0;text-transform:none;white-space:nowrap}
-.stat .val{display:flex;align-items:baseline;gap:2px;flex-wrap:wrap}
-.stat .v-sel{font-size:22px;font-weight:700;color:#1a3a5c}
-.stat .v-sep{font-size:14px;color:#7898b8;font-weight:400}
-.stat .v-tot{font-size:14px;font-weight:500;color:#5a7f96}
+.stat{background:#fff;border-radius:10px;padding:14px 20px;box-shadow:0 2px 8px rgba(0,0,0,.07);flex:1;min-width:130px}
+.stat .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#90a4ae;margin-bottom:4px}
+.stat .val{font-size:22px;font-weight:700;color:#1a3a5c}
 
 /* ===== Tabs ===== */
 .tabs{display:flex;gap:0;margin-bottom:0;border-bottom:2px solid #e3e9f0}
@@ -88,8 +57,6 @@ header span{font-size:11px;opacity:.7}
 .month-nav span{font-size:11px;color:#90a4ae;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
 .month-btn{padding:5px 12px;border:1px solid #d0dae6;border-radius:20px;background:#fff;cursor:pointer;font-size:12px;color:#607d8b;transition:all .15s}
 .month-btn:hover,.month-btn.active{background:#1a3a5c;color:#fff;border-color:#1a3a5c}
-.scroll-week-btn{padding:5px 10px;border:1px solid #b0bec5;border-radius:20px;background:#f5f7fa;cursor:pointer;font-size:11px;color:#546e7a;font-weight:700;transition:all .15s}
-.scroll-week-btn:hover{background:#546e7a;color:#fff;border-color:#546e7a}
 
 /* ===== Filters ===== */
 .filter-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-bottom:12px}
@@ -106,9 +73,9 @@ table{border-collapse:collapse;font-size:12px;white-space:nowrap}
 table th{background:#1a3a5c;color:#fff;padding:0;text-align:center;font-weight:600;position:sticky;top:0;z-index:2}
 table th.month-th{padding:6px 4px;border-right:1px solid #2a4a6c;font-size:11px}
 table th.day-th{padding:4px 2px;border-right:1px solid #2a4a6c;font-size:11px;min-width:44px;line-height:1.3}
-table th.info-th{padding:8px 10px;text-align:left;z-index:4;border-right:1px solid #c5d3e8;color:#1a3a5c}
+table th.info-th{padding:8px 10px;text-align:left;z-index:4;border-right:1px solid #2a4a6c}
 table td{padding:4px 4px;border-bottom:1px solid #edf0f5;border-right:1px solid #f0f2f5;text-align:center;vertical-align:middle}
-table td.info-td{text-align:left;padding:4px 10px;background:#fff;border-right:1px solid #c5d3e8}
+table td.info-td{text-align:left;padding:4px 10px;background:#fff;border-right:1px solid #e3e9f0}
 table tbody tr:nth-child(even) td:not(.sticky-bg){background:#fafbff}
 table tbody tr:hover td{background:#eef3fb!important}
 
@@ -148,7 +115,7 @@ th.s0,th.s1,th.s2,th.s3{z-index:5}
 .legend-dot{width:14px;height:14px;border-radius:3px;border:1px solid rgba(0,0,0,.1)}
 
 /* ===== Empty state ===== */
-.empty-state{text-align:center;padding:60px;color:#7898b8;font-size:14px}
+.empty-state{text-align:center;padding:60px;color:#b0bec5;font-size:14px}
 
 /* ===== Toast ===== */
 .toast{position:fixed;bottom:22px;right:22px;padding:11px 18px;border-radius:8px;font-size:13px;color:#fff;display:none;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.2)}
@@ -204,9 +171,8 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
     <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
     <line x1="3" y1="10" x2="21" y2="10"/>
   </svg>
-  <h1>Backlog 稼働分析</h1>
-  <span>開始日〜期限日・予定時間から日別按分 / 日別稼働確認 / ワークロード管理</span>
-  <button class="btn-logout" onclick="logout()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>ログアウト</button>
+  <h1>Backlog ガントチャート 稼働分析</h1>
+  <span>土日祝→平日按分 / 日別稼働確認 / ワークロード管理</span>
 </header>
 
 <div class="container">
@@ -223,44 +189,25 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
       xlsx ファイルを選択
     </label>
     <input type="file" id="fileInput" accept=".xlsx">
-    <span id="fileName">Backlog 課題一覧（xlsx）を選択してください</span>
-    <div class="cap-wrap">
-      <label>表示開始日</label>
-      <input type="date" id="startDateInput" placeholder="表示開始日を選択" style="width:160px;padding:6px 8px;border:1px solid #d0dae6;border-radius:6px;font-size:12px">
-    </div>
+    <span id="fileName">Backlog ガントチャートを選択してください</span>
+    <button class="btn btn-run" id="runBtn" onclick="processFile()" disabled>分析実行</button>
+    <button class="btn btn-dl"  id="dlBtn"  onclick="downloadFile()" disabled>Excel ダウンロード</button>
     <div class="cap-wrap">
       <label>1日稼働上限</label>
       <input type="number" id="capInput" value="7" min="1" max="24" step="0.5" onchange="onCapChange()">
       <span>h</span>
     </div>
   </div>
-  <div class="btn-row">
-    <button class="btn btn-run" id="runBtn" onclick="processFile()" disabled>分析実行</button>
-    <button class="btn btn-dl"  id="dlBtn"  onclick="downloadFile()" disabled>Excel ダウンロード</button>
-    <button class="btn btn-clear" id="clearBtn" onclick="clearData()" disabled>データクリア</button>
-  </div>
   <div id="loading"><div class="spin"></div><span id="loadMsg">処理中...</span></div>
-  <div class="note">※ Backlogの「課題一覧」Excelをアップロードしてください。開始日〜期限日の平日に予定時間を均等按分して日別稼働を算出します。</div>
+  <div class="note">※ 土日祝列（グレーセル）の時間を平日に均等按分します。セルの背景色（状態）は変更しません。</div>
 </div>
 
 <!-- Stats -->
 <div class="stats-row" id="statsRow" style="display:none">
-  <div class="stat">
-    <div class="lbl">タスク数<span class="lbl-sub">選択 / 全体</span></div>
-    <div class="val"><span class="v-sel" id="sTasksSel">-</span><span class="v-sep"> / </span><span class="v-tot" id="sTasksTot">-</span></div>
-  </div>
-  <div class="stat">
-    <div class="lbl">担当者数<span class="lbl-sub">選択 / 全体</span></div>
-    <div class="val"><span class="v-sel" id="sPeopleSel">-</span><span class="v-sep"> / </span><span class="v-tot" id="sPeopleTot">-</span></div>
-  </div>
-  <div class="stat">
-    <div class="lbl">実績時間<span class="lbl-sub">選択期間 / 全体</span></div>
-    <div class="val"><span class="v-sel" id="sGraySel">-</span><span class="v-sep"> / </span><span class="v-tot" id="sGrayTot">-</span></div>
-  </div>
-  <div class="stat">
-    <div class="lbl">按分済時間<span class="lbl-sub">選択期間 / 全体</span></div>
-    <div class="val"><span class="v-sel" id="sWdSel">-</span><span class="v-sep"> / </span><span class="v-tot" id="sWdTot">-</span></div>
-  </div>
+  <div class="stat"><div class="lbl">タスク数</div><div class="val" id="sTasks">-</div></div>
+  <div class="stat"><div class="lbl">担当者数</div><div class="val" id="sPeople">-</div></div>
+  <div class="stat"><div class="lbl">土日祝 合計時間</div><div class="val" id="sGray">-</div></div>
+  <div class="stat"><div class="lbl">按分後 平日合計</div><div class="val" id="sWd">-</div></div>
 </div>
 
 <!-- Main panel -->
@@ -275,24 +222,14 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <div class="filter-bar" style="padding:0">
-          <span id="ganttFilters" style="display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap">
-            <label>Job No.:</label>
-            <div class="csel" id="fJCsel">
-              <div class="csel-cur" id="fJCur" onclick="toggleFJDrop(event)">全て</div>
-              <div class="csel-list" id="fJList"></div>
-            </div>
-            <label>種別:</label><select id="fC" onchange="renderCurrent()"><option value="">全て</option></select>
-            <label>状態:</label><select id="fS" onchange="renderCurrent()"><option value="">全て</option></select>
-            <input type="text" id="fT" placeholder="件名で検索" oninput="renderCurrent()" style="min-width:150px">
-          </span>
+          <label>種別:</label><select id="fC" onchange="renderCurrent()"><option value="">全て</option></select>
           <label>担当者:</label><select id="fA" onchange="renderCurrent()"><option value="">全員</option></select>
+          <label>状態:</label><select id="fS" onchange="renderCurrent()"><option value="">全て</option></select>
+          <input type="text" id="fT" placeholder="キー / 件名で検索" oninput="renderCurrent()" style="min-width:150px">
         </div>
       </div>
     </div>
     <div class="month-nav" id="monthNav"></div>
-    <div id="scrollHint" style="display:none;font-size:11px;color:#7898b8;padding:0 4px 8px;letter-spacing:.3px">
-      💡 Shift + マウスホイールで横スクロールできます
-    </div>
   </div>
 
   <!-- Legend for workload tab -->
@@ -353,50 +290,6 @@ function isGray(ds) {
 let allRows = [], allCols = [], allMonths = [], allWorkload = {};
 let processedWb = null, origFileName = '', CAPACITY = 7;
 let activeTab = 'gantt', activeMonth = '';
-let ganttSortDir = 0; // 0=none 1=asc -1=desc
-let activeJobNo = '';  // カスタムドロップダウンの選択値
-let jobNoTips   = {};  // { 親番号: ['件名A','[123-001] 件名B',...] }
-let fpStartDate = null; // Flatpickr instance
-
-function toggleJobSort() {
-  ganttSortDir = ganttSortDir === 0 ? 1 : ganttSortDir === 1 ? -1 : 0;
-  renderGantt();
-}
-
-// ================================================================
-// Job No. カスタムドロップダウン
-// ================================================================
-function toggleFJDrop(e) {
-  e.stopPropagation();
-  document.getElementById('fJCsel').classList.toggle('csel-open');
-}
-
-function selectJobNo(val, lbl) {
-  activeJobNo = val;
-  document.getElementById('fJCur').textContent = lbl || '全て';
-  document.getElementById('fJCsel').classList.remove('csel-open');
-  document.getElementById('fJList').querySelectorAll('.csel-item').forEach(el =>
-    el.classList.toggle('sel', el.dataset.val === val));
-  renderCurrent();
-}
-
-document.addEventListener('click', e => {
-  const wrap = document.getElementById('fJCsel');
-  if (wrap && !wrap.contains(e.target)) {
-    wrap.classList.remove('csel-open');
-    document.getElementById('gl-tip').style.display = 'none';
-  }
-});
-
-// ================================================================
-// ログアウト
-// ================================================================
-function logout() {
-  sessionStorage.removeItem('bl_auth');
-  document.getElementById('pw-overlay').style.display = '';
-  document.getElementById('pw-input').value = '';
-  document.getElementById('pw-err').textContent = '';
-}
 const TODAY = new Date().toISOString().slice(0,10);
 
 // ================================================================
@@ -408,27 +301,6 @@ document.getElementById('fileInput').addEventListener('change', function() {
   document.getElementById('runBtn').disabled = !f;
   origFileName = f ? f.name : '';
 });
-
-function clearData() {
-  // 状態リセット
-  allRows=[]; allCols=[]; allMonths=[]; allWorkload={}; processedWb=null; origFileName=''; activeMonth=''; ganttSortDir=0;
-  activeJobNo='';
-  document.getElementById('fJCur').textContent='全て';
-  document.getElementById('fJList').innerHTML='';
-  document.getElementById('fJCsel').classList.remove('csel-open');
-  if (fpStartDate) fpStartDate.clear();
-  // ファイル入力・日付リセット
-  document.getElementById('fileInput').value='';
-  document.getElementById('fileName').textContent='Backlog 課題一覧（xlsx）を選択してください';
-  // ボタン状態
-  document.getElementById('runBtn').disabled=true;
-  document.getElementById('dlBtn').disabled=true;
-  document.getElementById('clearBtn').disabled=true;
-  // 表示エリア非表示
-  document.getElementById('statsRow').style.display='none';
-  document.getElementById('mainPanel').style.display='none';
-  document.getElementById('scrollHint').style.display='none';
-}
 
 function onCapChange() {
   CAPACITY = parseFloat(document.getElementById('capInput').value) || 7;
@@ -448,18 +320,11 @@ function processFile() {
   const reader = new FileReader();
   reader.onload = e => {
     try {
-      const result = processIssues(e.target.result);
+      const result = processGantt(e.target.result);
       allRows    = result.rows;
       allCols    = result.cols;
       allMonths  = result.months;
       processedWb = result.wb;
-
-      // 表示開始日フィルター
-      const sdVal = document.getElementById('startDateInput').value;
-      if (sdVal) {
-        allCols   = allCols.filter(c => c.ds >= sdVal);
-        allMonths = [...new Set(allCols.map(c => c.mo))];
-      }
 
       // ワークロード計算
       allWorkload = buildWorkload(allRows, allCols);
@@ -468,17 +333,23 @@ function processFile() {
       fillSel('fC', [...new Set(allRows.map(r=>r.cat))].sort());
       fillSel('fA', [...new Set(allRows.map(r=>r.assignee))].sort());
       fillSel('fS', [...new Set(allRows.map(r=>r.status))].sort());
-      fillJobNoSel();
 
-      // 月ナビ（デフォルト=全月、renderGantt側で5ヶ月に制限）
+      // 月ナビ
       buildMonthNav();
-      activeMonth = '';
+      activeMonth = allMonths[0] || '';
       updateMonthNav();
+
+      // 統計
+      const tGray = allRows.reduce((s,r)=>s+r.grayTotal, 0);
+      const tWd   = allRows.reduce((s,r)=>s+r.newWeekdayValue*r.weekdayCount, 0);
+      document.getElementById('sTasks').textContent  = allRows.length;
+      document.getElementById('sPeople').textContent = [...new Set(allRows.map(r=>r.assignee))].length;
+      document.getElementById('sGray').textContent   = tGray.toFixed(1)+'h';
+      document.getElementById('sWd').textContent     = tWd.toFixed(1)+'h';
 
       document.getElementById('statsRow').style.display = 'flex';
       document.getElementById('mainPanel').style.display = 'block';
       document.getElementById('dlBtn').disabled = false;
-      document.getElementById('clearBtn').disabled = false;
 
       renderCurrent();
       toast(`分析完了：${allRows.length}件 / ${allMonths.length}ヶ月分`, false);
@@ -494,92 +365,89 @@ function processFile() {
 }
 
 // ================================================================
-// 課題Excel処理ロジック（Backlog-Issues-*.xlsx）
+// ガントチャート処理ロジック
 // ================================================================
-function processIssues(buf) {
-  const wb    = XLSX.read(buf, { type: 'array' });
+function processGantt(buf) {
+  const wb    = XLSX.read(buf, { cellStyles: true, type: 'array' });
   const ws    = wb.Sheets[wb.SheetNames[0]];
   const range = XLSX.utils.decode_range(ws['!ref']);
+  const DSC   = 12; // M列
 
-  const gv = (r,c) => { const cell=ws[XLSX.utils.encode_cell({r,c})]; return cell!=null?cell.v:null; };
-  const gs = (r,c) => { const v=gv(r,c); return v!=null?String(v).trim():''; };
+  // 月境界
+  const mBounds = (ws['!merges']||[])
+    .filter(m => m.s.r===0 && m.s.c>=DSC)
+    .map(m => {
+      const c = ws[XLSX.utils.encode_cell({r:0,c:m.s.c})];
+      return c&&c.v ? {label:String(c.v), s:m.s.c, e:m.e.c} : null;
+    }).filter(Boolean).sort((a,b)=>a.s-b.s);
 
-  // 日付変換（Excelシリアル値 or "YYYY/MM/DD"文字列）
-  function parseDs(v) {
-    if (v==null||v==='') return null;
-    if (typeof v==='number') {
-      const d=new Date(Math.round((v-25569)*86400000));
-      return d.toISOString().slice(0,10);
-    }
-    return String(v).trim().replace(/\//g,'-');
-  }
+  // 列ごとの日付・グレー判定
+  const graySet = new Set();
+  const cols    = []; // 平日のみ
+  let cy=null, cm=null;
 
-  // データ行収集（1行目はヘッダー → r=1から）
-  const rawRows=[];
-  let minDs=null, maxDs=null;
-
-  for (let r=1; r<=range.e.r; r++) {
-    const key=gs(r,4);   // E列: キー
-    if (!key) continue;
-    const startDs=parseDs(gv(r,21)); // V列: 開始日
-    const endDs  =parseDs(gv(r,22)); // W列: 期限日
-    if (startDs&&(!minDs||startDs<minDs)) minDs=startDs;
-    if (endDs  &&(!maxDs ||endDs  >maxDs))  maxDs=endDs;
-    rawRows.push({
-      key,
-      jobNo:    gs(r,31), // AF列: Job No.
-      cat:      gs(r,6),  // G列:  種別
-      title:    gs(r,9),  // J列:  件名
-      status:   gs(r,12), // M列:  状態
-      assignee: gs(r,16), // Q列:  担当者
-      estHours: parseFloat(gs(r,23))||0, // X列: 予定時間
-      actHours: parseFloat(gs(r,24))||0, // Y列: 実績時間
-      startDs, endDs
-    });
-  }
-
-  if (!minDs||!maxDs) throw new Error('有効な日付データがありません');
-
-  // 全体の平日列を生成（minDs〜maxDs）
-  const cols=[], dsToCol={};
-  let idx=0;
-  const cur=new Date(minDs+'T12:00:00');
-  const endD=new Date(maxDs+'T12:00:00');
-  while (cur<=endD) {
-    const ds=cur.toISOString().slice(0,10);
-    if (!isGray(ds)) {
-      const mo=`${cur.getFullYear()}/${pad(cur.getMonth()+1)}`;
-      cols.push({col:idx, ds, lbl:`${cur.getMonth()+1}/${cur.getDate()}`, dayJa:WD_JA[cur.getDay()], mo});
-      dsToCol[ds]=idx; idx++;
-    }
-    cur.setDate(cur.getDate()+1);
-  }
-
-  const months=[...new Set(cols.map(c=>c.mo))];
-
-  // 各タスクの日別配分（開始日〜期限日の平日に予定時間を均等分配）
-  const rows=rawRows.map(raw=>{
-    const daily={}, monthTotals={};
-    let weekdayCount=0, newWeekdayValue=0;
-    if (raw.startDs&&raw.endDs&&raw.estHours>0) {
-      const taskCols=cols.filter(c=>c.ds>=raw.startDs&&c.ds<=raw.endDs);
-      weekdayCount=taskCols.length;
-      if (weekdayCount>0) {
-        newWeekdayValue=r2(raw.estHours/weekdayCount);
-        taskCols.forEach(c=>{
-          daily[c.col]=newWeekdayValue;
-          monthTotals[c.mo]=r2((monthTotals[c.mo]||0)+newWeekdayValue);
-        });
+  for (let c=DSC; c<=range.e.c; c++) {
+    const mc = ws[XLSX.utils.encode_cell({r:0,c})];
+    if (mc&&mc.v) { const p=String(mc.v).split('/'); cy=+p[0]; cm=+p[1]; }
+    const dc  = ws[XLSX.utils.encode_cell({r:1,c})];
+    const day = dc ? +dc.v : NaN;
+    if (!isNaN(day)&&cy&&cm) {
+      const ds = `${cy}-${pad(cm)}-${pad(day)}`;
+      if (isGray(ds)) {
+        graySet.add(c);
+      } else {
+        const mb  = mBounds.find(m=>c>=m.s&&c<=m.e);
+        const dow = new Date(ds+'T12:00:00').getDay();
+        cols.push({ col:c, ds, lbl:`${cm}/${day}`, dayJa:WD_JA[dow], mo:mb?mb.label:'' });
       }
     }
-    return { key:raw.key, jobNo:raw.jobNo, cat:raw.cat, title:raw.title,
-      status:raw.status, assignee:raw.assignee,
-      estHours:raw.estHours, actHours:raw.actHours,
-      grayTotal:0, weekdayTotal:raw.estHours,
-      newWeekdayValue, weekdayCount, monthTotals, daily };
-  });
+  }
 
-  return { wb, rows, cols, months };
+  // データ行処理
+  const rows = [];
+  for (let r=4; r<=range.e.r; r++) {
+    const kc = ws[XLSX.utils.encode_cell({r,c:0})];
+    if (!kc||!kc.v) continue;
+    const g = c => (ws[XLSX.utils.encode_cell({r,c})]||{}).v||'';
+    const assignee=String(g(6)), title=String(g(2)), cat=String(g(1)), status=String(g(11));
+
+    const gV={}, wV={};
+    for (let c=DSC; c<=range.e.c; c++) {
+      const cell = ws[XLSX.utils.encode_cell({r,c})];
+      if (!cell||cell.v==null) continue;
+      const v = parseFloat(cell.v);
+      if (!v||v<=0) continue;
+      if (graySet.has(c)) gV[c]=v; else wV[c]=v;
+    }
+    // ※ ガント列に値がないタスクも含める（スキップしない）
+
+    const gT  = sum(Object.values(gV));
+    const wT  = sum(Object.values(wV));
+    const wC  = Object.keys(wV).length;
+    const nv  = wC>0 ? (gT+wT)/wC : 0;
+    const rv  = r2(nv);
+
+    // シート更新（値のみ、スタイル維持）
+    Object.keys(gV).map(Number).forEach(c=>{const a=enc(r,c);if(ws[a]){ws[a].v=0;ws[a].w='0.00';}});
+    Object.keys(wV).map(Number).forEach(c=>{const a=enc(r,c);if(ws[a]){ws[a].v=rv;ws[a].w=rv.toFixed(2);}});
+
+    // 日別値（平日のみ）
+    const daily={};
+    Object.keys(wV).map(Number).forEach(c=>{ daily[c]=rv; });
+
+    // 月別集計
+    const mo={};
+    for (const mb of mBounds) {
+      let s=0; for(let c=mb.s;c<=mb.e;c++) if(wV[c]!==undefined) s+=rv;
+      mo[mb.label]=r2(s);
+    }
+
+    rows.push({ key:String(kc.v), title, cat, assignee, status,
+      grayTotal:r2(gT), weekdayTotal:r2(wT), newWeekdayValue:rv, weekdayCount:wC,
+      monthTotals:mo, daily });
+  }
+
+  return { wb, rows, cols, months: mBounds.map(m=>m.label) };
 }
 
 // ================================================================
@@ -605,8 +473,7 @@ function switchTab(name, btn) {
   activeTab = name;
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  document.getElementById('wlLegend').style.display    = name==='workload' ? 'flex'  : 'none';
-  document.getElementById('ganttFilters').style.display = name==='workload' ? 'none'  : 'inline-flex';
+  document.getElementById('wlLegend').style.display = name==='workload' ? 'flex' : 'none';
   renderCurrent();
 }
 
@@ -615,43 +482,12 @@ function renderCurrent() {
   else renderWorkload();
 }
 
-// 統計カード更新（選択値 / 全体値）
-function updateStats(sel, tot) {
-  const fh = v => v.toFixed(1)+'h';
-  document.getElementById('sTasksSel').textContent  = sel.tasks;
-  document.getElementById('sTasksTot').textContent  = tot.tasks;
-  document.getElementById('sPeopleSel').textContent = sel.people;
-  document.getElementById('sPeopleTot').textContent = tot.people;
-  document.getElementById('sGraySel').textContent   = fh(sel.actH);
-  document.getElementById('sGrayTot').textContent   = fh(tot.actH);
-  document.getElementById('sWdSel').textContent     = fh(sel.wdH);
-  document.getElementById('sWdTot').textContent     = fh(tot.wdH);
-}
-
 // ================================================================
 // 月ナビ
 // ================================================================
 function buildMonthNav() {
   const nav = document.getElementById('monthNav');
-  const tw  = document.getElementById('tableWrap');
-  const COL_W = 44; // day-th min-width
-
   nav.innerHTML = '<span>表示月:</span>';
-
-  // 全表示ボタン
-  const allBtn = document.createElement('button');
-  allBtn.className = 'month-btn' + (activeMonth==='' ? ' active' : '');
-  allBtn.textContent = '本日';
-  allBtn.onclick = () => { activeMonth=''; updateMonthNav(); renderCurrent(); };
-  nav.appendChild(allBtn);
-
-  const prev = document.createElement('button');
-  prev.className = 'scroll-week-btn';
-  prev.textContent = '◀';
-  prev.title = '1週前へ';
-  prev.onclick = () => { tw.scrollLeft -= COL_W * 5; };
-  nav.appendChild(prev);
-
   allMonths.forEach(m => {
     const b = document.createElement('button');
     b.className = 'month-btn';
@@ -660,22 +496,11 @@ function buildMonthNav() {
     b.onclick = () => { activeMonth=m; updateMonthNav(); renderCurrent(); };
     nav.appendChild(b);
   });
-
-  const next = document.createElement('button');
-  next.className = 'scroll-week-btn';
-  next.textContent = '▶';
-  next.title = '1週後へ';
-  next.onclick = () => { tw.scrollLeft += COL_W * 5; };
-  nav.appendChild(next);
 }
 
 function updateMonthNav() {
   document.querySelectorAll('.month-btn').forEach(b => {
-    if (b.dataset.month) {
-      b.classList.toggle('active', b.dataset.month === activeMonth);
-    } else {
-      b.classList.toggle('active', activeMonth === '');
-    }
+    b.classList.toggle('active', b.dataset.month === activeMonth);
   });
 }
 
@@ -687,29 +512,18 @@ function renderGantt() {
   const fs = document.getElementById('fS').value;
   const fc = document.getElementById('fC').value;
   const ft = document.getElementById('fT').value.toLowerCase();
-  const fj = activeJobNo; // '' | 親番号 | '__blank__'
-  // 表示列：選択月 or 本日±3ヶ月
-  let vcols;
-  const todayMode = activeMonth === '';
-  if (activeMonth) {
-    vcols = allCols.filter(c => c.mo === activeMonth);
-  } else {
-    const dFrom = new Date(TODAY + 'T12:00:00'); dFrom.setMonth(dFrom.getMonth() - 3);
-    const dTo   = new Date(TODAY + 'T12:00:00'); dTo.setMonth(dTo.getMonth() + 3);
-    vcols = allCols.filter(c => c.ds >= dFrom.toISOString().slice(0,10) && c.ds <= dTo.toISOString().slice(0,10));
-  }
-  document.getElementById('scrollHint').style.display = todayMode ? 'block' : 'none';
+  const vcols = allCols.filter(c => !activeMonth || c.mo === activeMonth);
 
   // 月グループヘッダー
   const mGroups = buildMonthGroups(vcols);
 
   // ヘッダー（2行）: キー | 種別 | 件名 | 状態 | 合計h
-  const STICKY_W = [90, 80, 180, 130, 105];
-  const left     = [0, 90, 170, 350, 480];
+  const STICKY_W = [90, 80, 180, 70, 64];
+  const left     = [0, 90, 170, 350, 420];
 
   document.getElementById('tHead').innerHTML = `
     <tr>
-      <th class="info-th s0 sticky-bg" style="left:${left[0]}px;min-width:${STICKY_W[0]}px;cursor:pointer;user-select:none" rowspan="2" onclick="toggleJobSort()" title="Job No. でソート">Job No. <span style="font-size:10px;opacity:.8">${ganttSortDir===1?'▲':ganttSortDir===-1?'▼':'⇅'}</span></th>
+      <th class="info-th s0 sticky-bg" style="left:${left[0]}px;min-width:${STICKY_W[0]}px" rowspan="2">キー</th>
       <th class="info-th s0 sticky-bg" style="left:${left[1]}px;min-width:${STICKY_W[1]}px" rowspan="2">種別</th>
       <th class="info-th s1 sticky-bg" style="left:${left[2]}px;min-width:${STICKY_W[2]}px" rowspan="2">件名</th>
       <th class="info-th s2 sticky-bg" style="left:${left[3]}px;min-width:${STICKY_W[3]}px" rowspan="2">状態</th>
@@ -725,9 +539,7 @@ function renderGantt() {
     if (fa && r.assignee!==fa) return false;
     if (fs && r.status!==fs) return false;
     if (fc && r.cat!==fc) return false;
-    if (ft && !r.key.toLowerCase().includes(ft) && !(r.jobNo||'').toLowerCase().includes(ft) && !r.title.toLowerCase().includes(ft)) return false;
-    if (fj === '__blank__') { if (r.jobNo) return false; }
-    else if (fj) { if (r.jobNo !== fj && !r.jobNo.startsWith(fj + '-')) return false; }
+    if (ft && !r.key.toLowerCase().includes(ft) && !r.title.toLowerCase().includes(ft)) return false;
     // ガント列に値のないタスクは月フィルターにかかわらず常に表示
     if (activeMonth && r.weekdayCount > 0 && !vcols.some(c=>(r.daily[c.col]||0)>0)) return false;
     return true;
@@ -739,56 +551,13 @@ function renderGantt() {
   if (!rows.length) {
     html = `<tr><td colspan="${vcols.length+5}" class="empty-state">条件に一致するデータがありません</td></tr>`;
   } else {
-    // 担当者グループを並び替え：fj選択時は親番号を持つ担当者を先頭に
-    let personEntries = Object.entries(byPerson).sort((a, b) => a[0].localeCompare(b[0]));
-    if (fj && fj !== '__blank__') {
-      personEntries.sort((a, b) => {
-        const aHasParent = a[1].some(t => t.jobNo === fj);
-        const bHasParent = b[1].some(t => t.jobNo === fj);
-        if (aHasParent && !bHasParent) return -1;
-        if (!aHasParent && bHasParent) return 1;
-        return a[0].localeCompare(b[0]);
-      });
-    }
-
-    personEntries.forEach(([name, tasksRaw]) => {
-      // タスクソート：fj選択時は親番号→子番号順、それ以外はganttSortDir
-      let tasks;
-      if (fj && fj !== '__blank__') {
-        tasks = [...tasksRaw].sort((a, b) => {
-          const aP = a.jobNo === fj, bP = b.jobNo === fj;
-          if (aP && !bP) return -1;
-          if (!aP && bP) return 1;
-          return (a.jobNo||'').localeCompare(b.jobNo||'');
-        });
-      } else if (ganttSortDir !== 0) {
-        tasks = [...tasksRaw].sort((a, b) => {
-          const aE = !a.jobNo, bE = !b.jobNo;
-          if (aE && bE) return 0;
-          if (aE) return 1;
-          if (bE) return -1;
-          return ganttSortDir * (parseFloat(a.jobNo) - parseFloat(b.jobNo));
-        });
-      } else {
-        tasks = tasksRaw;
-      }
-      const personTotal     = r2(tasks.reduce((s,r)=>s+r.newWeekdayValue*r.weekdayCount,0));
-      const personMonthTotal = activeMonth
-        ? r2(tasks.reduce((s,r)=>s+vcols.reduce((sv,c)=>sv+(r.daily[c.col]||0),0),0))
-        : null;
-      // グループ行の合計h セル表示
-      const groupTotalCell = activeMonth
-        ? `<span style="font-weight:700;color:#546e7a">${personMonthTotal.toFixed(2)}</span><span style="color:#7898b8;font-size:10px"> /${personTotal.toFixed(2)}</span>`
-        : `<span style="color:#9e9e9e;font-size:11px">合計</span>`;
-      // グループ行のインラインラベル
-      const groupLabel = activeMonth
-        ? `${tasks.length}件 ／ 月計 <b>${personMonthTotal.toFixed(2)}h</b><span style="color:#7898b8;font-size:10px"> / ${personTotal.toFixed(2)}h</span>`
-        : `${tasks.length}件 ／ 合計 ${personTotal.toFixed(2)}h`;
+    Object.entries(byPerson).sort().forEach(([name, tasks]) => {
+      const personTotal = r2(tasks.reduce((s,r)=>s+r.newWeekdayValue*r.weekdayCount,0));
       html += `<tr class="ag-row">
         <td colspan="4" class="s0 sticky-bg" style="left:0">👤 ${esc(name)}
-          <span style="font-size:11px;font-weight:400;color:#607d8b;margin-left:8px">${groupLabel}</span>
+          <span style="font-size:11px;font-weight:400;color:#607d8b;margin-left:8px">${tasks.length}件 ／ 合計 ${personTotal.toFixed(2)}h</span>
         </td>
-        <td class="s0 sticky-bg" style="left:${left[4]}px;text-align:right;padding-right:6px">${groupTotalCell}</td>
+        <td class="s0 sticky-bg" style="left:${left[4]}px;text-align:center;color:#9e9e9e;font-weight:400;font-size:11px">合計</td>
         ${vcols.map(c => {
           const daySum = r2(tasks.reduce((s, r) => s + (r.daily[c.col] || 0), 0));
           const todayStyle = c.ds===TODAY ? 'border-left:2px solid #ffa726;border-right:2px solid #ffa726;' : '';
@@ -799,20 +568,13 @@ function renderGantt() {
       </tr>`;
 
       tasks.forEach(row => {
-        const total      = r2(row.newWeekdayValue * row.weekdayCount);
-        const monthTotal = activeMonth
-          ? r2(vcols.reduce((sv,c)=>sv+(row.daily[c.col]||0),0))
-          : null;
-        // 合計h セル：月選択時は「月計 / 全体」、本日時は全体のみ
-        const totalCell = activeMonth
-          ? `<span style="font-weight:700;color:#1a3a5c">${monthTotal.toFixed(2)}</span><span style="color:#7898b8;font-size:10px"> /${total.toFixed(2)}</span>`
-          : `${total.toFixed(2)}`;
+        const total = r2(row.newWeekdayValue * row.weekdayCount);
         html += `<tr>
-          <td class="info-td s0 sticky-bg" style="left:${left[0]}px"><code style="font-size:10px;color:#607d8b">${esc(row.jobNo||'')}</code></td>
-          <td class="info-td s0 sticky-bg tip-cell" style="left:${left[1]}px;max-width:${STICKY_W[1]}px;overflow:hidden;text-overflow:ellipsis;font-size:11px;color:#607d8b;cursor:default" data-tip="${esc(row.cat)}">${esc(trunc(row.cat,10))}</td>
+          <td class="info-td s0 sticky-bg" style="left:${left[0]}px"><code style="font-size:10px;color:#607d8b">${esc(row.key)}</code></td>
+          <td class="info-td s0 sticky-bg" style="left:${left[1]}px;max-width:${STICKY_W[1]}px;overflow:hidden;text-overflow:ellipsis;font-size:11px;color:#607d8b">${esc(row.cat)}</td>
           <td class="info-td s1 sticky-bg tip-cell" style="left:${left[2]}px;max-width:${STICKY_W[2]}px;overflow:hidden;text-overflow:ellipsis;cursor:default" data-tip="${esc(row.title)}">${esc(trunc(row.title,22))}</td>
           <td class="info-td s2 sticky-bg" style="left:${left[3]}px">${badge(row.status)}</td>
-          <td class="info-td s3 sticky-bg" style="left:${left[4]}px;text-align:right;padding-right:6px;font-weight:700">${totalCell}</td>
+          <td class="info-td s3 sticky-bg" style="left:${left[4]}px;text-align:right;font-weight:700;color:#1a3a5c">${total.toFixed(2)}</td>
           ${vcols.map(c=>{
             const v = row.daily[c.col];
             const tc = c.ds===TODAY ? ' today-cell' : '';
@@ -826,51 +588,6 @@ function renderGantt() {
   }
 
   document.getElementById('tBody').innerHTML = html;
-
-  // ---- 統計更新（ガントタブ）----
-  {
-    const totActH = allRows.reduce((s,r) => s + r.actHours, 0);
-    const totWdH  = allRows.reduce((s,r) => s + r.newWeekdayValue * r.weekdayCount, 0);
-    const totPpl  = new Set(allRows.filter(r=>r.assignee).map(r => r.assignee)).size;
-    const selPpl  = new Set(rows.filter(r=>r.assignee).map(r => r.assignee)).size;
-    let selActH, selWdH;
-    if (todayMode) {
-      // 本日（全体）モード：期間制限なし → フィルター後タスクの全期間合計
-      selActH = rows.reduce((s,r) => s + r.actHours, 0);
-      selWdH  = rows.reduce((s,r) => s + r.newWeekdayValue * r.weekdayCount, 0);
-    } else {
-      // 月選択モード：その月の稼働日数で按分
-      selActH = rows.reduce((s,r) => {
-        if (!r.actHours) return s;
-        if (!r.weekdayCount) return s + r.actHours;
-        const inPeriod = vcols.filter(c => (r.daily[c.col]||0) > 0).length;
-        return !inPeriod ? s : s + r2(r.actHours * inPeriod / r.weekdayCount);
-      }, 0);
-      selWdH = rows.reduce((s,r) => s + vcols.reduce((sv,c) => sv + (r.daily[c.col]||0), 0), 0);
-    }
-    updateStats(
-      { tasks: rows.length,    people: selPpl, actH: selActH, wdH: selWdH },
-      { tasks: allRows.length, people: totPpl, actH: totActH, wdH: totWdH }
-    );
-  }
-
-  // 本日モードは本日列の先頭までスクロール
-  if (todayMode) {
-    const todayIdx = vcols.findIndex(c => c.ds === TODAY);
-    if (todayIdx >= 0) {
-      setTimeout(() => {
-        const tw = document.getElementById('tableWrap');
-        const dayThs = tw.querySelectorAll('th.day-th');
-        if (dayThs[todayIdx]) {
-          // scrollLeft=0 にしてから自然レイアウト位置を取得し絶対設定する
-          tw.scrollLeft = 0;
-          const firstLeft = dayThs[0].getBoundingClientRect().left;
-          const todayLeft = dayThs[todayIdx].getBoundingClientRect().left;
-          tw.scrollLeft = Math.max(0, todayLeft - firstLeft);
-        }
-      }, 50);
-    }
-  }
 }
 
 // ================================================================
@@ -878,16 +595,7 @@ function renderGantt() {
 // ================================================================
 function renderWorkload() {
   const fa    = document.getElementById('fA').value;
-  const todayMode = activeMonth === '';
-  let vcols;
-  if (activeMonth) {
-    vcols = allCols.filter(c => c.mo === activeMonth);
-  } else {
-    const dFrom = new Date(TODAY + 'T12:00:00'); dFrom.setMonth(dFrom.getMonth() - 3);
-    const dTo   = new Date(TODAY + 'T12:00:00'); dTo.setMonth(dTo.getMonth() + 3);
-    vcols = allCols.filter(c => c.ds >= dFrom.toISOString().slice(0,10) && c.ds <= dTo.toISOString().slice(0,10));
-  }
-  document.getElementById('scrollHint').style.display = todayMode ? 'block' : 'none';
+  const vcols = allCols.filter(c => !activeMonth || c.mo === activeMonth);
   const mGroups = buildMonthGroups(vcols);
   const people  = Object.keys(allWorkload).sort().filter(p => !fa || p===fa);
 
@@ -939,57 +647,6 @@ function renderWorkload() {
   }
 
   document.getElementById('tBody').innerHTML = html;
-
-  // ---- 統計更新（ワークロードタブ）----
-  // タスク数は常に全体を表示。担当者・時間は選択された担当者 × 選択期間
-  {
-    const pSet    = new Set(people);
-    const totActH = allRows.reduce((s,r) => s + r.actHours, 0);
-    const totWdH  = allRows.reduce((s,r) => s + r.newWeekdayValue * r.weekdayCount, 0);
-    const totPpl  = new Set(allRows.filter(r=>r.assignee).map(r => r.assignee)).size;
-    const selPpl  = people.filter(p => p).length;
-    const filtRows = allRows.filter(r => pSet.has(r.assignee));
-    let selActH, selWdH;
-    if (todayMode) {
-      // 本日（全体）モード：期間制限なし → 担当者フィルター後の全期間合計
-      selActH = filtRows.reduce((s,r) => s + r.actHours, 0);
-      selWdH  = filtRows.reduce((s,r) => s + r.newWeekdayValue * r.weekdayCount, 0);
-    } else {
-      // 月選択モード：その月の稼働日数で按分
-      selActH = filtRows.reduce((s,r) => {
-        if (!r.actHours) return s;
-        if (!r.weekdayCount) return s + r.actHours;
-        const inPeriod = vcols.filter(c => (r.daily[c.col]||0) > 0).length;
-        return !inPeriod ? s : s + r2(r.actHours * inPeriod / r.weekdayCount);
-      }, 0);
-      selWdH = people.reduce((s,p) => {
-        const pd = allWorkload[p] || {};
-        return s + vcols.reduce((sv,c) => sv + (pd[c.col]||0), 0);
-      }, 0);
-    }
-    updateStats(
-      { tasks: allRows.length, people: selPpl,  actH: selActH, wdH: selWdH },
-      { tasks: allRows.length, people: totPpl,  actH: totActH, wdH: totWdH }
-    );
-  }
-
-  // 本日モードは本日列の先頭までスクロール
-  if (todayMode) {
-    const todayIdx = vcols.findIndex(c => c.ds === TODAY);
-    if (todayIdx >= 0) {
-      setTimeout(() => {
-        const tw = document.getElementById('tableWrap');
-        const dayThs = tw.querySelectorAll('th.day-th');
-        if (dayThs[todayIdx]) {
-          // scrollLeft=0 にしてから自然レイアウト位置を取得し絶対設定する
-          tw.scrollLeft = 0;
-          const firstLeft = dayThs[0].getBoundingClientRect().left;
-          const todayLeft = dayThs[todayIdx].getBoundingClientRect().left;
-          tw.scrollLeft = Math.max(0, todayLeft - firstLeft);
-        }
-      }, 50);
-    }
-  }
 }
 
 // ================================================================
@@ -1006,155 +663,22 @@ function wlColor(h, cap) {
 }
 
 // ================================================================
-// Excel ダウンロード（xlsx-js-style でスタイル付き出力）
+// Excel ダウンロード
 // ================================================================
 function downloadFile() {
-  if (!allRows.length) return;
-  if (!window.XLSX || !window.XLSX.utils) { toast('XLSXライブラリが読み込まれていません', true); return; }
+  if (!processedWb) return;
   setLoad(true, 'Excelを生成中...');
   setTimeout(() => {
     try {
-      const XS = window.XLSX;
-      const wb = XS.utils.book_new();
-      XS.utils.book_append_sheet(wb, buildGanttSheet(XS),    '日別稼働表');
-      XS.utils.book_append_sheet(wb, buildWorkloadSheet(XS), 'ワークロード');
-      const d   = new Date();
-      const pfx = `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`;
-      const name = `${pfx}_日別稼働表_ワークロード.xlsx`;
-      XS.writeFile(wb, name, { bookType:'xlsx', cellStyles:true });
+      const d    = new Date();
+      const pfx  = `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`;
+      const base = origFileName.replace(/\.xlsx$/i,'');
+      const name = `${pfx}_${base}.xlsx`;
+      XLSX.writeFile(processedWb, name, { bookType:'xlsx', cellStyles:true });
       toast('ダウンロード完了: ' + name, false);
-    } catch(e) { toast('エラー: '+e.message, true); console.error(e); }
+    } catch(e) { toast('エラー: '+e.message, true); }
     finally { setLoad(false); }
   }, 30);
-}
-
-// ================================================================
-// Excel スタイル定義（xlsx-js-style 用）
-// ================================================================
-// 担当者カラーペア: [グループ行BG, データ行BG]（ソフトなパステル）
-const XL_PALETTE = [
-  ['B3C8DE','D9E9F5'], // blue
-  ['A3C9AD','CEEBD4'], // green
-  ['F5C08A','FDEACC'], // peach
-  ['EDAABB','FAD4DE'], // rose
-  ['BFB0D5','E2D8F0'], // purple
-  ['8EC8D4','CAEAF0'], // teal
-  ['CEB0D4','EDD8F0'], // lavender
-  ['B0B8D4','D8DCF0'], // indigo
-];
-const C = {
-  HDR1:'1A3A5C', HDR2:'2A5070',          // ヘッダー背景
-  WHT:'FFFFFF', DRK:'1A3A5C', MID:'3A5070', // 文字色
-  TOT:'D8DDE6',                            // チーム合計背景
-  BDR:'B8C8D8',                            // ボーダー色
-};
-
-// セルスタイルオブジェクト生成
-function xs(bg, bold, fg, align) {
-  const bdr = { style:'thin', color:{ rgb: C.BDR } };
-  return {
-    fill: { patternType:'solid', fgColor:{ rgb: bg } },
-    font: { bold:!!bold, color:{ rgb: fg||'333333' }, sz:10, name:'Meiryo UI' },
-    alignment: { horizontal: align||'left', vertical:'center', wrapText:false },
-    border: { top:bdr, bottom:bdr, left:bdr, right:bdr },
-  };
-}
-// 行全列にスタイルを適用（情報列と数値列で切り替え）
-function xlRow(XS, ws, ri, nCols, sInfo, sNum, splitCol) {
-  for (let ci = 0; ci < nCols; ci++) {
-    const addr = XS.utils.encode_cell({r:ri, c:ci});
-    if (!ws[addr]) ws[addr] = {v:'', t:'s'};
-    ws[addr].s = (sNum && splitCol != null && ci >= splitCol) ? sNum : sInfo;
-  }
-}
-
-// ---- 日別稼働表シート -------------------------------------------
-function buildGanttSheet(XS) {
-  const cols  = allCols;
-  const fmtDs = ds => ds.replace(/-/g,'/');
-  const DMAP  = {'0':'日','1':'月','2':'火','3':'水','4':'木','5':'金','6':'土'};
-  const dj    = ds => DMAP[String(new Date(ds+'T12:00:00').getDay())];
-  const INFO  = 6;
-  const nCols = INFO + cols.length;
-  const data  = [], metas = [];
-
-  // ヘッダー2行
-  data.push(['担当者','Job No.','種別','件名','状態','合計h（予定）',...cols.map(c=>fmtDs(c.ds))]);
-  metas.push({ si: xs(C.HDR1,true,C.WHT,'center'), sn: xs(C.HDR1,true,C.WHT,'center') });
-
-  data.push(['','','','','','',...cols.map(c=>dj(c.ds))]);
-  metas.push({ si: xs(C.HDR2,false,'AACCEE','center'), sn: xs(C.HDR2,false,'AACCEE','center') });
-
-  let pi = 0;
-  Object.entries(groupBy(allRows,'assignee')).sort().forEach(([name, tasks]) => {
-    const [gc, tc] = XL_PALETTE[pi % XL_PALETTE.length];
-    // 担当者グループ行（日別合計付き）
-    const gTotal = r2(tasks.reduce((s,r)=>s+r.newWeekdayValue*r.weekdayCount,0));
-    const dSums  = cols.map(c=>{ const v=r2(tasks.reduce((s,r)=>s+(r.daily[c.col]||0),0)); return v>0?v:''; });
-    data.push([`▼ ${name||'（未設定）'}（${tasks.length}件）`,'','','','',gTotal,...dSums]);
-    metas.push({ si: xs(gc,true,C.DRK,'left'), sn: xs(gc,true,C.DRK,'right'), sp: INFO });
-
-    // タスク行
-    tasks.forEach(row => {
-      const tot = r2(row.newWeekdayValue * row.weekdayCount);
-      data.push(['', row.jobNo||'', row.cat||'', row.title||'', row.status||'', tot>0?tot:'',
-        ...cols.map(c=>{ const v=r2(row.daily[c.col]||0); return v>0?v:''; })]);
-      metas.push({ si: xs(tc,false,C.MID,'left'), sn: xs(C.WHT,false,C.DRK,'right'), sp: INFO });
-    });
-    pi++;
-  });
-
-  const ws = XS.utils.aoa_to_sheet(data);
-  metas.forEach((m,ri) => xlRow(XS, ws, ri, nCols, m.si, m.sn, m.sp));
-  ws['!cols'] = [{wch:18},{wch:10},{wch:12},{wch:34},{wch:14},{wch:10},...cols.map(()=>({wch:7}))];
-  ws['!rows'] = new Array(data.length).fill({hpt:16});
-  ws['!rows'][0] = {hpt:20}; ws['!rows'][1] = {hpt:14};
-  return ws;
-}
-
-// ---- ワークロードシート -----------------------------------------
-function buildWorkloadSheet(XS) {
-  const cols  = allCols;
-  const fmtDs = ds => ds.replace(/-/g,'/');
-  const DMAP  = {'0':'日','1':'月','2':'火','3':'水','4':'木','5':'金','6':'土'};
-  const dj    = ds => DMAP[String(new Date(ds+'T12:00:00').getDay())];
-  const INFO  = 2;
-  const nCols = INFO + cols.length;
-  const data  = [], metas = [];
-
-  data.push(['担当者','',...cols.map(c=>fmtDs(c.ds))]);
-  metas.push({ si: xs(C.HDR1,true,C.WHT,'center'), sn: xs(C.HDR1,true,C.WHT,'center') });
-
-  data.push(['','',...cols.map(c=>dj(c.ds))]);
-  metas.push({ si: xs(C.HDR2,false,'AACCEE','center'), sn: xs(C.HDR2,false,'AACCEE','center') });
-
-  const people = Object.keys(allWorkload).filter(p=>p).sort(); // 空名除外
-  let pi = 0;
-  people.forEach(name => {
-    const pd = allWorkload[name]||{};
-    const [gc, tc] = XL_PALETTE[pi % XL_PALETTE.length];
-
-    data.push([name,'按分予定時間',...cols.map(c=>{ const v=r2(pd[c.col]||0); return v>0?v:''; })]);
-    metas.push({ si: xs(gc,true,C.DRK,'left'), sn: xs(gc,false,C.DRK,'right'), sp: INFO });
-
-    data.push(['','稼働可能時間',...cols.map(c=>{ const h=r2(pd[c.col]||0); return h>0?r2(CAPACITY-h):''; })]);
-    metas.push({ si: xs(tc,false,C.MID,'left'), sn: xs(tc,false,C.DRK,'right'), sp: INFO });
-    pi++;
-  });
-
-  // チーム合計
-  if (people.length > 1) {
-    data.push(['チーム合計','按分予定時間合計',
-      ...cols.map(c=>{ const v=r2(people.reduce((s,p)=>s+(allWorkload[p]?.[c.col]||0),0)); return v>0?v:''; })]);
-    metas.push({ si: xs(C.TOT,true,C.DRK,'left'), sn: xs(C.TOT,false,C.DRK,'right'), sp: INFO });
-  }
-
-  const ws = XS.utils.aoa_to_sheet(data);
-  metas.forEach((m,ri) => xlRow(XS, ws, ri, nCols, m.si, m.sn, m.sp));
-  ws['!cols'] = [{wch:18},{wch:16},...cols.map(()=>({wch:7}))];
-  ws['!rows'] = new Array(data.length).fill({hpt:16});
-  ws['!rows'][0] = {hpt:20}; ws['!rows'][1] = {hpt:14};
-  return ws;
 }
 
 // ================================================================
@@ -1176,77 +700,6 @@ function fillSel(id, items) {
   el.innerHTML=''; el.appendChild(first);
   items.forEach(v=>{ const o=document.createElement('option'); o.value=o.textContent=v; el.appendChild(o); });
 }
-
-function fillJobNoSel() {
-  const parents = new Set();
-  let hasBlank = false;
-  jobNoTips = {};
-
-  allRows.forEach(r => {
-    if (!r.jobNo) {
-      hasBlank = true;
-      if (!jobNoTips['__blank__']) jobNoTips['__blank__'] = [];
-      if (jobNoTips['__blank__'].length < 30 && !jobNoTips['__blank__'].includes(r.title))
-        jobNoTips['__blank__'].push(r.title);
-      return;
-    }
-    const parent = r.jobNo.split('-')[0];
-    parents.add(parent);
-    if (!jobNoTips[parent]) jobNoTips[parent] = [];
-    const line = r.jobNo === parent ? r.title : `[${r.jobNo}] ${r.title}`;
-    if (jobNoTips[parent].length < 30 && !jobNoTips[parent].includes(line))
-      jobNoTips[parent].push(line);
-  });
-
-  const sorted = [...parents].sort((a, b) => {
-    const na = parseFloat(a), nb = parseFloat(b);
-    return (!isNaN(na) && !isNaN(nb)) ? na - nb : a.localeCompare(b);
-  });
-  const items = [{ val: '', lbl: '全て' }];
-  sorted.forEach(p => items.push({ val: p, lbl: p }));
-  if (hasBlank) items.push({ val: '__blank__', lbl: '（空白）' });
-
-  const list = document.getElementById('fJList');
-  list.innerHTML = items.map(it =>
-    `<div class="csel-item${it.val===activeJobNo?' sel':''}" data-val="${esc(it.val)}" data-lbl="${esc(it.lbl)}">${esc(it.lbl)}</div>`
-  ).join('');
-
-  // イベント委譲でクリック処理
-  list.onclick = e => {
-    e.stopPropagation();
-    const el = e.target.closest('.csel-item');
-    if (el) selectJobNo(el.dataset.val, el.dataset.lbl);
-  };
-
-  // 件名ツールチップ（マウスオン）
-  const tip = document.getElementById('gl-tip');
-  list.addEventListener('mouseover', e => {
-    const el = e.target.closest('.csel-item[data-val]');
-    if (!el || el.dataset.val === '') return;
-    const lines = jobNoTips[el.dataset.val];
-    if (!lines || !lines.length) return;
-    tip.textContent = lines.join('\n');
-    tip.style.display = 'block';
-    tip.style.left = (e.clientX + 14) + 'px';
-    tip.style.top  = (e.clientY - 10) + 'px';
-  });
-  list.addEventListener('mousemove', e => {
-    if (tip.style.display === 'block') {
-      tip.style.left = (e.clientX + 14) + 'px';
-      tip.style.top  = (e.clientY - 10) + 'px';
-    }
-  });
-  list.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
-
-  // 最も幅の広いラベルに合わせて csel-cur の min-width を動的設定
-  const maxLbl = items.reduce((m, it) => it.lbl.length > m.length ? it.lbl : m, '全て');
-  const ruler = document.createElement('span');
-  ruler.style.cssText = 'visibility:hidden;position:fixed;font-size:13px;font-family:"Segoe UI","Meiryo",Arial,sans-serif;white-space:nowrap;padding:4px 24px 4px 8px';
-  ruler.textContent = maxLbl;
-  document.body.appendChild(ruler);
-  document.getElementById('fJCur').style.minWidth = (ruler.offsetWidth + 4) + 'px';
-  document.body.removeChild(ruler);
-}
 function badge(s) {
   const map={'処理中':'b0','完了':'b1','未対応':'b2','処理済み':'b3','レビュー待ち':'b4'};
   return `<span class="badge ${map[s]||'b5'}">${esc(s)}</span>`;
@@ -1263,17 +716,6 @@ function toast(msg,isErr){
   t.textContent=msg; t.style.background=isErr?'#c0392b':'#27ae60';
   t.style.display='block'; setTimeout(()=>t.style.display='none',3500);
 }
-
-// ===== テーブル横スクロール（Shift+ホイール） =====
-(function(){
-  const tw = document.getElementById('tableWrap');
-  tw.addEventListener('wheel', e => {
-    if (!e.shiftKey) return;          // 通常ホイール → 縦スクロールをそのまま維持
-    if (Math.abs(e.deltaX) > 0) return; // トラックパッド横スクロールはそのまま
-    e.preventDefault();
-    tw.scrollLeft += e.deltaY;
-  }, { passive: false });
-})();
 
 // ===== Drag & Drop =====
 (function(){
@@ -1341,27 +783,6 @@ function toast(msg,isErr){
     tip.style.top  = y + 'px';
   }
 })();
-
-// ===== Flatpickr（月曜始まりカレンダー）=====
-fpStartDate = flatpickr('#startDateInput', {
-  dateFormat: 'Y-m-d',
-  altInput: true,
-  altFormat: 'Y/m/d',
-  locale: Object.assign({}, flatpickr.l10ns.ja, { firstDayOfWeek: 1 }), // 日本語 + 月曜始まり
-  allowInput: true,
-  disableMobile: true,
-  onReady(_d, _s, instance) {
-    const ai = instance.altInput;
-    ai.style.width       = '190px';
-    ai.style.minWidth    = '190px';
-    ai.style.padding     = '6px 8px';
-    ai.style.border      = '1px solid #d0dae6';
-    ai.style.borderRadius = '6px';
-    ai.style.fontSize    = '12px';
-    ai.style.color       = '#333';
-    ai.placeholder       = '表示開始日を選択';
-  }
-});
 
 // ===== Password =====
 (function(){
