@@ -281,31 +281,37 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 
 <!-- Upload -->
 <div class="card">
-  <!-- Excel専用エリア（API設定済みの場合は非表示） -->
-  <div id="excelSection">
-    <div class="card-title">ファイルを選択して分析実行</div>
-    <div class="upload-row">
-      <label class="file-label" id="dropZone" for="fileInput">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-          <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-        </svg>
-        xlsx ファイルを選択
-      </label>
-      <input type="file" id="fileInput" accept=".xlsx">
-      <span id="fileName">Backlog 課題一覧（xlsx）を選択してください</span>
+  <!-- 横並びラッパー -->
+  <div style="display:flex;align-items:flex-start;gap:36px;flex-wrap:wrap">
+    <!-- Excel専用エリア（API設定済みの場合は非表示） -->
+    <div id="excelSection">
+      <div class="card-title">ファイルを選択して分析実行</div>
+      <div class="upload-row">
+        <label class="file-label" id="dropZone" for="fileInput">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          xlsx ファイルを選択
+        </label>
+        <input type="file" id="fileInput" accept=".xlsx">
+        <span id="fileName">Backlog 課題一覧（xlsx）を選択してください</span>
+      </div>
     </div>
-  </div>
-  <!-- 共通オプション（常時表示） -->
-  <div class="upload-row" style="margin-top:4px">
-    <div class="cap-wrap">
-      <label>表示開始日</label>
-      <input type="date" id="startDateInput" placeholder="表示開始日を選択" style="width:160px;padding:6px 8px;border:1px solid #d0dae6;border-radius:6px;font-size:12px">
-    </div>
-    <div class="cap-wrap">
-      <label>1日稼働上限</label>
-      <input type="number" id="capInput" value="7" min="1" max="24" step="0.5" onchange="onCapChange()">
-      <span>h</span>
+    <!-- 共通オプション（常時表示） -->
+    <div>
+      <div class="card-title">表示設定</div>
+      <div class="upload-row">
+        <div class="cap-wrap">
+          <label>表示開始日</label>
+          <input type="date" id="startDateInput" placeholder="表示開始日を選択" style="width:160px;padding:6px 8px;border:1px solid #d0dae6;border-radius:6px;font-size:12px">
+        </div>
+        <div class="cap-wrap">
+          <label>1日稼働上限</label>
+          <input type="number" id="capInput" value="7" min="1" max="24" step="0.5" onchange="onCapChange()">
+          <span>h</span>
+        </div>
+      </div>
     </div>
   </div>
   <div class="btn-row">
