@@ -1603,6 +1603,7 @@ function addCompanyHoliday() {
     return;
   }
   list.push({ start, end, label: label || '会社休日' });
+  list.sort((a, b) => a.start < b.start ? -1 : a.start > b.start ? 1 : 0);
   saveCompanyHolidays(list);
   renderCompanyHolidayList();
 
