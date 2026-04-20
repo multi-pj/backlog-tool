@@ -181,6 +181,12 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 .admin-field input{width:100%;padding:8px 12px;border:1.5px solid #d0dae6;border-radius:7px;font-size:13px;outline:none;transition:border-color .2s;background:#fff}
 .admin-field input:focus{border-color:#1a3a5c}
 .admin-section{margin-top:20px;padding-top:16px;border-top:1px solid #e3e9f0}
+.admin-section-toggle{cursor:pointer;user-select:none;display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#607d8b;margin-bottom:0;padding:4px 0}
+.admin-section-toggle:hover{color:#1a3a5c}
+.admin-section-toggle .toggle-arrow{font-size:10px;transition:transform .2s;display:inline-block}
+.admin-section-toggle.open .toggle-arrow{transform:rotate(90deg)}
+.admin-section-body{overflow:hidden;margin-top:0;max-height:0;transition:max-height .25s ease,margin-top .25s ease}
+.admin-section-body.open{max-height:200px;margin-top:12px}
 .admin-status{font-size:11px;margin-top:10px;min-height:16px;font-weight:600}
 .btn-admin-save{background:#1a3a5c;color:#fff;border:none;border-radius:7px;padding:9px 24px;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s}
 .btn-admin-save:hover{opacity:.85}
@@ -234,14 +240,19 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
     </div>
 
     <div class="admin-section">
-      <h4>▼ 管理者パスワード変更（変更しない場合は空白）</h4>
-      <div class="admin-field">
-        <label>新しいパスワード</label>
-        <input type="password" id="admin-newpwd" placeholder="4文字以上">
+      <div class="admin-section-toggle" id="pwdToggle" onclick="togglePwdSection()">
+        <span class="toggle-arrow">▶</span>
+        <span>管理者パスワード変更（変更しない場合は不要）</span>
       </div>
-      <div class="admin-field">
-        <label>確認（再入力）</label>
-        <input type="password" id="admin-newpwd2" placeholder="もう一度入力">
+      <div class="admin-section-body" id="pwdBody">
+        <div class="admin-field">
+          <label>新しいパスワード</label>
+          <input type="password" id="admin-newpwd" placeholder="4文字以上">
+        </div>
+        <div class="admin-field">
+          <label>確認（再入力）</label>
+          <input type="password" id="admin-newpwd2" placeholder="もう一度入力">
+        </div>
       </div>
     </div>
 
@@ -316,7 +327,7 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
   </div>
   <div class="btn-row">
     <button class="btn btn-run" id="runBtn" onclick="processFile()" disabled>分析実行</button>
-    <button class="btn btn-api" id="apiFetchBtn" onclick="processFromApi()" style="display:none">🔗 APIから取得</button>
+    <button class="btn btn-api" id="apiFetchBtn" onclick="processFromApi()" style="display:none">🔗 backlogと連携</button>
     <button class="btn btn-dl"  id="dlBtn"  onclick="downloadFile()" disabled>Excel ダウンロード</button>
     <button class="btn btn-clear" id="clearBtn" onclick="clearData()" disabled>データクリア</button>
   </div>
@@ -1505,11 +1516,22 @@ function applyRole(role) {
 // ================================================================
 // 管理者設定パネル
 // ================================================================
+function togglePwdSection() {
+  const toggle = document.getElementById('pwdToggle');
+  const body   = document.getElementById('pwdBody');
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  toggle.classList.toggle('open', !isOpen);
+}
+
 function openAdminPanel() {
   document.getElementById('admin-space').value   = localStorage.getItem('bl_api_space')   || '';
   document.getElementById('admin-apikey').value  = localStorage.getItem('bl_api_key')     || '';
   document.getElementById('admin-project').value = localStorage.getItem('bl_api_project') || '';
   document.getElementById('admin-newpwd').value  = '';
+  // パスワードセクションは毎回閉じた状態でリセット
+  document.getElementById('pwdBody').classList.remove('open');
+  document.getElementById('pwdToggle').classList.remove('open');
   document.getElementById('admin-newpwd2').value = '';
   document.getElementById('admin-msg').textContent = '';
   document.getElementById('admin-msg').style.color = '';
@@ -1593,9 +1615,11 @@ function initApiButton() {
   const excelSection = document.getElementById('excelSection');
   const excelNote    = document.getElementById('excelNote');
   const runBtn       = document.getElementById('runBtn');
+  const dlBtn        = document.getElementById('dlBtn');
   if (excelSection) excelSection.style.display = hasConfig ? 'none' : '';
   if (excelNote)    excelNote.style.display    = hasConfig ? 'none' : '';
   if (runBtn)       runBtn.style.display       = hasConfig ? 'none' : '';
+  if (dlBtn)        dlBtn.style.display        = hasConfig ? 'none' : '';
 }
 
 // ================================================================
