@@ -199,6 +199,18 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 .btn-api:disabled{opacity:.38;cursor:not-allowed}
 .api-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600}
 .api-badge.ok{background:#e8f5e9;color:#2e7d32}
+/* ===== 一般ユーザー向けAPIキー入力 ===== */
+#userApiSection{background:#f0f5ff;border:1px solid #c5d8f0;border-radius:8px;padding:14px 16px;margin-bottom:14px}
+#userApiSection .card-title{margin-bottom:10px}
+.user-api-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.user-api-row label{font-size:12px;color:#607d8b;font-weight:600;white-space:nowrap}
+.user-api-row input{padding:7px 10px;border:1.5px solid #c5d8f0;border-radius:6px;font-size:12px;outline:none;background:#fff;transition:border-color .2s}
+.user-api-row input:focus{border-color:#1a3a5c}
+.user-api-row .inp-key{width:260px}
+.user-api-row .inp-short{width:150px}
+.btn-user-api{background:#0077cc;color:#fff;border:none;border-radius:7px;padding:8px 18px;font-size:12px;font-weight:600;cursor:pointer;transition:opacity .15s}
+.btn-user-api:hover{opacity:.85}
+#userApiMsg{font-size:11px;margin-top:6px;min-height:14px;font-weight:600}
 .api-badge.ng{background:#fce4ec;color:#c62828}
 /* ===== Password overlay ===== */
 #pw-overlay{position:fixed;inset:0;background:#1a3a5c;display:flex;align-items:center;justify-content:center;z-index:9999}
@@ -292,6 +304,22 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 
 <!-- Upload -->
 <div class="card">
+  <!-- 一般ユーザー向けAPIキー入力（未設定時のみ表示） -->
+  <div id="userApiSection" style="display:none">
+    <div class="card-title">🔗 Backlog API 接続設定</div>
+    <div id="userApiSpaceRow" class="user-api-row" style="margin-bottom:8px">
+      <label>スペース名</label>
+      <input class="inp-short" type="text" id="userApiSpace" placeholder="例: yourspace">
+      <label style="margin-left:8px">プロジェクトキー</label>
+      <input class="inp-short" type="text" id="userApiProject" placeholder="例: VELO">
+    </div>
+    <div class="user-api-row">
+      <label>APIキー</label>
+      <input class="inp-key" type="password" id="userApiKey" placeholder="Backlog 個人設定 → API で取得">
+      <button class="btn-user-api" onclick="saveUserApiKey()">設定して連携</button>
+    </div>
+    <div id="userApiMsg"></div>
+  </div>
   <!-- 横並びラッパー -->
   <div style="display:flex;align-items:flex-start;gap:36px;flex-wrap:wrap">
     <!-- Excel専用エリア（API設定済みの場合は非表示） -->
@@ -1511,6 +1539,47 @@ function applyRole(role) {
   if (gear) gear.style.display = (role==='admin') ? 'inline-flex' : 'none';
   // APIボタン表示更新
   initApiButton();
+  // 一般ユーザー：API未設定時は入力欄を表示
+  const userSec = document.getElementById('userApiSection');
+  if (userSec) {
+    const hasConfig = localStorage.getItem('bl_api_key') &&
+                      localStorage.getItem('bl_api_space') &&
+                      localStorage.getItem('bl_api_project');
+    if (role === 'user' && !hasConfig) {
+      // スペース・プロジェクトが既存なら入力欄を隠す（APIキーだけ入力）
+      const hasSpaceProj = localStorage.getItem('bl_api_space') && localStorage.getItem('bl_api_project');
+      const spaceRow = document.getElementById('userApiSpaceRow');
+      if (spaceRow) spaceRow.style.display = hasSpaceProj ? 'none' : '';
+      // 既存値を補完
+      const sp = document.getElementById('userApiSpace');
+      const pj = document.getElementById('userApiProject');
+      if (sp) sp.value = localStorage.getItem('bl_api_space') || '';
+      if (pj) pj.value = localStorage.getItem('bl_api_project') || '';
+      userSec.style.display = 'block';
+    } else {
+      userSec.style.display = 'none';
+    }
+  }
+}
+
+function saveUserApiKey() {
+  const key  = (document.getElementById('userApiKey')?.value || '').trim();
+  const sp   = (document.getElementById('userApiSpace')?.value || '').trim()
+               || localStorage.getItem('bl_api_space') || '';
+  const pj   = (document.getElementById('userApiProject')?.value || '').trim().toUpperCase()
+               || localStorage.getItem('bl_api_project') || '';
+  const msg  = document.getElementById('userApiMsg');
+  if (!key) { if(msg){msg.textContent='APIキーを入力してください';msg.style.color='#e53935';} return; }
+  if (!sp)  { if(msg){msg.textContent='スペース名を入力してください';msg.style.color='#e53935';} return; }
+  if (!pj)  { if(msg){msg.textContent='プロジェクトキーを入力してください';msg.style.color='#e53935';} return; }
+  localStorage.setItem('bl_api_key',     key);
+  localStorage.setItem('bl_api_space',   sp);
+  localStorage.setItem('bl_api_project', pj);
+  if(msg){msg.textContent='✓ 設定しました';msg.style.color='#2e7d32';}
+  setTimeout(() => {
+    document.getElementById('userApiSection').style.display = 'none';
+    initApiButton();
+  }, 800);
 }
 
 // ================================================================
