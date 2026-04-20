@@ -186,7 +186,7 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 .admin-section-toggle .toggle-arrow{font-size:10px;transition:transform .2s;display:inline-block}
 .admin-section-toggle.open .toggle-arrow{transform:rotate(90deg)}
 .admin-section-body{overflow:hidden;margin-top:0;max-height:0;transition:max-height .25s ease,margin-top .25s ease}
-.admin-section-body.open{max-height:200px;margin-top:12px}
+.admin-section-body.open{max-height:400px;margin-top:12px}
 .admin-status{font-size:11px;margin-top:10px;min-height:16px;font-weight:600}
 .btn-admin-save{background:#1a3a5c;color:#fff;border:none;border-radius:7px;padding:9px 24px;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s}
 .btn-admin-save:hover{opacity:.85}
@@ -249,16 +249,20 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
       <div id="companyHolMsg" style="font-size:11px;margin-top:6px;min-height:14px;font-weight:600"></div>
     </div>
 
-    <!-- パスワード変更 -->
+    <!-- パスワード変更（アコーディオン・デフォルト閉） -->
     <div style="padding-top:16px;border-top:1px solid #e3e9f0">
-      <div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#78909c;margin-bottom:10px">一般ユーザー パスワード変更</div>
-      <div style="font-size:11px;color:#90a4ae;margin-bottom:10px">一般ユーザー（multi等）のパスワードを変更します。全端末に即時反映されます。</div>
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <input type="password" id="newPwInput" autocomplete="new-password" placeholder="新しいパスワード（4文字以上）" style="flex:1;min-width:180px;padding:7px 10px;border:1.5px solid #d0dae6;border-radius:6px;font-size:12px">
-        <button class="btn-admin-save" style="padding:7px 16px;font-size:12px" onclick="changeGeneralPassword()">変更</button>
+      <div class="admin-section-toggle" id="pwChangeTgl" onclick="togglePwChange()">
+        <span class="toggle-arrow">▶</span>一般ユーザー パスワード変更
       </div>
-      <div id="pwChangeMsg" style="font-size:11px;margin-top:6px;min-height:14px;font-weight:600"></div>
-      <p style="font-size:10px;color:#b0bec5;margin-top:8px;line-height:1.6">※ 管理者パスワードの変更は Cloudflare ダッシュボード（ADMIN_PWD）から行ってください。</p>
+      <div class="admin-section-body" id="pwChangeBody">
+        <div style="font-size:11px;color:#90a4ae;margin-bottom:10px">一般ユーザーのパスワードを変更します。全端末に即時反映されます。</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <input type="password" id="newPwInput" autocomplete="new-password" placeholder="新しいパスワード（4文字以上）" style="flex:1;min-width:180px;padding:7px 10px;border:1.5px solid #d0dae6;border-radius:6px;font-size:12px">
+          <button class="btn-admin-save" style="padding:7px 16px;font-size:12px" onclick="changeGeneralPassword()">変更</button>
+        </div>
+        <div id="pwChangeMsg" style="font-size:11px;margin-top:6px;min-height:14px;font-weight:600"></div>
+        <p style="font-size:10px;color:#b0bec5;margin-top:8px;line-height:1.6">※ 管理者パスワードの変更は Cloudflare ダッシュボード（ADMIN_PWD）から行ってください。</p>
+      </div>
     </div>
 
     <div style="margin-top:20px">
@@ -1650,6 +1654,13 @@ function openAdminPanel() {
 
 function closeAdminPanel() {
   document.getElementById('admin-modal').classList.remove('open');
+  // パスワード変更アコーディオンをリセット（閉じる）
+  document.getElementById('pwChangeTgl')?.classList.remove('open');
+  document.getElementById('pwChangeBody')?.classList.remove('open');
+  const pwInput = document.getElementById('newPwInput');
+  const pwMsg   = document.getElementById('pwChangeMsg');
+  if (pwInput) pwInput.value = '';
+  if (pwMsg)   pwMsg.textContent = '';
 }
 
 // ================================================================
@@ -1719,6 +1730,17 @@ async function deleteCompanyHoliday(index) {
   } catch(e) {
     msg.style.color = '#c62828'; msg.textContent = e.message || '保存に失敗しました';
     companyHolidaysCache = list; // ロールバック不可のため再描画のみ
+  }
+}
+
+function togglePwChange() {
+  const tgl  = document.getElementById('pwChangeTgl');
+  const body = document.getElementById('pwChangeBody');
+  const isOpen = body.classList.toggle('open');
+  tgl.classList.toggle('open', isOpen);
+  if (!isOpen) {
+    document.getElementById('newPwInput').value = '';
+    document.getElementById('pwChangeMsg').textContent = '';
   }
 }
 
