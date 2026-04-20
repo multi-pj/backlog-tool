@@ -234,24 +234,7 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
   <div id="admin-box">
     <h3>⚙ 管理者設定</h3>
 
-    <h4>▼ Backlog API 接続設定</h4>
-    <div class="admin-field">
-      <label>スペース名</label>
-      <input type="text" id="admin-space" placeholder="例: yourspace　（backlog.com の前の部分）">
-    </div>
-    <div class="admin-field">
-      <label>API キー</label>
-      <div class="afield-row">
-        <input type="password" id="admin-apikey" placeholder="Backlog 個人設定 → API で取得">
-        <button class="btn-show-key" onclick="toggleAdminKeyVis()">表示</button>
-      </div>
-    </div>
-    <div class="admin-field">
-      <label>プロジェクトキー</label>
-      <input type="text" id="admin-project" placeholder="例: VELO（プロジェクトURLの最後の部分）">
-    </div>
-
-    <div class="admin-section">
+    <div class="admin-section" style="margin-top:0;padding-top:0;border-top:none">
       <div class="admin-section-toggle" id="pwdToggle" onclick="togglePwdSection()">
         <span class="toggle-arrow">▶</span>
         <span>管理者パスワード変更（変更しない場合は不要）</span>
@@ -304,22 +287,6 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 
 <!-- Upload -->
 <div class="card">
-  <!-- 一般ユーザー向けAPIキー入力（未設定時のみ表示） -->
-  <div id="userApiSection" style="display:none">
-    <div class="card-title">🔗 Backlog API 接続設定</div>
-    <div id="userApiSpaceRow" class="user-api-row" style="margin-bottom:8px">
-      <label>スペース名</label>
-      <input class="inp-short" type="text" id="userApiSpace" placeholder="例: yourspace">
-      <label style="margin-left:8px">プロジェクトキー</label>
-      <input class="inp-short" type="text" id="userApiProject" placeholder="例: VELO">
-    </div>
-    <div class="user-api-row">
-      <label>APIキー</label>
-      <input class="inp-key" type="password" id="userApiKey" placeholder="Backlog 個人設定 → API で取得">
-      <button class="btn-user-api" onclick="saveUserApiKey()">設定して連携</button>
-    </div>
-    <div id="userApiMsg"></div>
-  </div>
   <!-- 横並びラッパー -->
   <div style="display:flex;align-items:flex-start;gap:36px;flex-wrap:wrap">
     <!-- Excel専用エリア（API設定済みの場合は非表示） -->
@@ -1537,49 +1504,8 @@ function applyRole(role) {
   // 管理者ギアボタン
   const gear = document.getElementById('adminGearBtn');
   if (gear) gear.style.display = (role==='admin') ? 'inline-flex' : 'none';
-  // APIボタン表示更新
+  // APIボタン表示更新（常にWorker利用可能）
   initApiButton();
-  // 一般ユーザー：API未設定時は入力欄を表示
-  const userSec = document.getElementById('userApiSection');
-  if (userSec) {
-    const hasConfig = localStorage.getItem('bl_api_key') &&
-                      localStorage.getItem('bl_api_space') &&
-                      localStorage.getItem('bl_api_project');
-    if (role === 'user' && !hasConfig) {
-      // スペース・プロジェクトが既存なら入力欄を隠す（APIキーだけ入力）
-      const hasSpaceProj = localStorage.getItem('bl_api_space') && localStorage.getItem('bl_api_project');
-      const spaceRow = document.getElementById('userApiSpaceRow');
-      if (spaceRow) spaceRow.style.display = hasSpaceProj ? 'none' : '';
-      // 既存値を補完
-      const sp = document.getElementById('userApiSpace');
-      const pj = document.getElementById('userApiProject');
-      if (sp) sp.value = localStorage.getItem('bl_api_space') || '';
-      if (pj) pj.value = localStorage.getItem('bl_api_project') || '';
-      userSec.style.display = 'block';
-    } else {
-      userSec.style.display = 'none';
-    }
-  }
-}
-
-function saveUserApiKey() {
-  const key  = (document.getElementById('userApiKey')?.value || '').trim();
-  const sp   = (document.getElementById('userApiSpace')?.value || '').trim()
-               || localStorage.getItem('bl_api_space') || '';
-  const pj   = (document.getElementById('userApiProject')?.value || '').trim().toUpperCase()
-               || localStorage.getItem('bl_api_project') || '';
-  const msg  = document.getElementById('userApiMsg');
-  if (!key) { if(msg){msg.textContent='APIキーを入力してください';msg.style.color='#e53935';} return; }
-  if (!sp)  { if(msg){msg.textContent='スペース名を入力してください';msg.style.color='#e53935';} return; }
-  if (!pj)  { if(msg){msg.textContent='プロジェクトキーを入力してください';msg.style.color='#e53935';} return; }
-  localStorage.setItem('bl_api_key',     key);
-  localStorage.setItem('bl_api_space',   sp);
-  localStorage.setItem('bl_api_project', pj);
-  if(msg){msg.textContent='✓ 設定しました';msg.style.color='#2e7d32';}
-  setTimeout(() => {
-    document.getElementById('userApiSection').style.display = 'none';
-    initApiButton();
-  }, 800);
 }
 
 // ================================================================
@@ -1594,10 +1520,8 @@ function togglePwdSection() {
 }
 
 function openAdminPanel() {
-  document.getElementById('admin-space').value   = localStorage.getItem('bl_api_space')   || '';
-  document.getElementById('admin-apikey').value  = localStorage.getItem('bl_api_key')     || '';
-  document.getElementById('admin-project').value = localStorage.getItem('bl_api_project') || '';
   document.getElementById('admin-newpwd').value  = '';
+  document.getElementById('admin-newpwd2').value = '';
   // パスワードセクションは毎回閉じた状態でリセット
   document.getElementById('pwdBody').classList.remove('open');
   document.getElementById('pwdToggle').classList.remove('open');
@@ -1611,24 +1535,11 @@ function closeAdminPanel() {
   document.getElementById('admin-modal').classList.remove('open');
 }
 
-function toggleAdminKeyVis() {
-  const inp = document.getElementById('admin-apikey');
-  inp.type = inp.type === 'password' ? 'text' : 'password';
-}
-
 function saveAdminSettings() {
-  const space   = document.getElementById('admin-space').value.trim();
-  const apiKey  = document.getElementById('admin-apikey').value.trim();
-  const project = document.getElementById('admin-project').value.trim().toUpperCase();
   const newPwd  = document.getElementById('admin-newpwd').value;
   const newPwd2 = document.getElementById('admin-newpwd2').value;
   const msg     = document.getElementById('admin-msg');
 
-  if (!space || !apiKey || !project) {
-    msg.textContent = 'スペース名・APIキー・プロジェクトキーはすべて必須です';
-    msg.style.color = '#e53935';
-    return;
-  }
   // パスワード変更（入力がある場合のみ）
   if (newPwd || newPwd2) {
     if (newPwd !== newPwd2) {
@@ -1643,13 +1554,9 @@ function saveAdminSettings() {
     }
     localStorage.setItem(ADMIN_PWD_KEY, newPwd);
   }
-  localStorage.setItem('bl_api_space',   space);
-  localStorage.setItem('bl_api_key',     apiKey);
-  localStorage.setItem('bl_api_project', project);
 
   msg.textContent = '✓ 保存しました';
   msg.style.color = '#2e7d32';
-  initApiButton();
   setTimeout(() => closeAdminPanel(), 1400);
 }
 
@@ -1661,34 +1568,29 @@ document.getElementById('admin-modal').addEventListener('click', e => {
 // ================================================================
 // APIボタン表示制御
 // ================================================================
+// Worker URL（Cloudflare経由でAPIキーを隠蔽）
+const WORKER_URL = 'https://backlog-proxy.multi-pj.workers.dev';
+
 function initApiButton() {
-  const hasConfig = localStorage.getItem('bl_api_key') &&
-                    localStorage.getItem('bl_api_space') &&
-                    localStorage.getItem('bl_api_project');
-  const btn = document.getElementById('apiFetchBtn');
-  const row = document.getElementById('api-status-row');
+  const btn   = document.getElementById('apiFetchBtn');
+  const row   = document.getElementById('api-status-row');
   const badge = document.getElementById('apiBadge');
-  if (btn) btn.style.display = hasConfig ? 'inline-flex' : 'none';
+  // Workerが常に利用可能 → APIボタン表示
+  if (btn) btn.style.display = 'inline-flex';
   if (row && badge) {
-    if (hasConfig) {
-      const sp = localStorage.getItem('bl_api_space');
-      const pj = localStorage.getItem('bl_api_project');
-      row.style.display = 'block';
-      badge.className = 'api-badge ok';
-      badge.textContent = `● API接続設定済 (${sp} / ${pj})`;
-    } else {
-      row.style.display = 'none';
-    }
+    row.style.display = 'block';
+    badge.className = 'api-badge ok';
+    badge.textContent = '● Backlog API 接続済';
   }
-  // API設定済み → Excelアップロード関連を非表示
+  // Excelアップロード関連は非表示
   const excelSection = document.getElementById('excelSection');
   const excelNote    = document.getElementById('excelNote');
   const runBtn       = document.getElementById('runBtn');
   const dlBtn        = document.getElementById('dlBtn');
-  if (excelSection) excelSection.style.display = hasConfig ? 'none' : '';
-  if (excelNote)    excelNote.style.display    = hasConfig ? 'none' : '';
-  if (runBtn)       runBtn.style.display       = hasConfig ? 'none' : '';
-  if (dlBtn)        dlBtn.style.display        = hasConfig ? 'none' : '';
+  if (excelSection) excelSection.style.display = 'none';
+  if (excelNote)    excelNote.style.display    = 'none';
+  if (runBtn)       runBtn.style.display       = 'none';
+  if (dlBtn)        dlBtn.style.display        = 'none';
 }
 
 // ================================================================
@@ -1710,40 +1612,13 @@ function mapApiToRawRows(issues) {
 }
 
 async function fetchBacklogIssues() {
-  const space   = localStorage.getItem('bl_api_space')   || '';
-  const apiKey  = localStorage.getItem('bl_api_key')     || '';
-  const project = localStorage.getItem('bl_api_project') || '';
-  if (!space || !apiKey || !project) {
-    throw new Error('API設定が未完了です。管理者に設定を依頼してください。');
+  setLoad(true, 'Backlog から課題取得中...');
+  const res = await fetch(`${WORKER_URL}/issues`);
+  if (!res.ok) {
+    const e = await res.json().catch(() => ({}));
+    throw new Error(`課題取得失敗: ${e.error || res.status}`);
   }
-  const base = `https://${space}.backlog.com/api/v2`;
-
-  // プロジェクト情報取得（IDを得るため）
-  const projRes = await fetch(`${base}/projects/${encodeURIComponent(project)}?apiKey=${apiKey}`);
-  if (!projRes.ok) {
-    const e = await projRes.json().catch(() => ({}));
-    throw new Error(`プロジェクト取得失敗: ${e.errors?.[0]?.message || projRes.status}`);
-  }
-  const projData  = await projRes.json();
-  const projectId = projData.id;
-
-  // 全課題をページネーションで取得
-  const issues = [];
-  let offset = 0;
-  while (true) {
-    setLoad(true, `課題取得中... ${issues.length}件`);
-    const url = `${base}/issues?apiKey=${apiKey}&projectId[]=${projectId}&count=100&offset=${offset}`;
-    const res = await fetch(url);
-    if (!res.ok) {
-      const e = await res.json().catch(() => ({}));
-      throw new Error(`課題取得失敗: ${e.errors?.[0]?.message || res.status}`);
-    }
-    const batch = await res.json();
-    if (!batch.length) break;
-    issues.push(...batch);
-    if (batch.length < 100) break;
-    offset += 100;
-  }
+  const issues = await res.json();
   return issues;
 }
 
@@ -1764,7 +1639,7 @@ async function processFromApi() {
     allCols    = result.cols;
     allMonths  = result.months;
     processedWb = null;
-    origFileName = `API_${localStorage.getItem('bl_api_project')}_${TODAY}`;
+    origFileName = `API_BACKLOG_${TODAY}`;
 
     // 表示開始日フィルター
     const sdVal = document.getElementById('startDateInput').value;
