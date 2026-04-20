@@ -233,48 +233,14 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 <div id="admin-modal">
   <div id="admin-box">
     <h3>⚙ 管理者設定</h3>
-
-    <!-- 一般ユーザーPW変更 -->
-    <div class="admin-section" style="margin-top:0;padding-top:0;border-top:none">
-      <div class="admin-section-toggle" id="generalPwdToggle" onclick="toggleSection('generalPwdBody','generalPwdToggle')">
-        <span class="toggle-arrow">▶</span>
-        <span>一般ユーザーパスワード変更</span>
-      </div>
-      <div class="admin-section-body" id="generalPwdBody">
-        <div class="admin-field">
-          <label>新しいパスワード</label>
-          <input type="password" id="admin-general-newpwd" placeholder="4文字以上">
-        </div>
-        <div class="admin-field">
-          <label>確認（再入力）</label>
-          <input type="password" id="admin-general-newpwd2" placeholder="もう一度入力">
-        </div>
-      </div>
+    <p style="font-size:12px;color:#607d8b;line-height:1.7;margin-bottom:20px">
+      パスワード変更は Cloudflare ダッシュボードから行ってください。<br>
+      <b>Workers &amp; Pages → backlog-proxy → Settings → Variables and Secrets</b><br>
+      <span style="color:#90a4ae">（GENERAL_PWD：一般ユーザー用 ／ ADMIN_PWD：管理者用）</span>
+    </p>
+    <div style="margin-top:8px">
+      <button class="btn-admin-cancel" onclick="closeAdminPanel()">閉じる</button>
     </div>
-
-    <!-- 管理者PW変更 -->
-    <div class="admin-section">
-      <div class="admin-section-toggle" id="adminPwdToggle" onclick="toggleSection('adminPwdBody','adminPwdToggle')">
-        <span class="toggle-arrow">▶</span>
-        <span>管理者パスワード変更</span>
-      </div>
-      <div class="admin-section-body" id="adminPwdBody">
-        <div class="admin-field">
-          <label>新しいパスワード</label>
-          <input type="password" id="admin-newpwd" placeholder="4文字以上">
-        </div>
-        <div class="admin-field">
-          <label>確認（再入力）</label>
-          <input type="password" id="admin-newpwd2" placeholder="もう一度入力">
-        </div>
-      </div>
-    </div>
-
-    <div style="margin-top:22px;display:flex;align-items:center;flex-wrap:wrap;gap:8px">
-      <button class="btn-admin-save" onclick="saveAdminSettings()">保存</button>
-      <button class="btn-admin-cancel" onclick="closeAdminPanel()">キャンセル</button>
-    </div>
-    <div class="admin-status" id="admin-msg"></div>
   </div>
 </div>
 
@@ -1480,17 +1446,7 @@ fpStartDate = flatpickr('#startDateInput', {
 // ================================================================
 // 認証（一般ユーザー / 管理者の2段階）
 // ================================================================
-const GENERAL_PWD_KEY     = 'bl_general_pwd';
-const GENERAL_PWD_DEFAULT = 'multi';
-const ADMIN_PWD_KEY       = 'bl_admin_pwd';
-const ADMIN_PWD_DEFAULT   = 'wlm2026';
-
-function getGeneralPwd() {
-  return localStorage.getItem(GENERAL_PWD_KEY) || GENERAL_PWD_DEFAULT;
-}
-function getAdminPwd() {
-  return localStorage.getItem(ADMIN_PWD_KEY) || ADMIN_PWD_DEFAULT;
-}
+// パスワードはCloudflare Worker側で管理（GENERAL_PWD / ADMIN_PWD シークレット）
 
 (function(){
   if(sessionStorage.getItem('bl_auth')==='ok'){
@@ -1502,24 +1458,37 @@ function getAdminPwd() {
   });
 })();
 
-function checkPw(){
+async function checkPw() {
   const val = document.getElementById('pw-input').value;
   const inp = document.getElementById('pw-input');
   const err = document.getElementById('pw-err');
-  let role = null;
-  if (val === getGeneralPwd()) role = 'user';
-  if (val === getAdminPwd())   role = 'admin';
-  if (role) {
-    sessionStorage.setItem('bl_auth', 'ok');
-    sessionStorage.setItem('bl_role', role);
-    document.getElementById('pw-overlay').style.display = 'none';
-    err.textContent = '';
-    applyRole(role);
-  } else {
-    inp.value = '';
-    inp.classList.add('error');
-    err.textContent = 'パスワードが正しくありません';
-    setTimeout(()=>inp.classList.remove('error'), 400);
+  const btn = document.getElementById('pw-btn');
+  btn.disabled = true;
+  btn.textContent = '確認中...';
+  try {
+    const res  = await fetch(`${WORKER_URL}/auth`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: val })
+    });
+    const data = await res.json();
+    if (data.role) {
+      sessionStorage.setItem('bl_auth', 'ok');
+      sessionStorage.setItem('bl_role', data.role);
+      document.getElementById('pw-overlay').style.display = 'none';
+      err.textContent = '';
+      applyRole(data.role);
+    } else {
+      inp.value = '';
+      inp.classList.add('error');
+      setTimeout(() => inp.classList.remove('error'), 400);
+      err.textContent = 'パスワードが正しくありません';
+    }
+  } catch(e) {
+    err.textContent = '接続エラーが発生しました';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'ログイン';
   }
 }
 
@@ -1534,73 +1503,12 @@ function applyRole(role) {
 // ================================================================
 // 管理者設定パネル
 // ================================================================
-function toggleSection(bodyId, toggleId) {
-  const body   = document.getElementById(bodyId);
-  const toggle = document.getElementById(toggleId);
-  const isOpen = body.classList.contains('open');
-  body.classList.toggle('open', !isOpen);
-  toggle.classList.toggle('open', !isOpen);
-}
-
 function openAdminPanel() {
-  document.getElementById('admin-general-newpwd').value  = '';
-  document.getElementById('admin-general-newpwd2').value = '';
-  document.getElementById('admin-newpwd').value  = '';
-  document.getElementById('admin-newpwd2').value = '';
-  document.getElementById('admin-msg').textContent = '';
-  // 両セクションを閉じた状態でリセット
-  ['generalPwdBody','adminPwdBody'].forEach(id => document.getElementById(id).classList.remove('open'));
-  ['generalPwdToggle','adminPwdToggle'].forEach(id => document.getElementById(id).classList.remove('open'));
-  document.getElementById('admin-newpwd2').value = '';
-  document.getElementById('admin-msg').textContent = '';
-  document.getElementById('admin-msg').style.color = '';
   document.getElementById('admin-modal').classList.add('open');
 }
 
 function closeAdminPanel() {
   document.getElementById('admin-modal').classList.remove('open');
-}
-
-function saveAdminSettings() {
-  const msg = document.getElementById('admin-msg');
-
-  // 一般ユーザーPW変更（入力がある場合のみ）
-  const gPwd  = document.getElementById('admin-general-newpwd').value;
-  const gPwd2 = document.getElementById('admin-general-newpwd2').value;
-  if (gPwd || gPwd2) {
-    if (gPwd !== gPwd2) {
-      msg.textContent = '一般ユーザーパスワードが一致しません';
-      msg.style.color = '#e53935';
-      return;
-    }
-    if (gPwd.length < 4) {
-      msg.textContent = 'パスワードは4文字以上にしてください';
-      msg.style.color = '#e53935';
-      return;
-    }
-    localStorage.setItem(GENERAL_PWD_KEY, gPwd);
-  }
-
-  // 管理者PW変更（入力がある場合のみ）
-  const aPwd  = document.getElementById('admin-newpwd').value;
-  const aPwd2 = document.getElementById('admin-newpwd2').value;
-  if (aPwd || aPwd2) {
-    if (aPwd !== aPwd2) {
-      msg.textContent = '管理者パスワードが一致しません';
-      msg.style.color = '#e53935';
-      return;
-    }
-    if (aPwd.length < 4) {
-      msg.textContent = 'パスワードは4文字以上にしてください';
-      msg.style.color = '#e53935';
-      return;
-    }
-    localStorage.setItem(ADMIN_PWD_KEY, aPwd);
-  }
-
-  msg.textContent = '✓ 保存しました';
-  msg.style.color = '#2e7d32';
-  setTimeout(() => closeAdminPanel(), 1400);
 }
 
 // モーダル外クリックで閉じる
