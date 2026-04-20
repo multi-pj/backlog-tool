@@ -304,14 +304,13 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-left:16px;border-left:1px solid #e3e9f0">
         <button class="btn btn-run" id="runBtn" onclick="processFile()" disabled>分析実行</button>
         <button class="btn btn-api" id="apiFetchBtn" onclick="processFromApi()" style="display:none">🔗 backlogと連携</button>
+        <span class="api-badge" id="apiBadge" style="display:none"></span>
         <button class="btn btn-dl"  id="dlBtn"  onclick="downloadFile()" disabled>Excel ダウンロード</button>
         <button class="btn btn-clear" id="clearBtn" onclick="clearData()" disabled>データクリア</button>
       </div>
     </div>
   </div>
-  <div id="api-status-row" style="margin-top:8px;display:none">
-    <span class="api-badge" id="apiBadge"></span>
-  </div>
+  <div id="api-status-row" style="display:none"></div>
   <div id="loading"><div class="spin"></div><span id="loadMsg">処理中...</span></div>
   <div class="note" id="excelNote">※ Backlogの「課題一覧」Excelをアップロードしてください。開始日〜期限日の平日に予定時間を均等按分して日別稼働を算出します。</div>
 </div>
@@ -1522,14 +1521,13 @@ const WORKER_URL = 'https://backlog-proxy.multi-pj.workers.dev';
 
 function initApiButton() {
   const btn   = document.getElementById('apiFetchBtn');
-  const row   = document.getElementById('api-status-row');
   const badge = document.getElementById('apiBadge');
-  // Workerが常に利用可能 → APIボタン表示
-  if (btn) btn.style.display = 'inline-flex';
-  if (row && badge) {
-    row.style.display = 'block';
-    badge.className = 'api-badge ok';
+  // Workerが常に利用可能 → APIボタン・バッジ表示
+  if (btn)   btn.style.display   = 'inline-flex';
+  if (badge) {
+    badge.className   = 'api-badge ok';
     badge.textContent = '● Backlog API 接続済';
+    badge.style.display = 'inline-block';
   }
   // Excelアップロード関連は非表示
   const excelSection = document.getElementById('excelSection');
