@@ -289,27 +289,25 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
         <span id="fileName">Backlog 課題一覧（xlsx）を選択してください</span>
       </div>
     </div>
-    <!-- 共通オプション（常時表示） -->
-    <div>
-      <div class="card-title">表示設定</div>
-      <div class="upload-row">
-        <div class="cap-wrap">
-          <label>表示開始日</label>
-          <input type="date" id="startDateInput" placeholder="表示開始日を選択" style="width:160px;padding:6px 8px;border:1px solid #d0dae6;border-radius:6px;font-size:12px">
-        </div>
-        <div class="cap-wrap">
-          <label>1日稼働上限</label>
-          <input type="number" id="capInput" value="7" min="1" max="24" step="0.5" onchange="onCapChange()">
-          <span>h</span>
-        </div>
+    <!-- 共通オプション＋ボタン群（常時表示・1行レイアウト） -->
+    <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;flex:1">
+      <div class="cap-wrap">
+        <label>表示開始日</label>
+        <input type="date" id="startDateInput" placeholder="表示開始日を選択" style="width:160px;padding:6px 8px;border:1px solid #d0dae6;border-radius:6px;font-size:12px">
+      </div>
+      <div class="cap-wrap">
+        <label>1日稼働上限</label>
+        <input type="number" id="capInput" value="7" min="1" max="24" step="0.5" onchange="onCapChange()">
+        <span>h</span>
+      </div>
+      <!-- ボタン群（区切り線で視覚的に分離） -->
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-left:16px;border-left:1px solid #e3e9f0">
+        <button class="btn btn-run" id="runBtn" onclick="processFile()" disabled>分析実行</button>
+        <button class="btn btn-api" id="apiFetchBtn" onclick="processFromApi()" style="display:none">🔗 backlogと連携</button>
+        <button class="btn btn-dl"  id="dlBtn"  onclick="downloadFile()" disabled>Excel ダウンロード</button>
+        <button class="btn btn-clear" id="clearBtn" onclick="clearData()" disabled>データクリア</button>
       </div>
     </div>
-  </div>
-  <div class="btn-row">
-    <button class="btn btn-run" id="runBtn" onclick="processFile()" disabled>分析実行</button>
-    <button class="btn btn-api" id="apiFetchBtn" onclick="processFromApi()" style="display:none">🔗 backlogと連携</button>
-    <button class="btn btn-dl"  id="dlBtn"  onclick="downloadFile()" disabled>Excel ダウンロード</button>
-    <button class="btn btn-clear" id="clearBtn" onclick="clearData()" disabled>データクリア</button>
   </div>
   <div id="api-status-row" style="margin-top:8px;display:none">
     <span class="api-badge" id="apiBadge"></span>
