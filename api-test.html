@@ -234,12 +234,31 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
   <div id="admin-box">
     <h3>⚙ 管理者設定</h3>
 
+    <!-- 一般ユーザーPW変更 -->
     <div class="admin-section" style="margin-top:0;padding-top:0;border-top:none">
-      <div class="admin-section-toggle" id="pwdToggle" onclick="togglePwdSection()">
+      <div class="admin-section-toggle" id="generalPwdToggle" onclick="toggleSection('generalPwdBody','generalPwdToggle')">
         <span class="toggle-arrow">▶</span>
-        <span>管理者パスワード変更（変更しない場合は不要）</span>
+        <span>一般ユーザーパスワード変更</span>
       </div>
-      <div class="admin-section-body" id="pwdBody">
+      <div class="admin-section-body" id="generalPwdBody">
+        <div class="admin-field">
+          <label>新しいパスワード</label>
+          <input type="password" id="admin-general-newpwd" placeholder="4文字以上">
+        </div>
+        <div class="admin-field">
+          <label>確認（再入力）</label>
+          <input type="password" id="admin-general-newpwd2" placeholder="もう一度入力">
+        </div>
+      </div>
+    </div>
+
+    <!-- 管理者PW変更 -->
+    <div class="admin-section">
+      <div class="admin-section-toggle" id="adminPwdToggle" onclick="toggleSection('adminPwdBody','adminPwdToggle')">
+        <span class="toggle-arrow">▶</span>
+        <span>管理者パスワード変更</span>
+      </div>
+      <div class="admin-section-body" id="adminPwdBody">
         <div class="admin-field">
           <label>新しいパスワード</label>
           <input type="password" id="admin-newpwd" placeholder="4文字以上">
@@ -1461,10 +1480,14 @@ fpStartDate = flatpickr('#startDateInput', {
 // ================================================================
 // 認証（一般ユーザー / 管理者の2段階）
 // ================================================================
-const GENERAL_PWD     = 'multi';
-const ADMIN_PWD_KEY   = 'bl_admin_pwd';
-const ADMIN_PWD_DEFAULT = 'wlm2026';
+const GENERAL_PWD_KEY     = 'bl_general_pwd';
+const GENERAL_PWD_DEFAULT = 'multi';
+const ADMIN_PWD_KEY       = 'bl_admin_pwd';
+const ADMIN_PWD_DEFAULT   = 'wlm2026';
 
+function getGeneralPwd() {
+  return localStorage.getItem(GENERAL_PWD_KEY) || GENERAL_PWD_DEFAULT;
+}
 function getAdminPwd() {
   return localStorage.getItem(ADMIN_PWD_KEY) || ADMIN_PWD_DEFAULT;
 }
@@ -1484,8 +1507,8 @@ function checkPw(){
   const inp = document.getElementById('pw-input');
   const err = document.getElementById('pw-err');
   let role = null;
-  if (val === GENERAL_PWD)  role = 'user';
-  if (val === getAdminPwd()) role = 'admin';
+  if (val === getGeneralPwd()) role = 'user';
+  if (val === getAdminPwd())   role = 'admin';
   if (role) {
     sessionStorage.setItem('bl_auth', 'ok');
     sessionStorage.setItem('bl_role', role);
@@ -1511,20 +1534,23 @@ function applyRole(role) {
 // ================================================================
 // 管理者設定パネル
 // ================================================================
-function togglePwdSection() {
-  const toggle = document.getElementById('pwdToggle');
-  const body   = document.getElementById('pwdBody');
+function toggleSection(bodyId, toggleId) {
+  const body   = document.getElementById(bodyId);
+  const toggle = document.getElementById(toggleId);
   const isOpen = body.classList.contains('open');
   body.classList.toggle('open', !isOpen);
   toggle.classList.toggle('open', !isOpen);
 }
 
 function openAdminPanel() {
+  document.getElementById('admin-general-newpwd').value  = '';
+  document.getElementById('admin-general-newpwd2').value = '';
   document.getElementById('admin-newpwd').value  = '';
   document.getElementById('admin-newpwd2').value = '';
-  // パスワードセクションは毎回閉じた状態でリセット
-  document.getElementById('pwdBody').classList.remove('open');
-  document.getElementById('pwdToggle').classList.remove('open');
+  document.getElementById('admin-msg').textContent = '';
+  // 両セクションを閉じた状態でリセット
+  ['generalPwdBody','adminPwdBody'].forEach(id => document.getElementById(id).classList.remove('open'));
+  ['generalPwdToggle','adminPwdToggle'].forEach(id => document.getElementById(id).classList.remove('open'));
   document.getElementById('admin-newpwd2').value = '';
   document.getElementById('admin-msg').textContent = '';
   document.getElementById('admin-msg').style.color = '';
@@ -1536,23 +1562,40 @@ function closeAdminPanel() {
 }
 
 function saveAdminSettings() {
-  const newPwd  = document.getElementById('admin-newpwd').value;
-  const newPwd2 = document.getElementById('admin-newpwd2').value;
-  const msg     = document.getElementById('admin-msg');
+  const msg = document.getElementById('admin-msg');
 
-  // パスワード変更（入力がある場合のみ）
-  if (newPwd || newPwd2) {
-    if (newPwd !== newPwd2) {
-      msg.textContent = 'パスワードが一致しません';
+  // 一般ユーザーPW変更（入力がある場合のみ）
+  const gPwd  = document.getElementById('admin-general-newpwd').value;
+  const gPwd2 = document.getElementById('admin-general-newpwd2').value;
+  if (gPwd || gPwd2) {
+    if (gPwd !== gPwd2) {
+      msg.textContent = '一般ユーザーパスワードが一致しません';
       msg.style.color = '#e53935';
       return;
     }
-    if (newPwd.length < 4) {
+    if (gPwd.length < 4) {
       msg.textContent = 'パスワードは4文字以上にしてください';
       msg.style.color = '#e53935';
       return;
     }
-    localStorage.setItem(ADMIN_PWD_KEY, newPwd);
+    localStorage.setItem(GENERAL_PWD_KEY, gPwd);
+  }
+
+  // 管理者PW変更（入力がある場合のみ）
+  const aPwd  = document.getElementById('admin-newpwd').value;
+  const aPwd2 = document.getElementById('admin-newpwd2').value;
+  if (aPwd || aPwd2) {
+    if (aPwd !== aPwd2) {
+      msg.textContent = '管理者パスワードが一致しません';
+      msg.style.color = '#e53935';
+      return;
+    }
+    if (aPwd.length < 4) {
+      msg.textContent = 'パスワードは4文字以上にしてください';
+      msg.style.color = '#e53935';
+      return;
+    }
+    localStorage.setItem(ADMIN_PWD_KEY, aPwd);
   }
 
   msg.textContent = '✓ 保存しました';
