@@ -249,14 +249,16 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
       <div id="companyHolMsg" style="font-size:11px;margin-top:6px;min-height:14px;font-weight:600"></div>
     </div>
 
-    <!-- パスワード変更案内 -->
+    <!-- パスワード変更 -->
     <div style="padding-top:16px;border-top:1px solid #e3e9f0">
-      <div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#78909c;margin-bottom:8px">パスワード変更</div>
-      <p style="font-size:11px;color:#607d8b;line-height:1.7">
-        Cloudflare ダッシュボードから変更してください。<br>
-        <b>Workers &amp; Pages → backlog-proxy → Settings → Variables and Secrets</b><br>
-        <span style="color:#90a4ae">GENERAL_PWD：一般ユーザー用 ／ ADMIN_PWD：管理者用</span>
-      </p>
+      <div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#78909c;margin-bottom:10px">一般ユーザー パスワード変更</div>
+      <div style="font-size:11px;color:#90a4ae;margin-bottom:10px">一般ユーザー（multi等）のパスワードを変更します。全端末に即時反映されます。</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <input type="password" id="newPwInput" autocomplete="new-password" placeholder="新しいパスワード（4文字以上）" style="flex:1;min-width:180px;padding:7px 10px;border:1.5px solid #d0dae6;border-radius:6px;font-size:12px">
+        <button class="btn-admin-save" style="padding:7px 16px;font-size:12px" onclick="changeGeneralPassword()">変更</button>
+      </div>
+      <div id="pwChangeMsg" style="font-size:11px;margin-top:6px;min-height:14px;font-weight:600"></div>
+      <p style="font-size:10px;color:#b0bec5;margin-top:8px;line-height:1.6">※ 管理者パスワードの変更は Cloudflare ダッシュボード（ADMIN_PWD）から行ってください。</p>
     </div>
 
     <div style="margin-top:20px">
@@ -418,7 +420,10 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 // ================================================================
 // 祝日 (2025-2030)  ※毎年更新が必要。2028年以降は暫定値を含む
 // ================================================================
-const JP_HOL = new Set([
+// Worker URL（祝日・会社カレンダー取得でも使用するため先頭で定義）
+const WORKER_URL = 'https://backlog-proxy.multi-pj.workers.dev';
+
+let JP_HOL = new Set([
   // 2025
   '2025-01-01','2025-01-13','2025-02-11','2025-02-23','2025-02-24',
   '2025-03-20','2025-04-29','2025-05-03','2025-05-04','2025-05-05',
@@ -453,16 +458,50 @@ const JP_HOL = new Set([
 
 const WD_JA = ['日','月','火','水','木','金','土'];
 
-// 会社カレンダー（localStorage）
+// 会社カレンダー（メモリキャッシュ + Worker KV）
+let companyHolidaysCache = [];
+
 function getCompanyHolidays() {
-  try { return JSON.parse(localStorage.getItem('bl_company_holidays') || '[]'); }
-  catch { return []; }
+  return companyHolidaysCache;
 }
-function saveCompanyHolidays(list) {
-  localStorage.setItem('bl_company_holidays', JSON.stringify(list));
+async function saveCompanyHolidays(list) {
+  companyHolidaysCache = list;
+  localStorage.setItem('bl_company_holidays', JSON.stringify(list)); // ローカルキャッシュ
+  const token = sessionStorage.getItem('bl_admin_token') || '';
+  const res = await fetch(`${WORKER_URL}/holidays/company`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify(list),
+  });
+  if (!res.ok) throw new Error('サーバーへの保存に失敗しました');
 }
+async function loadCompanyHolidays() {
+  try {
+    const res = await fetch(`${WORKER_URL}/holidays/company`);
+    if (res.ok) {
+      companyHolidaysCache = await res.json();
+      localStorage.setItem('bl_company_holidays', JSON.stringify(companyHolidaysCache));
+      return;
+    }
+  } catch { /* フォールバックへ */ }
+  // Worker 失敗時は localStorage を使用
+  try { companyHolidaysCache = JSON.parse(localStorage.getItem('bl_company_holidays') || '[]'); }
+  catch { companyHolidaysCache = []; }
+}
+
+// 祝日セット（初期値＝ハードコード。Worker 取得成功時に上書き）
+async function loadNationalHolidays() {
+  try {
+    const res = await fetch(`${WORKER_URL}/holidays/national`);
+    if (res.ok) {
+      const dates = await res.json();
+      if (Array.isArray(dates) && dates.length > 0) JP_HOL = new Set(dates);
+    }
+  } catch { /* ハードコードをそのまま使用 */ }
+}
+
 function isCompanyHoliday(ds) {
-  return getCompanyHolidays().some(h => ds >= h.start && ds <= h.end);
+  return companyHolidaysCache.some(h => ds >= h.start && ds <= h.end);
 }
 
 function isGray(ds) {
@@ -519,6 +558,7 @@ document.addEventListener('click', e => {
 function logout() {
   sessionStorage.removeItem('bl_auth');
   sessionStorage.removeItem('bl_role');
+  sessionStorage.removeItem('bl_admin_token');
   document.getElementById('adminGearBtn').style.display = 'none';
   document.getElementById('pw-overlay').style.display = '';
   document.getElementById('pw-input').value = '';
@@ -1525,6 +1565,7 @@ async function checkPw() {
     if (data.role) {
       sessionStorage.setItem('bl_auth', 'ok');
       sessionStorage.setItem('bl_role', data.role);
+      if (data.adminToken) sessionStorage.setItem('bl_admin_token', data.adminToken);
       document.getElementById('pw-overlay').style.display = 'none';
       err.textContent = '';
       applyRole(data.role);
@@ -1548,6 +1589,11 @@ function applyRole(role) {
   if (gear) gear.style.display = (role==='admin') ? 'inline-flex' : 'none';
   // APIボタン表示更新（常にWorker利用可能）
   initApiButton();
+  // 祝日・会社カレンダーをバックグラウンドで取得
+  Promise.all([
+    loadNationalHolidays(),
+    loadCompanyHolidays(),
+  ]).catch(console.warn);
 }
 
 // ================================================================
@@ -1625,7 +1671,7 @@ function renderCompanyHolidayList() {
   `).join('');
 }
 
-function addCompanyHoliday() {
+async function addCompanyHoliday() {
   const start = document.getElementById('newHolStart').value;
   const rawEnd = document.getElementById('newHolEnd').value;
   const end   = rawEnd || start;
@@ -1633,40 +1679,73 @@ function addCompanyHoliday() {
   const msg   = document.getElementById('companyHolMsg');
 
   if (!start) {
-    msg.style.color = '#c62828';
-    msg.textContent = '開始日を入力してください';
-    return;
+    msg.style.color = '#c62828'; msg.textContent = '開始日を入力してください'; return;
   }
   if (end < start) {
-    msg.style.color = '#c62828';
-    msg.textContent = '終了日は開始日以降にしてください';
-    return;
+    msg.style.color = '#c62828'; msg.textContent = '終了日は開始日以降にしてください'; return;
   }
   const list = getCompanyHolidays();
   if (list.length >= 8) {
-    msg.style.color = '#c62828';
-    msg.textContent = '最大8件まで登録できます';
-    return;
+    msg.style.color = '#c62828'; msg.textContent = '最大8件まで登録できます'; return;
   }
   list.push({ start, end, label: label || '会社休日' });
   list.sort((a, b) => a.start < b.start ? -1 : a.start > b.start ? 1 : 0);
-  saveCompanyHolidays(list);
-  renderCompanyHolidayList();
 
-  if (fpHolStart) fpHolStart.clear(); else document.getElementById('newHolStart').value = '';
-  if (fpHolEnd)   fpHolEnd.clear();   else document.getElementById('newHolEnd').value   = '';
-  if (fpHolEnd)   fpHolEnd.set('minDate', null);
-  document.getElementById('newHolLabel').value = '';
-  msg.style.color = '#2e7d32';
-  msg.textContent = '追加しました';
-  setTimeout(() => { msg.textContent = ''; }, 2500);
+  msg.style.color = '#607d8b'; msg.textContent = '保存中...';
+  try {
+    await saveCompanyHolidays(list);
+    renderCompanyHolidayList();
+    if (fpHolStart) fpHolStart.clear(); else document.getElementById('newHolStart').value = '';
+    if (fpHolEnd)   fpHolEnd.clear();   else document.getElementById('newHolEnd').value   = '';
+    if (fpHolEnd)   fpHolEnd.set('minDate', null);
+    document.getElementById('newHolLabel').value = '';
+    msg.style.color = '#2e7d32'; msg.textContent = '追加しました（全端末に反映）';
+    setTimeout(() => { msg.textContent = ''; }, 3000);
+  } catch(e) {
+    msg.style.color = '#c62828'; msg.textContent = e.message || '保存に失敗しました';
+  }
 }
 
-function deleteCompanyHoliday(index) {
+async function deleteCompanyHoliday(index) {
   const list = getCompanyHolidays();
   list.splice(index, 1);
-  saveCompanyHolidays(list);
-  renderCompanyHolidayList();
+  const msg = document.getElementById('companyHolMsg');
+  msg.style.color = '#607d8b'; msg.textContent = '保存中...';
+  try {
+    await saveCompanyHolidays(list);
+    renderCompanyHolidayList();
+    msg.style.color = '#2e7d32'; msg.textContent = '削除しました（全端末に反映）';
+    setTimeout(() => { msg.textContent = ''; }, 2500);
+  } catch(e) {
+    msg.style.color = '#c62828'; msg.textContent = e.message || '保存に失敗しました';
+    companyHolidaysCache = list; // ロールバック不可のため再描画のみ
+  }
+}
+
+async function changeGeneralPassword() {
+  const newPw = document.getElementById('newPwInput').value;
+  const msg   = document.getElementById('pwChangeMsg');
+  if (!newPw || newPw.length < 4) {
+    msg.style.color = '#c62828'; msg.textContent = 'パスワードは4文字以上で入力してください'; return;
+  }
+  msg.style.color = '#607d8b'; msg.textContent = '変更中...';
+  try {
+    const token = sessionStorage.getItem('bl_admin_token') || '';
+    const res = await fetch(`${WORKER_URL}/auth/change-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ newPassword: newPw }),
+    });
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({}));
+      throw new Error(e.error || '変更に失敗しました');
+    }
+    document.getElementById('newPwInput').value = '';
+    msg.style.color = '#2e7d32'; msg.textContent = 'パスワードを変更しました（全端末に反映）';
+    setTimeout(() => { msg.textContent = ''; }, 4000);
+  } catch(e) {
+    msg.style.color = '#c62828'; msg.textContent = e.message;
+  }
 }
 
 // モーダル外クリックで閉じる
@@ -1677,9 +1756,6 @@ document.getElementById('admin-modal').addEventListener('click', e => {
 // ================================================================
 // APIボタン表示制御
 // ================================================================
-// Worker URL（Cloudflare経由でAPIキーを隠蔽）
-const WORKER_URL = 'https://backlog-proxy.multi-pj.workers.dev';
-
 function initApiButton() {
   const btn   = document.getElementById('apiFetchBtn');
   const badge = document.getElementById('apiBadge');
