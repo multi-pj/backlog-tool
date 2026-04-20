@@ -233,12 +233,33 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 <div id="admin-modal">
   <div id="admin-box">
     <h3>⚙ 管理者設定</h3>
-    <p style="font-size:12px;color:#607d8b;line-height:1.7;margin-bottom:20px">
-      パスワード変更は Cloudflare ダッシュボードから行ってください。<br>
-      <b>Workers &amp; Pages → backlog-proxy → Settings → Variables and Secrets</b><br>
-      <span style="color:#90a4ae">（GENERAL_PWD：一般ユーザー用 ／ ADMIN_PWD：管理者用）</span>
-    </p>
-    <div style="margin-top:8px">
+
+    <!-- 会社カレンダー -->
+    <div style="margin-bottom:20px">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#78909c;margin-bottom:10px">会社カレンダー（休日追加）</div>
+      <div style="font-size:11px;color:#90a4ae;margin-bottom:10px">土日・祝日以外の会社固有の休日を登録します（最大8件）</div>
+      <div id="companyHolidayList" style="margin-bottom:12px"></div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <input type="date" id="newHolStart" style="padding:7px 8px;border:1.5px solid #d0dae6;border-radius:6px;font-size:12px">
+        <span style="font-size:12px;color:#607d8b">〜</span>
+        <input type="date" id="newHolEnd" style="padding:7px 8px;border:1.5px solid #d0dae6;border-radius:6px;font-size:12px">
+        <input type="text" id="newHolLabel" placeholder="例：夏季休暇" style="width:110px;padding:7px 8px;border:1.5px solid #d0dae6;border-radius:6px;font-size:12px">
+        <button class="btn-admin-save" style="padding:7px 16px;font-size:12px" onclick="addCompanyHoliday()">追加</button>
+      </div>
+      <div id="companyHolMsg" style="font-size:11px;margin-top:6px;min-height:14px;font-weight:600"></div>
+    </div>
+
+    <!-- パスワード変更案内 -->
+    <div style="padding-top:16px;border-top:1px solid #e3e9f0">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#78909c;margin-bottom:8px">パスワード変更</div>
+      <p style="font-size:11px;color:#607d8b;line-height:1.7">
+        Cloudflare ダッシュボードから変更してください。<br>
+        <b>Workers &amp; Pages → backlog-proxy → Settings → Variables and Secrets</b><br>
+        <span style="color:#90a4ae">GENERAL_PWD：一般ユーザー用 ／ ADMIN_PWD：管理者用</span>
+      </p>
+    </div>
+
+    <div style="margin-top:20px">
       <button class="btn-admin-cancel" onclick="closeAdminPanel()">閉じる</button>
     </div>
   </div>
@@ -395,28 +416,58 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 
 <script>
 // ================================================================
-// 祝日 (2025-2027)
+// 祝日 (2025-2030)  ※毎年更新が必要。2028年以降は暫定値を含む
 // ================================================================
 const JP_HOL = new Set([
+  // 2025
   '2025-01-01','2025-01-13','2025-02-11','2025-02-23','2025-02-24',
   '2025-03-20','2025-04-29','2025-05-03','2025-05-04','2025-05-05',
   '2025-05-06','2025-07-21','2025-08-11','2025-09-15','2025-09-23',
   '2025-10-13','2025-11-03','2025-11-23','2025-11-24',
+  // 2026
   '2026-01-01','2026-01-12','2026-02-11','2026-02-23',
   '2026-03-20','2026-04-29','2026-05-03','2026-05-04','2026-05-05','2026-05-06',
   '2026-07-20','2026-08-11','2026-09-21','2026-09-22','2026-09-23',
   '2026-10-12','2026-11-03','2026-11-23',
+  // 2027
   '2027-01-01','2027-01-11','2027-02-11','2027-02-23',
   '2027-03-21','2027-04-29','2027-05-03','2027-05-04','2027-05-05',
   '2027-07-19','2027-08-11','2027-09-20','2027-09-23',
   '2027-10-11','2027-11-03','2027-11-23',
+  // 2028（暫定）
+  '2028-01-01','2028-01-10','2028-02-11','2028-02-23',
+  '2028-03-20','2028-04-29','2028-05-03','2028-05-04','2028-05-05',
+  '2028-07-17','2028-08-11','2028-09-18','2028-09-22',
+  '2028-10-09','2028-11-03','2028-11-23',
+  // 2029（暫定）
+  '2029-01-01','2029-01-14','2029-02-11','2029-02-12','2029-02-23',
+  '2029-03-20','2029-04-29','2029-04-30','2029-05-03','2029-05-04','2029-05-05','2029-05-07',
+  '2029-07-16','2029-08-11','2029-08-12','2029-09-17','2029-09-23',
+  '2029-10-08','2029-11-03','2029-11-23',
+  // 2030（暫定）
+  '2030-01-01','2030-01-14','2030-02-11','2030-02-23',
+  '2030-03-20','2030-04-29','2030-05-03','2030-05-04','2030-05-05','2030-05-06',
+  '2030-07-15','2030-08-11','2030-09-16','2030-09-22',
+  '2030-10-14','2030-11-03','2030-11-23',
 ]);
 
 const WD_JA = ['日','月','火','水','木','金','土'];
 
+// 会社カレンダー（localStorage）
+function getCompanyHolidays() {
+  try { return JSON.parse(localStorage.getItem('bl_company_holidays') || '[]'); }
+  catch { return []; }
+}
+function saveCompanyHolidays(list) {
+  localStorage.setItem('bl_company_holidays', JSON.stringify(list));
+}
+function isCompanyHoliday(ds) {
+  return getCompanyHolidays().some(h => ds >= h.start && ds <= h.end);
+}
+
 function isGray(ds) {
   const d = new Date(ds + 'T12:00:00'), dow = d.getDay();
-  return dow === 0 || dow === 6 || JP_HOL.has(ds);
+  return dow === 0 || dow === 6 || JP_HOL.has(ds) || isCompanyHoliday(ds);
 }
 
 // ================================================================
@@ -1501,11 +1552,73 @@ function applyRole(role) {
 // 管理者設定パネル
 // ================================================================
 function openAdminPanel() {
+  renderCompanyHolidayList();
   document.getElementById('admin-modal').classList.add('open');
 }
 
 function closeAdminPanel() {
   document.getElementById('admin-modal').classList.remove('open');
+}
+
+// ================================================================
+// 会社カレンダー管理
+// ================================================================
+function renderCompanyHolidayList() {
+  const list = getCompanyHolidays();
+  const container = document.getElementById('companyHolidayList');
+  if (!list.length) {
+    container.innerHTML = '<div style="font-size:11px;color:#b0bec5;padding:6px 0">登録なし</div>';
+    return;
+  }
+  container.innerHTML = list.map((h, i) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:#f5f7fa;border-radius:6px;margin-bottom:4px">
+      <span style="flex:1;font-size:12px;font-weight:600;color:#333">${esc(h.label || '（ラベルなし）')}</span>
+      <span style="font-size:11px;color:#607d8b;white-space:nowrap">${h.start}${h.start !== h.end ? ' 〜 ' + h.end : ''}</span>
+      <button onclick="deleteCompanyHoliday(${i})" style="flex-shrink:0;background:#fce4ec;color:#c62828;border:none;border-radius:5px;padding:3px 8px;font-size:10px;cursor:pointer;font-weight:700">削除</button>
+    </div>
+  `).join('');
+}
+
+function addCompanyHoliday() {
+  const start = document.getElementById('newHolStart').value;
+  const rawEnd = document.getElementById('newHolEnd').value;
+  const end   = rawEnd || start;
+  const label = document.getElementById('newHolLabel').value.trim();
+  const msg   = document.getElementById('companyHolMsg');
+
+  if (!start) {
+    msg.style.color = '#c62828';
+    msg.textContent = '開始日を入力してください';
+    return;
+  }
+  if (end < start) {
+    msg.style.color = '#c62828';
+    msg.textContent = '終了日は開始日以降にしてください';
+    return;
+  }
+  const list = getCompanyHolidays();
+  if (list.length >= 8) {
+    msg.style.color = '#c62828';
+    msg.textContent = '最大8件まで登録できます';
+    return;
+  }
+  list.push({ start, end, label: label || '会社休日' });
+  saveCompanyHolidays(list);
+  renderCompanyHolidayList();
+
+  document.getElementById('newHolStart').value = '';
+  document.getElementById('newHolEnd').value   = '';
+  document.getElementById('newHolLabel').value  = '';
+  msg.style.color = '#2e7d32';
+  msg.textContent = '追加しました';
+  setTimeout(() => { msg.textContent = ''; }, 2500);
+}
+
+function deleteCompanyHoliday(index) {
+  const list = getCompanyHolidays();
+  list.splice(index, 1);
+  saveCompanyHolidays(list);
+  renderCompanyHolidayList();
 }
 
 // モーダル外クリックで閉じる
