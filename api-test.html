@@ -239,13 +239,14 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
       <div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#78909c;margin-bottom:10px">会社カレンダー（休日追加）</div>
       <div style="font-size:11px;color:#90a4ae;margin-bottom:10px">土日・祝日以外の会社固有の休日を登録します（最大8件）</div>
       <div id="companyHolidayList" style="margin-bottom:12px"></div>
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <input type="text" id="newHolStart" placeholder="開始日" readonly style="width:110px;padding:7px 8px;border:1.5px solid #d0dae6;border-radius:6px;font-size:12px;cursor:pointer;background:#fff">
+      <!-- form で隔離することで Chrome/Edge がパスワード関連フィールドと誤認識するのを防ぐ -->
+      <form autocomplete="off" onsubmit="return false" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0">
+        <input type="text" id="newHolStart" placeholder="開始日" readonly autocomplete="off" style="width:110px;padding:7px 8px;border:1.5px solid #d0dae6;border-radius:6px;font-size:12px;cursor:pointer;background:#fff">
         <span style="font-size:12px;color:#607d8b">〜</span>
-        <input type="text" id="newHolEnd" placeholder="終了日（省略可）" readonly style="width:130px;padding:7px 8px;border:1.5px solid #d0dae6;border-radius:6px;font-size:12px;cursor:pointer;background:#fff">
-        <input type="text" id="newHolLabel" placeholder="例：夏季休暇" autocomplete="off" name="company-holiday-label" style="width:110px;padding:7px 8px;border:1.5px solid #d0dae6;border-radius:6px;font-size:12px">
-        <button class="btn-admin-save" style="padding:7px 16px;font-size:12px" onclick="addCompanyHoliday()">追加</button>
-      </div>
+        <input type="text" id="newHolEnd" placeholder="終了日（省略可）" readonly autocomplete="off" style="width:130px;padding:7px 8px;border:1.5px solid #d0dae6;border-radius:6px;font-size:12px;cursor:pointer;background:#fff">
+        <input type="text" id="newHolLabel" placeholder="例：夏季休暇" autocomplete="off" style="width:110px;padding:7px 8px;border:1.5px solid #d0dae6;border-radius:6px;font-size:12px">
+        <button type="button" class="btn-admin-save" style="padding:7px 16px;font-size:12px" onclick="addCompanyHoliday()">追加</button>
+      </form>
       <div id="companyHolMsg" style="font-size:11px;margin-top:6px;min-height:14px;font-weight:600"></div>
     </div>
 
