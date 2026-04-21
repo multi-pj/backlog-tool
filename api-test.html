@@ -353,20 +353,27 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
     <div class="val"><span class="v-sel" id="sPeopleSel">-</span><span class="v-sep"> / </span><span class="v-tot" id="sPeopleTot">-</span></div>
   </div>
   <div class="stat">
-    <div class="lbl">実績時間<span class="lbl-sub">選択期間 / 全体</span></div>
+    <div class="lbl">実績時間<span class="lbl-sub" id="sActHLabel">選択期間 / 全体</span></div>
     <div class="val"><span class="v-sel" id="sGraySel">-</span><span class="v-sep"> / </span><span class="v-tot" id="sGrayTot">-</span></div>
   </div>
   <div class="stat">
-    <div class="lbl">按分済時間<span class="lbl-sub">選択期間 / 全体</span></div>
+    <div class="lbl">按分済時間<span class="lbl-sub" id="sWdHLabel">選択期間 / 全体</span></div>
     <div class="val"><span class="v-sel" id="sWdSel">-</span><span class="v-sep"> / </span><span class="v-tot" id="sWdTot">-</span></div>
   </div>
 </div>
 
 <!-- 稼働日0件警告バナー -->
 <div id="zeroWarnBanner" style="display:none;background:#fff8e1;border:1px solid #ffb300;border-radius:8px;padding:10px 16px;margin-bottom:12px;font-size:12px;color:#5d4037;line-height:1.7">
-  <b>⚠ 按分できないタスクがあります</b>
-  <span id="zeroWarnMsg"></span>
-  <div id="zeroWarnKeys" style="margin-top:2px;font-size:11px;color:#795548"></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+    <b style="white-space:nowrap">⚠ 按分できないタスクがあります</b>
+    <button id="zeroWarnToggle" onclick="toggleZeroWarn()"
+      style="flex-shrink:0;background:none;border:1px solid #ffb300;border-radius:5px;cursor:pointer;padding:2px 8px;font-size:12px;color:#5d4037;line-height:1;transition:background .15s"
+      title="詳細を折りたたむ">▲</button>
+  </div>
+  <div id="zeroWarnDetail">
+    <span id="zeroWarnMsg"></span>
+    <div id="zeroWarnKeys" style="margin-top:2px;font-size:11px;color:#795548"></div>
+  </div>
 </div>
 
 <!-- Main panel -->
@@ -807,16 +814,22 @@ function renderCurrent() {
 }
 
 // 統計カード更新（選択値 / 全体値）
-function updateStats(sel, tot) {
+// grand: 全期間合計オブジェクト {actH, wdH}。単月選択時のみ渡す。
+function updateStats(sel, tot, grand) {
   const fh = v => v.toFixed(1)+'h';
   document.getElementById('sTasksSel').textContent  = sel.tasks;
   document.getElementById('sTasksTot').textContent  = tot.tasks;
   document.getElementById('sPeopleSel').textContent = sel.people;
   document.getElementById('sPeopleTot').textContent = tot.people;
   document.getElementById('sGraySel').textContent   = fh(sel.actH);
-  document.getElementById('sGrayTot').textContent   = fh(tot.actH);
+  document.getElementById('sGrayTot').textContent   = grand ? fh(grand.actH) : fh(tot.actH);
   document.getElementById('sWdSel').textContent     = fh(sel.wdH);
-  document.getElementById('sWdTot').textContent     = fh(tot.wdH);
+  document.getElementById('sWdTot').textContent     = grand ? fh(grand.wdH) : fh(tot.wdH);
+  // ラベル切り替え（単月：「単月 / 全期間」、全体モード：「選択期間 / 全体」）
+  const aLbl = document.getElementById('sActHLabel');
+  const wLbl = document.getElementById('sWdHLabel');
+  if (aLbl) aLbl.textContent = grand ? '単月 / 全期間' : '選択期間 / 全体';
+  if (wLbl) wLbl.textContent = grand ? '単月 / 全期間' : '選択期間 / 全体';
 }
 
 // ================================================================
@@ -1020,29 +1033,13 @@ function renderGantt() {
 
   // ---- 統計更新（ガントタブ）----
   {
-    const totActH = allRows.reduce((s,r) => s + r.actHours, 0);
-    const totWdH  = allRows.reduce((s,r) => s + r.distHours, 0);
-    const totPpl  = new Set(allRows.filter(r=>r.assignee).map(r => r.assignee)).size;
-    const selPpl  = new Set(rows.filter(r=>r.assignee).map(r => r.assignee)).size;
-    let selActH, selWdH;
-    if (todayMode) {
-      // 本日（全体）モード：期間制限なし → フィルター後タスクの全期間合計
-      selActH = rows.reduce((s,r) => s + r.actHours, 0);
-      selWdH  = rows.reduce((s,r) => s + r.distHours, 0);
-    } else {
-      // 月選択モード：その月の稼働日数で按分
-      selActH = rows.reduce((s,r) => {
-        if (!r.actHours) return s;
-        if (!r.weekdayCount) return s + r.actHours;
-        const inPeriod = vcols.filter(c => (r.daily[c.col]||0) > 0).length;
-        return !inPeriod ? s : s + r2(r.actHours * inPeriod / r.weekdayCount);
-      }, 0);
-      selWdH = rows.reduce((s,r) => s + vcols.reduce((sv,c) => sv + (r.daily[c.col]||0), 0), 0);
-    }
-    updateStats(
-      { tasks: rows.length,    people: selPpl, actH: selActH, wdH: selWdH },
-      { tasks: allRows.length, people: totPpl, actH: totActH, wdH: totWdH }
-    );
+    const sel   = calcPeriodStats(rows,    vcols);
+    const tot   = calcPeriodStats(allRows, vcols);
+    const grand = activeMonth ? {
+      actH: r2(allRows.reduce((s,r) => s + r.actHours,   0)),
+      wdH:  r2(allRows.reduce((s,r) => s + r.distHours,  0)),
+    } : null;
+    updateStats(sel, tot, grand);
   }
 
   // 本日モードは本日列の先頭までスクロール
@@ -1132,36 +1129,16 @@ function renderWorkload() {
   document.getElementById('tBody').innerHTML = html;
 
   // ---- 統計更新（ワークロードタブ）----
-  // タスク数は常に全体を表示。担当者・時間は選択された担当者 × 選択期間
   {
-    const pSet    = new Set(people);
-    const totActH = allRows.reduce((s,r) => s + r.actHours, 0);
-    const totWdH  = allRows.reduce((s,r) => s + r.distHours, 0);
-    const totPpl  = new Set(allRows.filter(r=>r.assignee).map(r => r.assignee)).size;
-    const selPpl  = people.filter(p => p).length;
+    const pSet     = new Set(people);
     const filtRows = allRows.filter(r => pSet.has(r.assignee));
-    let selActH, selWdH;
-    if (todayMode) {
-      // 本日（全体）モード：期間制限なし → 担当者フィルター後の全期間合計
-      selActH = filtRows.reduce((s,r) => s + r.actHours, 0);
-      selWdH  = filtRows.reduce((s,r) => s + r.distHours, 0);
-    } else {
-      // 月選択モード：その月の稼働日数で按分
-      selActH = filtRows.reduce((s,r) => {
-        if (!r.actHours) return s;
-        if (!r.weekdayCount) return s + r.actHours;
-        const inPeriod = vcols.filter(c => (r.daily[c.col]||0) > 0).length;
-        return !inPeriod ? s : s + r2(r.actHours * inPeriod / r.weekdayCount);
-      }, 0);
-      selWdH = people.reduce((s,p) => {
-        const pd = allWorkload[p] || {};
-        return s + vcols.reduce((sv,c) => sv + (pd[c.col]||0), 0);
-      }, 0);
-    }
-    updateStats(
-      { tasks: allRows.length, people: selPpl,  actH: selActH, wdH: selWdH },
-      { tasks: allRows.length, people: totPpl,  actH: totActH, wdH: totWdH }
-    );
+    const sel   = calcPeriodStats(filtRows, vcols);
+    const tot   = calcPeriodStats(allRows,  vcols);
+    const grand = activeMonth ? {
+      actH: r2(allRows.reduce((s,r) => s + r.actHours,   0)),
+      wdH:  r2(allRows.reduce((s,r) => s + r.distHours,  0)),
+    } : null;
+    updateStats(sel, tot, grand);
   }
 
   // 本日モードは本日列の先頭までスクロール
@@ -1361,6 +1338,21 @@ function showZeroWarnBanner(zeroTasks) {
   document.getElementById('zeroWarnKeys').textContent =
     '対象キー: ' + keys + (zeroTasks.length > 8 ? '  ... 他' + (zeroTasks.length - 8) + '件' : '');
   banner.style.display = 'block';
+  // 前回の折りたたみ状態を復元
+  const collapsed = sessionStorage.getItem('zeroWarnCollapsed') === '1';
+  document.getElementById('zeroWarnDetail').style.display = collapsed ? 'none' : '';
+  document.getElementById('zeroWarnToggle').textContent   = collapsed ? '▼' : '▲';
+}
+
+// ── 警告バナー開閉トグル ────────────────────────────────────
+function toggleZeroWarn() {
+  const detail = document.getElementById('zeroWarnDetail');
+  const btn    = document.getElementById('zeroWarnToggle');
+  const nowCollapsed = detail.style.display === 'none';
+  // 現在が閉じていれば開く、開いていれば閉じる
+  detail.style.display = nowCollapsed ? '' : 'none';
+  btn.textContent      = nowCollapsed ? '▲' : '▼';
+  try { sessionStorage.setItem('zeroWarnCollapsed', nowCollapsed ? '0' : '1'); } catch {}
 }
 
 function buildMonthGroups(vcols) {
@@ -1459,6 +1451,27 @@ function esc(s){ const d=document.createElement('div');d.textContent=s||'';retur
 function pad(n){ return String(n).padStart(2,'0'); }
 function r2(v){ return Math.round(v*100)/100; }
 function sum(a){ return a.reduce((s,x)=>s+x,0); }
+
+// ---- 選択期間に絞った統計を計算 ----------------------------------------
+// targetRows : 集計対象の行配列（フィルター済み or 全体）
+// vcols      : 表示中の稼働日列配列
+// 返値       : { tasks, people, actH, wdH }
+function calcPeriodStats(targetRows, vcols) {
+  // vcols 内に按分値が存在する行だけを「アクティブ」とみなす
+  const active = targetRows.filter(r => vcols.some(c => (r.daily[c.col]||0) > 0));
+  const tasks  = active.length;
+  const people = new Set(active.filter(r => r.assignee).map(r => r.assignee)).size;
+  // 按分済時間：vcols 内の daily 値を合算
+  const wdH = r2(targetRows.reduce((s,r) =>
+    s + vcols.reduce((sv,c) => sv + (r.daily[c.col]||0), 0), 0));
+  // 実績時間：全稼働日数に対するvcols内比率で按分
+  const actH = r2(targetRows.reduce((s,r) => {
+    if (!r.actHours || !r.weekdayCount) return s;
+    const cnt = vcols.filter(c => (r.daily[c.col]||0) > 0).length;
+    return cnt ? s + r2(r.actHours * cnt / r.weekdayCount) : s;
+  }, 0));
+  return { tasks, people, actH, wdH };
+}
 function enc(r,c){ return XLSX.utils.encode_cell({r,c}); }
 function setLoad(on,msg){ document.getElementById('loading').style.display=on?'flex':'none'; if(msg)document.getElementById('loadMsg').textContent=msg; }
 function toast(msg,isErr){
