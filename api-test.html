@@ -362,6 +362,13 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
   </div>
 </div>
 
+<!-- 稼働日0件警告バナー -->
+<div id="zeroWarnBanner" style="display:none;background:#fff8e1;border:1px solid #ffb300;border-radius:8px;padding:10px 16px;margin-bottom:12px;font-size:12px;color:#5d4037;line-height:1.7">
+  <b>⚠ 按分できないタスクがあります</b>
+  <span id="zeroWarnMsg"></span>
+  <div id="zeroWarnKeys" style="margin-top:2px;font-size:11px;color:#795548"></div>
+</div>
+
 <!-- Main panel -->
 <div id="mainPanel" style="display:none">
 
@@ -597,6 +604,7 @@ function clearData() {
   document.getElementById('clearBtn').disabled=true;
   // 表示エリア非表示
   document.getElementById('statsRow').style.display='none';
+  document.getElementById('zeroWarnBanner').style.display='none';
   document.getElementById('mainPanel').style.display='none';
   document.getElementById('scrollHint').style.display='none';
 }
@@ -652,6 +660,7 @@ function processFile() {
       document.getElementById('clearBtn').disabled = false;
 
       renderCurrent();
+      showZeroWarnBanner(result.zeroWorkdayTasks || []);
       toast(`分析完了：${allRows.length}件 / ${allMonths.length}ヶ月分`, false);
     } catch(err) {
       toast('エラー: ' + err.message, true);
@@ -698,20 +707,28 @@ function buildFromRawRows(rawRows) {
       weekdayCount = taskCols.length;
       if (weekdayCount > 0) {
         newWeekdayValue = r2(raw.estHours / weekdayCount);
-        taskCols.forEach(c => {
-          daily[c.col] = newWeekdayValue;
-          monthTotals[c.mo] = r2((monthTotals[c.mo]||0) + newWeekdayValue);
+        // ── 問題1修正：最終日で丸め誤差を吸収し合計をestHoursに一致させる ──
+        const lastVal = r2(raw.estHours - r2(newWeekdayValue * (weekdayCount - 1)));
+        taskCols.forEach((c, i) => {
+          const v = (i === taskCols.length - 1) ? lastVal : newWeekdayValue;
+          daily[c.col] = v;
+          monthTotals[c.mo] = r2((monthTotals[c.mo]||0) + v);
         });
       }
     }
+    // distHours: 実際に按分された時間（稼働日0ならば0）
+    const distHours = weekdayCount > 0 ? raw.estHours : 0;
     return { key:raw.key, jobNo:raw.jobNo, cat:raw.cat, title:raw.title,
       status:raw.status, assignee:raw.assignee,
       estHours:raw.estHours, actHours:raw.actHours,
-      grayTotal:0, weekdayTotal:raw.estHours,
+      grayTotal:0, weekdayTotal:raw.estHours, distHours,
       newWeekdayValue, weekdayCount, monthTotals, daily };
   });
 
-  return { rows, cols, months };
+  // ── 問題2：稼働日0件タスク（祝日のみ期間など）を抽出 ──
+  const zeroWorkdayTasks = rows.filter(r => r.estHours > 0 && r.weekdayCount === 0);
+
+  return { rows, cols, months, zeroWorkdayTasks };
 }
 
 // ================================================================
@@ -752,8 +769,8 @@ function processIssues(buf) {
     });
   }
 
-  const { rows, cols, months } = buildFromRawRows(rawRows);
-  return { wb, rows, cols, months };
+  const { rows, cols, months, zeroWorkdayTasks } = buildFromRawRows(rawRows);
+  return { wb, rows, cols, months, zeroWorkdayTasks };
 }
 
 // ================================================================
@@ -946,7 +963,7 @@ function renderGantt() {
       } else {
         tasks = tasksRaw;
       }
-      const personTotal     = r2(tasks.reduce((s,r)=>s+r.newWeekdayValue*r.weekdayCount,0));
+      const personTotal     = r2(tasks.reduce((s,r)=>s+r.distHours,0));
       const personMonthTotal = activeMonth
         ? r2(tasks.reduce((s,r)=>s+vcols.reduce((sv,c)=>sv+(r.daily[c.col]||0),0),0))
         : null;
@@ -973,7 +990,7 @@ function renderGantt() {
       </tr>`;
 
       tasks.forEach(row => {
-        const total      = r2(row.newWeekdayValue * row.weekdayCount);
+        const total      = row.distHours;
         const monthTotal = activeMonth
           ? r2(vcols.reduce((sv,c)=>sv+(row.daily[c.col]||0),0))
           : null;
@@ -1004,14 +1021,14 @@ function renderGantt() {
   // ---- 統計更新（ガントタブ）----
   {
     const totActH = allRows.reduce((s,r) => s + r.actHours, 0);
-    const totWdH  = allRows.reduce((s,r) => s + r.newWeekdayValue * r.weekdayCount, 0);
+    const totWdH  = allRows.reduce((s,r) => s + r.distHours, 0);
     const totPpl  = new Set(allRows.filter(r=>r.assignee).map(r => r.assignee)).size;
     const selPpl  = new Set(rows.filter(r=>r.assignee).map(r => r.assignee)).size;
     let selActH, selWdH;
     if (todayMode) {
       // 本日（全体）モード：期間制限なし → フィルター後タスクの全期間合計
       selActH = rows.reduce((s,r) => s + r.actHours, 0);
-      selWdH  = rows.reduce((s,r) => s + r.newWeekdayValue * r.weekdayCount, 0);
+      selWdH  = rows.reduce((s,r) => s + r.distHours, 0);
     } else {
       // 月選択モード：その月の稼働日数で按分
       selActH = rows.reduce((s,r) => {
@@ -1119,7 +1136,7 @@ function renderWorkload() {
   {
     const pSet    = new Set(people);
     const totActH = allRows.reduce((s,r) => s + r.actHours, 0);
-    const totWdH  = allRows.reduce((s,r) => s + r.newWeekdayValue * r.weekdayCount, 0);
+    const totWdH  = allRows.reduce((s,r) => s + r.distHours, 0);
     const totPpl  = new Set(allRows.filter(r=>r.assignee).map(r => r.assignee)).size;
     const selPpl  = people.filter(p => p).length;
     const filtRows = allRows.filter(r => pSet.has(r.assignee));
@@ -1127,7 +1144,7 @@ function renderWorkload() {
     if (todayMode) {
       // 本日（全体）モード：期間制限なし → 担当者フィルター後の全期間合計
       selActH = filtRows.reduce((s,r) => s + r.actHours, 0);
-      selWdH  = filtRows.reduce((s,r) => s + r.newWeekdayValue * r.weekdayCount, 0);
+      selWdH  = filtRows.reduce((s,r) => s + r.distHours, 0);
     } else {
       // 月選択モード：その月の稼働日数で按分
       selActH = filtRows.reduce((s,r) => {
@@ -1263,14 +1280,14 @@ function buildGanttSheet(XS) {
   Object.entries(groupBy(allRows,'assignee')).sort().forEach(([name, tasks]) => {
     const [gc, tc] = XL_PALETTE[pi % XL_PALETTE.length];
     // 担当者グループ行（日別合計付き）
-    const gTotal = r2(tasks.reduce((s,r)=>s+r.newWeekdayValue*r.weekdayCount,0));
+    const gTotal = r2(tasks.reduce((s,r)=>s+r.distHours,0));
     const dSums  = cols.map(c=>{ const v=r2(tasks.reduce((s,r)=>s+(r.daily[c.col]||0),0)); return v>0?v:''; });
     data.push([`▼ ${name||'（未設定）'}（${tasks.length}件）`,'','','','',gTotal,...dSums]);
     metas.push({ si: xs(gc,true,C.DRK,'left'), sn: xs(gc,true,C.DRK,'right'), sp: INFO });
 
     // タスク行
     tasks.forEach(row => {
-      const tot = r2(row.newWeekdayValue * row.weekdayCount);
+      const tot = row.distHours;
       data.push(['', row.jobNo||'', row.cat||'', row.title||'', row.status||'', tot>0?tot:'',
         ...cols.map(c=>{ const v=r2(row.daily[c.col]||0); return v>0?v:''; })]);
       metas.push({ si: xs(tc,false,C.MID,'left'), sn: xs(C.WHT,false,C.DRK,'right'), sp: INFO });
@@ -1334,6 +1351,18 @@ function buildWorkloadSheet(XS) {
 // ================================================================
 // ユーティリティ
 // ================================================================
+// ── 稼働日0件タスクの警告バナー表示 ────────────────────────────
+function showZeroWarnBanner(zeroTasks) {
+  const banner = document.getElementById('zeroWarnBanner');
+  if (!zeroTasks.length) { banner.style.display = 'none'; return; }
+  document.getElementById('zeroWarnMsg').textContent =
+    `（${zeroTasks.length}件）：開始日〜終了日がすべて土日・祝日のため予定時間を按分できません。Backlog側で日程を確認してください。`;
+  const keys = zeroTasks.slice(0, 8).map(r => r.key).join('  /  ');
+  document.getElementById('zeroWarnKeys').textContent =
+    '対象キー: ' + keys + (zeroTasks.length > 8 ? '  ... 他' + (zeroTasks.length - 8) + '件' : '');
+  banner.style.display = 'block';
+}
+
 function buildMonthGroups(vcols) {
   const g=[];
   vcols.forEach(c => {
@@ -1870,6 +1899,7 @@ async function processFromApi() {
     document.getElementById('clearBtn').disabled = false;
 
     renderCurrent();
+    showZeroWarnBanner(result.zeroWorkdayTasks || []);
     toast(`API取得完了: ${allRows.length}件 / ${allMonths.length}ヶ月分`, false);
   } catch(err) {
     toast('エラー: ' + err.message, true);
