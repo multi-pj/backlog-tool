@@ -345,11 +345,11 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 <!-- Stats -->
 <div class="stats-row" id="statsRow" style="display:none">
   <div class="stat">
-    <div class="lbl">タスク数<span class="lbl-sub">選択 / 全体</span></div>
+    <div class="lbl">タスク数<span class="lbl-sub" id="sTasksLabel">選択期間 / 全期間</span></div>
     <div class="val"><span class="v-sel" id="sTasksSel">-</span><span class="v-sep"> / </span><span class="v-tot" id="sTasksTot">-</span></div>
   </div>
   <div class="stat">
-    <div class="lbl">担当者数<span class="lbl-sub">選択 / 全体</span></div>
+    <div class="lbl">担当者数<span class="lbl-sub" id="sPeopleLabel">選択期間 / 全期間</span></div>
     <div class="val"><span class="v-sel" id="sPeopleSel">-</span><span class="v-sep"> / </span><span class="v-tot" id="sPeopleTot">-</span></div>
   </div>
   <div class="stat">
@@ -727,6 +727,7 @@ function buildFromRawRows(rawRows) {
     const distHours = weekdayCount > 0 ? raw.estHours : 0;
     return { key:raw.key, jobNo:raw.jobNo, cat:raw.cat, title:raw.title,
       status:raw.status, assignee:raw.assignee,
+      startDs: raw.startDs||null, endDs: raw.endDs||null,
       estHours:raw.estHours, actHours:raw.actHours,
       grayTotal:0, weekdayTotal:raw.estHours, distHours,
       newWeekdayValue, weekdayCount, monthTotals, daily };
@@ -815,6 +816,7 @@ function renderCurrent() {
 
 // 統計カード更新（選択値 / 全体値）
 // grand: 全期間合計オブジェクト {actH, wdH}。単月選択時のみ渡す。
+// tot.tasks / tot.people は呼び出し元で全件にオーバーライド済み。
 function updateStats(sel, tot, grand) {
   const fh = v => v.toFixed(1)+'h';
   document.getElementById('sTasksSel').textContent  = sel.tasks;
@@ -825,11 +827,18 @@ function updateStats(sel, tot, grand) {
   document.getElementById('sGrayTot').textContent   = grand ? fh(grand.actH) : fh(tot.actH);
   document.getElementById('sWdSel').textContent     = fh(sel.wdH);
   document.getElementById('sWdTot').textContent     = grand ? fh(grand.wdH) : fh(tot.wdH);
-  // ラベル切り替え（単月：「単月 / 全期間」、全体モード：「選択期間 / 全体」）
+  // ラベル切り替え（単月：「単月 / 全期間」、全体モード：「選択期間 / 全期間」）
+  const isMonth = !!grand;
+  const cntLbl  = isMonth ? '単月 / 全期間' : '選択期間 / 全期間';
+  const timeLbl = isMonth ? '単月 / 全期間' : '選択期間 / 全体';
+  const tLbl = document.getElementById('sTasksLabel');
+  const pLbl = document.getElementById('sPeopleLabel');
   const aLbl = document.getElementById('sActHLabel');
   const wLbl = document.getElementById('sWdHLabel');
-  if (aLbl) aLbl.textContent = grand ? '単月 / 全期間' : '選択期間 / 全体';
-  if (wLbl) wLbl.textContent = grand ? '単月 / 全期間' : '選択期間 / 全体';
+  if (tLbl) tLbl.textContent = cntLbl;
+  if (pLbl) pLbl.textContent = cntLbl;
+  if (aLbl) aLbl.textContent = timeLbl;
+  if (wLbl) wLbl.textContent = timeLbl;
 }
 
 // ================================================================
@@ -1035,6 +1044,9 @@ function renderGantt() {
   {
     const sel   = calcPeriodStats(rows,    vcols);
     const tot   = calcPeriodStats(allRows, vcols);
+    // タスク数・担当者数の分母は常に全件（期間外タスクも含む）
+    tot.tasks  = allRows.length;
+    tot.people = new Set(allRows.filter(r => r.assignee).map(r => r.assignee)).size;
     const grand = activeMonth ? {
       actH: r2(allRows.reduce((s,r) => s + r.actHours,   0)),
       wdH:  r2(allRows.reduce((s,r) => s + r.distHours,  0)),
@@ -1134,6 +1146,9 @@ function renderWorkload() {
     const filtRows = allRows.filter(r => pSet.has(r.assignee));
     const sel   = calcPeriodStats(filtRows, vcols);
     const tot   = calcPeriodStats(allRows,  vcols);
+    // タスク数・担当者数の分母は常に全件（期間外タスクも含む）
+    tot.tasks  = allRows.length;
+    tot.people = new Set(allRows.filter(r => r.assignee).map(r => r.assignee)).size;
     const grand = activeMonth ? {
       actH: r2(allRows.reduce((s,r) => s + r.actHours,   0)),
       wdH:  r2(allRows.reduce((s,r) => s + r.distHours,  0)),
@@ -1457,8 +1472,20 @@ function sum(a){ return a.reduce((s,x)=>s+x,0); }
 // vcols      : 表示中の稼働日列配列
 // 返値       : { tasks, people, actH, wdH }
 function calcPeriodStats(targetRows, vcols) {
-  // vcols 内に按分値が存在する行だけを「アクティブ」とみなす
-  const active = targetRows.filter(r => vcols.some(c => (r.daily[c.col]||0) > 0));
+  const vFrom = vcols.length ? vcols[0].ds : null;
+  const vTo   = vcols.length ? vcols[vcols.length - 1].ds : null;
+
+  // アクティブ判定：
+  //  ① vcols内に按分値あり（予定時間が設定されているタスク）
+  //  ② 日程がvcols期間に重なる（予定時間0でも期間内に存在するタスク）
+  const active = targetRows.filter(r => {
+    if (vcols.some(c => (r.daily[c.col]||0) > 0)) return true;
+    if (r.startDs && r.endDs && vFrom && vTo) {
+      return r.startDs <= vTo && r.endDs >= vFrom;
+    }
+    return false;
+  });
+
   const tasks  = active.length;
   const people = new Set(active.filter(r => r.assignee).map(r => r.assignee)).size;
   // 按分済時間：vcols 内の daily 値を合算
