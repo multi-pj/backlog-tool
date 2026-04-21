@@ -1349,9 +1349,17 @@ function showZeroWarnBanner(zeroTasks) {
   if (!zeroTasks.length) { banner.style.display = 'none'; return; }
   document.getElementById('zeroWarnMsg').textContent =
     `（${zeroTasks.length}件）：開始日〜終了日がすべて土日・祝日のため予定時間を按分できません。Backlog側で日程を確認してください。`;
-  const keys = zeroTasks.slice(0, 8).map(r => r.key).join('  /  ');
-  document.getElementById('zeroWarnKeys').textContent =
-    '対象キー: ' + keys + (zeroTasks.length > 8 ? '  ... 他' + (zeroTasks.length - 8) + '件' : '');
+
+  // キー順にソートして1件1行で表示
+  const sorted = [...zeroTasks].sort((a, b) => a.key.localeCompare(b.key, undefined, { numeric: true }));
+  const rows = sorted.map(r => {
+    const assignee = r.assignee || '（担当者未設定）';
+    const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return `<div style="padding:1px 0">${esc(r.key)}　／　${esc(r.title)}　／　担当者：${esc(assignee)}</div>`;
+  }).join('');
+  document.getElementById('zeroWarnKeys').innerHTML =
+    `<div style="margin-top:6px;font-weight:600">▼対象案件</div>${rows}`;
+
   banner.style.display = 'block';
   // 前回の折りたたみ状態を復元
   const collapsed = sessionStorage.getItem('zeroWarnCollapsed') === '1';
