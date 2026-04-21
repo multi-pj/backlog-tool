@@ -169,6 +169,49 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 #gl-tip{position:fixed;background:#1a3a5c;color:#fff;padding:8px 12px;border-radius:8px;font-size:12px;line-height:1.6;max-width:340px;pointer-events:none;display:none;z-index:9990;box-shadow:0 4px 16px rgba(0,0,0,.3);word-break:break-all}
 #gl-tip::after{content:'';position:absolute;top:100%;left:14px;border:6px solid transparent;border-top-color:#1a3a5c}
 
+/* ===== Admin settings modal ===== */
+#admin-modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:9998}
+#admin-modal.open{display:flex}
+#admin-box{background:#fff;border-radius:14px;padding:32px 36px;box-shadow:0 8px 32px rgba(0,0,0,.25);width:440px;max-width:94vw;max-height:90vh;overflow-y:auto}
+#admin-box h3{font-size:15px;font-weight:700;color:#1a3a5c;margin-bottom:20px;display:flex;align-items:center;gap:8px}
+#admin-box h4{font-size:12px;font-weight:700;color:#607d8b;margin-bottom:12px}
+.admin-field{margin-bottom:12px}
+.admin-field label{font-size:11px;font-weight:700;color:#607d8b;display:block;margin-bottom:4px;letter-spacing:.4px}
+.admin-field .afield-row{display:flex;gap:6px}
+.admin-field input{width:100%;padding:8px 12px;border:1.5px solid #d0dae6;border-radius:7px;font-size:13px;outline:none;transition:border-color .2s;background:#fff}
+.admin-field input:focus{border-color:#1a3a5c}
+.admin-section{margin-top:20px;padding-top:16px;border-top:1px solid #e3e9f0}
+.admin-section-toggle{cursor:pointer;user-select:none;display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#607d8b;margin-bottom:0;padding:4px 0}
+.admin-section-toggle:hover{color:#1a3a5c}
+.admin-section-toggle .toggle-arrow{font-size:10px;transition:transform .2s;display:inline-block}
+.admin-section-toggle.open .toggle-arrow{transform:rotate(90deg)}
+.admin-section-body{overflow:hidden;margin-top:0;max-height:0;transition:max-height .25s ease,margin-top .25s ease}
+.admin-section-body.open{max-height:400px;margin-top:12px}
+.admin-status{font-size:11px;margin-top:10px;min-height:16px;font-weight:600}
+.btn-admin-save{background:#1a3a5c;color:#fff;border:none;border-radius:7px;padding:9px 24px;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s}
+.btn-admin-save:hover{opacity:.85}
+.btn-admin-cancel{background:#f0f0f0;color:#607d8b;border:1px solid #d0dae6;border-radius:7px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;margin-left:8px}
+.btn-show-key{flex-shrink:0;padding:8px 12px;border:1.5px solid #d0dae6;border-radius:7px;background:#f5f7fa;font-size:11px;cursor:pointer;color:#607d8b}
+.btn-admin-gear{display:none;align-items:center;gap:5px;background:rgba(255,165,0,.18);border:1px solid rgba(255,165,0,.4);color:#ffe0b2;padding:6px 12px;border-radius:7px;font-size:12px;cursor:pointer;font-weight:600;margin-right:8px;transition:background .15s}
+.btn-admin-gear:hover{background:rgba(255,165,0,.3)}
+.btn-api{background:#0077cc;color:#fff}
+.btn-api:hover:not(:disabled){opacity:.85}
+.btn-api:disabled{opacity:.38;cursor:not-allowed}
+.api-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600}
+.api-badge.ok{background:#e8f5e9;color:#2e7d32}
+/* ===== 一般ユーザー向けAPIキー入力 ===== */
+#userApiSection{background:#f0f5ff;border:1px solid #c5d8f0;border-radius:8px;padding:14px 16px;margin-bottom:14px}
+#userApiSection .card-title{margin-bottom:10px}
+.user-api-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.user-api-row label{font-size:12px;color:#607d8b;font-weight:600;white-space:nowrap}
+.user-api-row input{padding:7px 10px;border:1.5px solid #c5d8f0;border-radius:6px;font-size:12px;outline:none;background:#fff;transition:border-color .2s}
+.user-api-row input:focus{border-color:#1a3a5c}
+.user-api-row .inp-key{width:260px}
+.user-api-row .inp-short{width:150px}
+.btn-user-api{background:#0077cc;color:#fff;border:none;border-radius:7px;padding:8px 18px;font-size:12px;font-weight:600;cursor:pointer;transition:opacity .15s}
+.btn-user-api:hover{opacity:.85}
+#userApiMsg{font-size:11px;margin-top:6px;min-height:14px;font-weight:600}
+.api-badge.ng{background:#fce4ec;color:#c62828}
 /* ===== Password overlay ===== */
 #pw-overlay{position:fixed;inset:0;background:#1a3a5c;display:flex;align-items:center;justify-content:center;z-index:9999}
 #pw-box{background:#fff;border-radius:14px;padding:40px 44px;box-shadow:0 8px 32px rgba(0,0,0,.25);text-align:center;width:320px}
@@ -185,6 +228,48 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 </style>
 </head>
 <body>
+
+<!-- Admin settings modal -->
+<div id="admin-modal">
+  <div id="admin-box">
+    <h3>⚙ 管理者設定</h3>
+
+    <!-- 会社カレンダー -->
+    <div style="margin-bottom:20px">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#78909c;margin-bottom:10px">会社カレンダー（休日追加）</div>
+      <div style="font-size:11px;color:#90a4ae;margin-bottom:10px">土日・祝日以外の会社固有の休日を登録します（最大8件）</div>
+      <div id="companyHolidayList" style="margin-bottom:12px"></div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <input type="text" id="newHolStart" placeholder="開始日" readonly style="width:110px;padding:7px 8px;border:1.5px solid #d0dae6;border-radius:6px;font-size:12px;cursor:pointer;background:#fff">
+        <span style="font-size:12px;color:#607d8b">〜</span>
+        <input type="text" id="newHolEnd" placeholder="終了日（省略可）" readonly style="width:130px;padding:7px 8px;border:1.5px solid #d0dae6;border-radius:6px;font-size:12px;cursor:pointer;background:#fff">
+        <input type="text" id="newHolLabel" placeholder="例：夏季休暇" autocomplete="off" name="company-holiday-label" style="width:110px;padding:7px 8px;border:1.5px solid #d0dae6;border-radius:6px;font-size:12px">
+        <button class="btn-admin-save" style="padding:7px 16px;font-size:12px" onclick="addCompanyHoliday()">追加</button>
+      </div>
+      <div id="companyHolMsg" style="font-size:11px;margin-top:6px;min-height:14px;font-weight:600"></div>
+    </div>
+
+    <!-- パスワード変更（アコーディオン・デフォルト閉） -->
+    <div style="padding-top:16px;border-top:1px solid #e3e9f0">
+      <div class="admin-section-toggle" id="pwChangeTgl" onclick="togglePwChange()">
+        <span class="toggle-arrow">▶</span>一般ユーザー パスワード変更
+      </div>
+      <div class="admin-section-body" id="pwChangeBody">
+        <div style="font-size:11px;color:#90a4ae;margin-bottom:10px">一般ユーザーのパスワードを変更します。全端末に即時反映されます。</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <input type="password" id="newPwInput" autocomplete="new-password" placeholder="新しいパスワード（4文字以上）" style="flex:1;min-width:180px;padding:7px 10px;border:1.5px solid #d0dae6;border-radius:6px;font-size:12px">
+          <button class="btn-admin-save" style="padding:7px 16px;font-size:12px" onclick="changeGeneralPassword()">変更</button>
+        </div>
+        <div id="pwChangeMsg" style="font-size:11px;margin-top:6px;min-height:14px;font-weight:600"></div>
+        <p style="font-size:10px;color:#b0bec5;margin-top:8px;line-height:1.6">※ 管理者パスワードの変更は Cloudflare ダッシュボード（ADMIN_PWD）から行ってください。</p>
+      </div>
+    </div>
+
+    <div style="margin-top:20px">
+      <button class="btn-admin-cancel" onclick="closeAdminPanel()">閉じる</button>
+    </div>
+  </div>
+</div>
 
 <!-- Password overlay -->
 <div id="pw-overlay">
@@ -206,6 +291,7 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
   </svg>
   <h1>Backlog 稼働分析</h1>
   <span>開始日〜期限日・予定時間から日別按分 / 日別稼働確認 / ワークロード管理</span>
+  <button class="btn-admin-gear" id="adminGearBtn" onclick="openAdminPanel()">⚙ 管理者設定</button>
   <button class="btn-logout" onclick="logout()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>ログアウト</button>
 </header>
 
@@ -213,34 +299,47 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 
 <!-- Upload -->
 <div class="card">
-  <div class="card-title">ファイルを選択して分析実行</div>
-  <div class="upload-row">
-    <label class="file-label" id="dropZone" for="fileInput">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-        <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-      </svg>
-      xlsx ファイルを選択
-    </label>
-    <input type="file" id="fileInput" accept=".xlsx">
-    <span id="fileName">Backlog 課題一覧（xlsx）を選択してください</span>
-    <div class="cap-wrap">
-      <label>表示開始日</label>
-      <input type="date" id="startDateInput" placeholder="表示開始日を選択" style="width:160px;padding:6px 8px;border:1px solid #d0dae6;border-radius:6px;font-size:12px">
+  <!-- 横並びラッパー -->
+  <div style="display:flex;align-items:flex-start;gap:36px;flex-wrap:wrap">
+    <!-- Excel専用エリア（API設定済みの場合は非表示） -->
+    <div id="excelSection">
+      <div class="card-title">ファイルを選択して分析実行</div>
+      <div class="upload-row">
+        <label class="file-label" id="dropZone" for="fileInput">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          xlsx ファイルを選択
+        </label>
+        <input type="file" id="fileInput" accept=".xlsx">
+        <span id="fileName">Backlog 課題一覧（xlsx）を選択してください</span>
+      </div>
     </div>
-    <div class="cap-wrap">
-      <label>1日稼働上限</label>
-      <input type="number" id="capInput" value="7" min="1" max="24" step="0.5" onchange="onCapChange()">
-      <span>h</span>
+    <!-- 共通オプション＋ボタン群（常時表示・1行レイアウト） -->
+    <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;flex:1">
+      <div class="cap-wrap">
+        <label>表示開始日</label>
+        <input type="date" id="startDateInput" placeholder="表示開始日を選択" style="width:160px;padding:6px 8px;border:1px solid #d0dae6;border-radius:6px;font-size:12px">
+      </div>
+      <div class="cap-wrap">
+        <label>1日稼働上限</label>
+        <input type="number" id="capInput" value="7" min="1" max="24" step="0.5" onchange="onCapChange()">
+        <span>h</span>
+      </div>
+      <!-- ボタン群（区切り線で視覚的に分離） -->
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-left:16px;border-left:1px solid #e3e9f0">
+        <button class="btn btn-run" id="runBtn" onclick="processFile()" disabled>分析実行</button>
+        <button class="btn btn-api" id="apiFetchBtn" onclick="processFromApi()" style="display:none">🔗 backlogと連携</button>
+        <span class="api-badge" id="apiBadge" style="display:none"></span>
+        <button class="btn btn-dl"  id="dlBtn"  onclick="downloadFile()" disabled>Excel ダウンロード</button>
+        <button class="btn btn-clear" id="clearBtn" onclick="clearData()" disabled>データクリア</button>
+      </div>
     </div>
   </div>
-  <div class="btn-row">
-    <button class="btn btn-run" id="runBtn" onclick="processFile()" disabled>分析実行</button>
-    <button class="btn btn-dl"  id="dlBtn"  onclick="downloadFile()" disabled>Excel ダウンロード</button>
-    <button class="btn btn-clear" id="clearBtn" onclick="clearData()" disabled>データクリア</button>
-  </div>
+  <div id="api-status-row" style="display:none"></div>
   <div id="loading"><div class="spin"></div><span id="loadMsg">処理中...</span></div>
-  <div class="note">※ Backlogの「課題一覧」Excelをアップロードしてください。開始日〜期限日の平日に予定時間を均等按分して日別稼働を算出します。</div>
+  <div class="note" id="excelNote">※ Backlogの「課題一覧」Excelをアップロードしてください。開始日〜期限日の平日に予定時間を均等按分して日別稼働を算出します。</div>
 </div>
 
 <!-- Stats -->
@@ -261,6 +360,13 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
     <div class="lbl">按分済時間<span class="lbl-sub">選択期間 / 全体</span></div>
     <div class="val"><span class="v-sel" id="sWdSel">-</span><span class="v-sep"> / </span><span class="v-tot" id="sWdTot">-</span></div>
   </div>
+</div>
+
+<!-- 稼働日0件警告バナー -->
+<div id="zeroWarnBanner" style="display:none;background:#fff8e1;border:1px solid #ffb300;border-radius:8px;padding:10px 16px;margin-bottom:12px;font-size:12px;color:#5d4037;line-height:1.7">
+  <b>⚠ 按分できないタスクがあります</b>
+  <span id="zeroWarnMsg"></span>
+  <div id="zeroWarnKeys" style="margin-top:2px;font-size:11px;color:#795548"></div>
 </div>
 
 <!-- Main panel -->
@@ -323,28 +429,95 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 
 <script>
 // ================================================================
-// 祝日 (2025-2027)
+// 祝日 (2025-2030)  ※毎年更新が必要。2028年以降は暫定値を含む
 // ================================================================
-const JP_HOL = new Set([
+// Worker URL（祝日・会社カレンダー取得でも使用するため先頭で定義）
+const WORKER_URL = 'https://backlog-proxy.multi-pj.workers.dev';
+
+let JP_HOL = new Set([
+  // 2025
   '2025-01-01','2025-01-13','2025-02-11','2025-02-23','2025-02-24',
   '2025-03-20','2025-04-29','2025-05-03','2025-05-04','2025-05-05',
   '2025-05-06','2025-07-21','2025-08-11','2025-09-15','2025-09-23',
   '2025-10-13','2025-11-03','2025-11-23','2025-11-24',
+  // 2026
   '2026-01-01','2026-01-12','2026-02-11','2026-02-23',
   '2026-03-20','2026-04-29','2026-05-03','2026-05-04','2026-05-05','2026-05-06',
   '2026-07-20','2026-08-11','2026-09-21','2026-09-22','2026-09-23',
   '2026-10-12','2026-11-03','2026-11-23',
+  // 2027
   '2027-01-01','2027-01-11','2027-02-11','2027-02-23',
   '2027-03-21','2027-04-29','2027-05-03','2027-05-04','2027-05-05',
   '2027-07-19','2027-08-11','2027-09-20','2027-09-23',
   '2027-10-11','2027-11-03','2027-11-23',
+  // 2028（暫定）
+  '2028-01-01','2028-01-10','2028-02-11','2028-02-23',
+  '2028-03-20','2028-04-29','2028-05-03','2028-05-04','2028-05-05',
+  '2028-07-17','2028-08-11','2028-09-18','2028-09-22',
+  '2028-10-09','2028-11-03','2028-11-23',
+  // 2029（暫定）
+  '2029-01-01','2029-01-14','2029-02-11','2029-02-12','2029-02-23',
+  '2029-03-20','2029-04-29','2029-04-30','2029-05-03','2029-05-04','2029-05-05','2029-05-07',
+  '2029-07-16','2029-08-11','2029-08-12','2029-09-17','2029-09-23',
+  '2029-10-08','2029-11-03','2029-11-23',
+  // 2030（暫定）
+  '2030-01-01','2030-01-14','2030-02-11','2030-02-23',
+  '2030-03-20','2030-04-29','2030-05-03','2030-05-04','2030-05-05','2030-05-06',
+  '2030-07-15','2030-08-11','2030-09-16','2030-09-22',
+  '2030-10-14','2030-11-03','2030-11-23',
 ]);
 
 const WD_JA = ['日','月','火','水','木','金','土'];
 
+// 会社カレンダー（メモリキャッシュ + Worker KV）
+let companyHolidaysCache = [];
+
+function getCompanyHolidays() {
+  return companyHolidaysCache;
+}
+async function saveCompanyHolidays(list) {
+  companyHolidaysCache = list;
+  localStorage.setItem('bl_company_holidays', JSON.stringify(list)); // ローカルキャッシュ
+  const token = sessionStorage.getItem('bl_admin_token') || '';
+  const res = await fetch(`${WORKER_URL}/holidays/company`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify(list),
+  });
+  if (!res.ok) throw new Error('サーバーへの保存に失敗しました');
+}
+async function loadCompanyHolidays() {
+  try {
+    const res = await fetch(`${WORKER_URL}/holidays/company`);
+    if (res.ok) {
+      companyHolidaysCache = await res.json();
+      localStorage.setItem('bl_company_holidays', JSON.stringify(companyHolidaysCache));
+      return;
+    }
+  } catch { /* フォールバックへ */ }
+  // Worker 失敗時は localStorage を使用
+  try { companyHolidaysCache = JSON.parse(localStorage.getItem('bl_company_holidays') || '[]'); }
+  catch { companyHolidaysCache = []; }
+}
+
+// 祝日セット（初期値＝ハードコード。Worker 取得成功時に上書き）
+async function loadNationalHolidays() {
+  try {
+    const res = await fetch(`${WORKER_URL}/holidays/national`);
+    if (res.ok) {
+      const dates = await res.json();
+      if (Array.isArray(dates) && dates.length > 0) JP_HOL = new Set(dates);
+    }
+  } catch { /* ハードコードをそのまま使用 */ }
+}
+
+function isCompanyHoliday(ds) {
+  return companyHolidaysCache.some(h => ds >= h.start && ds <= h.end);
+}
+
 function isGray(ds) {
   const d = new Date(ds + 'T12:00:00'), dow = d.getDay();
-  return dow === 0 || dow === 6 || JP_HOL.has(ds);
+  return dow === 0 || dow === 6 || JP_HOL.has(ds) || isCompanyHoliday(ds);
 }
 
 // ================================================================
@@ -357,6 +530,8 @@ let ganttSortDir = 0; // 0=none 1=asc -1=desc
 let activeJobNo = '';  // カスタムドロップダウンの選択値
 let jobNoTips   = {};  // { 親番号: ['件名A','[123-001] 件名B',...] }
 let fpStartDate = null; // Flatpickr instance
+let fpHolStart  = null; // 管理者パネル用
+let fpHolEnd    = null;
 
 function toggleJobSort() {
   ganttSortDir = ganttSortDir === 0 ? 1 : ganttSortDir === 1 ? -1 : 0;
@@ -393,6 +568,9 @@ document.addEventListener('click', e => {
 // ================================================================
 function logout() {
   sessionStorage.removeItem('bl_auth');
+  sessionStorage.removeItem('bl_role');
+  sessionStorage.removeItem('bl_admin_token');
+  document.getElementById('adminGearBtn').style.display = 'none';
   document.getElementById('pw-overlay').style.display = '';
   document.getElementById('pw-input').value = '';
   document.getElementById('pw-err').textContent = '';
@@ -426,6 +604,7 @@ function clearData() {
   document.getElementById('clearBtn').disabled=true;
   // 表示エリア非表示
   document.getElementById('statsRow').style.display='none';
+  document.getElementById('zeroWarnBanner').style.display='none';
   document.getElementById('mainPanel').style.display='none';
   document.getElementById('scrollHint').style.display='none';
 }
@@ -481,6 +660,7 @@ function processFile() {
       document.getElementById('clearBtn').disabled = false;
 
       renderCurrent();
+      showZeroWarnBanner(result.zeroWorkdayTasks || []);
       toast(`分析完了：${allRows.length}件 / ${allMonths.length}ヶ月分`, false);
     } catch(err) {
       toast('エラー: ' + err.message, true);
@@ -494,6 +674,64 @@ function processFile() {
 }
 
 // ================================================================
+// 共通：rawRows → cols / rows / months を生成
+// ================================================================
+function buildFromRawRows(rawRows) {
+  let minDs = null, maxDs = null;
+  rawRows.forEach(r => {
+    if (r.startDs && (!minDs || r.startDs < minDs)) minDs = r.startDs;
+    if (r.endDs   && (!maxDs || r.endDs   > maxDs)) maxDs = r.endDs;
+  });
+  if (!minDs || !maxDs) throw new Error('有効な日付データがありません');
+
+  const cols = [], dsToCol = {};
+  let idx = 0;
+  const cur  = new Date(minDs + 'T12:00:00');
+  const endD = new Date(maxDs + 'T12:00:00');
+  while (cur <= endD) {
+    const ds = cur.toISOString().slice(0, 10);
+    if (!isGray(ds)) {
+      const mo = `${cur.getFullYear()}/${pad(cur.getMonth()+1)}`;
+      cols.push({col:idx, ds, lbl:`${cur.getMonth()+1}/${cur.getDate()}`, dayJa:WD_JA[cur.getDay()], mo});
+      dsToCol[ds] = idx; idx++;
+    }
+    cur.setDate(cur.getDate() + 1);
+  }
+  const months = [...new Set(cols.map(c => c.mo))];
+
+  const rows = rawRows.map(raw => {
+    const daily = {}, monthTotals = {};
+    let weekdayCount = 0, newWeekdayValue = 0;
+    if (raw.startDs && raw.endDs && raw.estHours > 0) {
+      const taskCols = cols.filter(c => c.ds >= raw.startDs && c.ds <= raw.endDs);
+      weekdayCount = taskCols.length;
+      if (weekdayCount > 0) {
+        newWeekdayValue = r2(raw.estHours / weekdayCount);
+        // ── 問題1修正：最終日で丸め誤差を吸収し合計をestHoursに一致させる ──
+        const lastVal = r2(raw.estHours - r2(newWeekdayValue * (weekdayCount - 1)));
+        taskCols.forEach((c, i) => {
+          const v = (i === taskCols.length - 1) ? lastVal : newWeekdayValue;
+          daily[c.col] = v;
+          monthTotals[c.mo] = r2((monthTotals[c.mo]||0) + v);
+        });
+      }
+    }
+    // distHours: 実際に按分された時間（稼働日0ならば0）
+    const distHours = weekdayCount > 0 ? raw.estHours : 0;
+    return { key:raw.key, jobNo:raw.jobNo, cat:raw.cat, title:raw.title,
+      status:raw.status, assignee:raw.assignee,
+      estHours:raw.estHours, actHours:raw.actHours,
+      grayTotal:0, weekdayTotal:raw.estHours, distHours,
+      newWeekdayValue, weekdayCount, monthTotals, daily };
+  });
+
+  // ── 問題2：稼働日0件タスク（祝日のみ期間など）を抽出 ──
+  const zeroWorkdayTasks = rows.filter(r => r.estHours > 0 && r.weekdayCount === 0);
+
+  return { rows, cols, months, zeroWorkdayTasks };
+}
+
+// ================================================================
 // 課題Excel処理ロジック（Backlog-Issues-*.xlsx）
 // ================================================================
 function processIssues(buf) {
@@ -504,7 +742,6 @@ function processIssues(buf) {
   const gv = (r,c) => { const cell=ws[XLSX.utils.encode_cell({r,c})]; return cell!=null?cell.v:null; };
   const gs = (r,c) => { const v=gv(r,c); return v!=null?String(v).trim():''; };
 
-  // 日付変換（Excelシリアル値 or "YYYY/MM/DD"文字列）
   function parseDs(v) {
     if (v==null||v==='') return null;
     if (typeof v==='number') {
@@ -514,72 +751,26 @@ function processIssues(buf) {
     return String(v).trim().replace(/\//g,'-');
   }
 
-  // データ行収集（1行目はヘッダー → r=1から）
-  const rawRows=[];
-  let minDs=null, maxDs=null;
-
+  const rawRows = [];
   for (let r=1; r<=range.e.r; r++) {
-    const key=gs(r,4);   // E列: キー
+    const key = gs(r,4); // E列: キー
     if (!key) continue;
-    const startDs=parseDs(gv(r,21)); // V列: 開始日
-    const endDs  =parseDs(gv(r,22)); // W列: 期限日
-    if (startDs&&(!minDs||startDs<minDs)) minDs=startDs;
-    if (endDs  &&(!maxDs ||endDs  >maxDs))  maxDs=endDs;
     rawRows.push({
       key,
-      jobNo:    gs(r,31), // AF列: Job No.
-      cat:      gs(r,6),  // G列:  種別
-      title:    gs(r,9),  // J列:  件名
-      status:   gs(r,12), // M列:  状態
-      assignee: gs(r,16), // Q列:  担当者
-      estHours: parseFloat(gs(r,23))||0, // X列: 予定時間
-      actHours: parseFloat(gs(r,24))||0, // Y列: 実績時間
-      startDs, endDs
+      jobNo:    gs(r,31),                    // AF列: Job No.（カスタム属性）
+      cat:      gs(r,6),                     // G列:  種別
+      title:    gs(r,9),                     // J列:  件名
+      status:   gs(r,12),                    // M列:  状態
+      assignee: gs(r,16),                    // Q列:  担当者
+      estHours: parseFloat(gs(r,23))||0,     // X列:  予定時間
+      actHours: parseFloat(gs(r,24))||0,     // Y列:  実績時間
+      startDs:  parseDs(gv(r,21)),           // V列:  開始日
+      endDs:    parseDs(gv(r,22)),           // W列:  期限日
     });
   }
 
-  if (!minDs||!maxDs) throw new Error('有効な日付データがありません');
-
-  // 全体の平日列を生成（minDs〜maxDs）
-  const cols=[], dsToCol={};
-  let idx=0;
-  const cur=new Date(minDs+'T12:00:00');
-  const endD=new Date(maxDs+'T12:00:00');
-  while (cur<=endD) {
-    const ds=cur.toISOString().slice(0,10);
-    if (!isGray(ds)) {
-      const mo=`${cur.getFullYear()}/${pad(cur.getMonth()+1)}`;
-      cols.push({col:idx, ds, lbl:`${cur.getMonth()+1}/${cur.getDate()}`, dayJa:WD_JA[cur.getDay()], mo});
-      dsToCol[ds]=idx; idx++;
-    }
-    cur.setDate(cur.getDate()+1);
-  }
-
-  const months=[...new Set(cols.map(c=>c.mo))];
-
-  // 各タスクの日別配分（開始日〜期限日の平日に予定時間を均等分配）
-  const rows=rawRows.map(raw=>{
-    const daily={}, monthTotals={};
-    let weekdayCount=0, newWeekdayValue=0;
-    if (raw.startDs&&raw.endDs&&raw.estHours>0) {
-      const taskCols=cols.filter(c=>c.ds>=raw.startDs&&c.ds<=raw.endDs);
-      weekdayCount=taskCols.length;
-      if (weekdayCount>0) {
-        newWeekdayValue=r2(raw.estHours/weekdayCount);
-        taskCols.forEach(c=>{
-          daily[c.col]=newWeekdayValue;
-          monthTotals[c.mo]=r2((monthTotals[c.mo]||0)+newWeekdayValue);
-        });
-      }
-    }
-    return { key:raw.key, jobNo:raw.jobNo, cat:raw.cat, title:raw.title,
-      status:raw.status, assignee:raw.assignee,
-      estHours:raw.estHours, actHours:raw.actHours,
-      grayTotal:0, weekdayTotal:raw.estHours,
-      newWeekdayValue, weekdayCount, monthTotals, daily };
-  });
-
-  return { wb, rows, cols, months };
+  const { rows, cols, months, zeroWorkdayTasks } = buildFromRawRows(rawRows);
+  return { wb, rows, cols, months, zeroWorkdayTasks };
 }
 
 // ================================================================
@@ -772,7 +963,7 @@ function renderGantt() {
       } else {
         tasks = tasksRaw;
       }
-      const personTotal     = r2(tasks.reduce((s,r)=>s+r.newWeekdayValue*r.weekdayCount,0));
+      const personTotal     = r2(tasks.reduce((s,r)=>s+r.distHours,0));
       const personMonthTotal = activeMonth
         ? r2(tasks.reduce((s,r)=>s+vcols.reduce((sv,c)=>sv+(r.daily[c.col]||0),0),0))
         : null;
@@ -799,7 +990,7 @@ function renderGantt() {
       </tr>`;
 
       tasks.forEach(row => {
-        const total      = r2(row.newWeekdayValue * row.weekdayCount);
+        const total      = row.distHours;
         const monthTotal = activeMonth
           ? r2(vcols.reduce((sv,c)=>sv+(row.daily[c.col]||0),0))
           : null;
@@ -829,29 +1020,9 @@ function renderGantt() {
 
   // ---- 統計更新（ガントタブ）----
   {
-    const totActH = allRows.reduce((s,r) => s + r.actHours, 0);
-    const totWdH  = allRows.reduce((s,r) => s + r.newWeekdayValue * r.weekdayCount, 0);
-    const totPpl  = new Set(allRows.filter(r=>r.assignee).map(r => r.assignee)).size;
-    const selPpl  = new Set(rows.filter(r=>r.assignee).map(r => r.assignee)).size;
-    let selActH, selWdH;
-    if (todayMode) {
-      // 本日（全体）モード：期間制限なし → フィルター後タスクの全期間合計
-      selActH = rows.reduce((s,r) => s + r.actHours, 0);
-      selWdH  = rows.reduce((s,r) => s + r.newWeekdayValue * r.weekdayCount, 0);
-    } else {
-      // 月選択モード：その月の稼働日数で按分
-      selActH = rows.reduce((s,r) => {
-        if (!r.actHours) return s;
-        if (!r.weekdayCount) return s + r.actHours;
-        const inPeriod = vcols.filter(c => (r.daily[c.col]||0) > 0).length;
-        return !inPeriod ? s : s + r2(r.actHours * inPeriod / r.weekdayCount);
-      }, 0);
-      selWdH = rows.reduce((s,r) => s + vcols.reduce((sv,c) => sv + (r.daily[c.col]||0), 0), 0);
-    }
-    updateStats(
-      { tasks: rows.length,    people: selPpl, actH: selActH, wdH: selWdH },
-      { tasks: allRows.length, people: totPpl, actH: totActH, wdH: totWdH }
-    );
+    const sel = calcPeriodStats(rows,    vcols);
+    const tot = calcPeriodStats(allRows, vcols);
+    updateStats(sel, tot);
   }
 
   // 本日モードは本日列の先頭までスクロール
@@ -941,36 +1112,12 @@ function renderWorkload() {
   document.getElementById('tBody').innerHTML = html;
 
   // ---- 統計更新（ワークロードタブ）----
-  // タスク数は常に全体を表示。担当者・時間は選択された担当者 × 選択期間
   {
-    const pSet    = new Set(people);
-    const totActH = allRows.reduce((s,r) => s + r.actHours, 0);
-    const totWdH  = allRows.reduce((s,r) => s + r.newWeekdayValue * r.weekdayCount, 0);
-    const totPpl  = new Set(allRows.filter(r=>r.assignee).map(r => r.assignee)).size;
-    const selPpl  = people.filter(p => p).length;
+    const pSet     = new Set(people);
     const filtRows = allRows.filter(r => pSet.has(r.assignee));
-    let selActH, selWdH;
-    if (todayMode) {
-      // 本日（全体）モード：期間制限なし → 担当者フィルター後の全期間合計
-      selActH = filtRows.reduce((s,r) => s + r.actHours, 0);
-      selWdH  = filtRows.reduce((s,r) => s + r.newWeekdayValue * r.weekdayCount, 0);
-    } else {
-      // 月選択モード：その月の稼働日数で按分
-      selActH = filtRows.reduce((s,r) => {
-        if (!r.actHours) return s;
-        if (!r.weekdayCount) return s + r.actHours;
-        const inPeriod = vcols.filter(c => (r.daily[c.col]||0) > 0).length;
-        return !inPeriod ? s : s + r2(r.actHours * inPeriod / r.weekdayCount);
-      }, 0);
-      selWdH = people.reduce((s,p) => {
-        const pd = allWorkload[p] || {};
-        return s + vcols.reduce((sv,c) => sv + (pd[c.col]||0), 0);
-      }, 0);
-    }
-    updateStats(
-      { tasks: allRows.length, people: selPpl,  actH: selActH, wdH: selWdH },
-      { tasks: allRows.length, people: totPpl,  actH: totActH, wdH: totWdH }
-    );
+    const sel = calcPeriodStats(filtRows, vcols);
+    const tot = calcPeriodStats(allRows,  vcols);
+    updateStats(sel, tot);
   }
 
   // 本日モードは本日列の先頭までスクロール
@@ -1089,14 +1236,14 @@ function buildGanttSheet(XS) {
   Object.entries(groupBy(allRows,'assignee')).sort().forEach(([name, tasks]) => {
     const [gc, tc] = XL_PALETTE[pi % XL_PALETTE.length];
     // 担当者グループ行（日別合計付き）
-    const gTotal = r2(tasks.reduce((s,r)=>s+r.newWeekdayValue*r.weekdayCount,0));
+    const gTotal = r2(tasks.reduce((s,r)=>s+r.distHours,0));
     const dSums  = cols.map(c=>{ const v=r2(tasks.reduce((s,r)=>s+(r.daily[c.col]||0),0)); return v>0?v:''; });
     data.push([`▼ ${name||'（未設定）'}（${tasks.length}件）`,'','','','',gTotal,...dSums]);
     metas.push({ si: xs(gc,true,C.DRK,'left'), sn: xs(gc,true,C.DRK,'right'), sp: INFO });
 
     // タスク行
     tasks.forEach(row => {
-      const tot = r2(row.newWeekdayValue * row.weekdayCount);
+      const tot = row.distHours;
       data.push(['', row.jobNo||'', row.cat||'', row.title||'', row.status||'', tot>0?tot:'',
         ...cols.map(c=>{ const v=r2(row.daily[c.col]||0); return v>0?v:''; })]);
       metas.push({ si: xs(tc,false,C.MID,'left'), sn: xs(C.WHT,false,C.DRK,'right'), sp: INFO });
@@ -1160,6 +1307,18 @@ function buildWorkloadSheet(XS) {
 // ================================================================
 // ユーティリティ
 // ================================================================
+// ── 稼働日0件タスクの警告バナー表示 ────────────────────────────
+function showZeroWarnBanner(zeroTasks) {
+  const banner = document.getElementById('zeroWarnBanner');
+  if (!zeroTasks.length) { banner.style.display = 'none'; return; }
+  document.getElementById('zeroWarnMsg').textContent =
+    `（${zeroTasks.length}件）：開始日〜終了日がすべて土日・祝日のため予定時間を按分できません。Backlog側で日程を確認してください。`;
+  const keys = zeroTasks.slice(0, 8).map(r => r.key).join('  /  ');
+  document.getElementById('zeroWarnKeys').textContent =
+    '対象キー: ' + keys + (zeroTasks.length > 8 ? '  ... 他' + (zeroTasks.length - 8) + '件' : '');
+  banner.style.display = 'block';
+}
+
 function buildMonthGroups(vcols) {
   const g=[];
   vcols.forEach(c => {
@@ -1256,6 +1415,27 @@ function esc(s){ const d=document.createElement('div');d.textContent=s||'';retur
 function pad(n){ return String(n).padStart(2,'0'); }
 function r2(v){ return Math.round(v*100)/100; }
 function sum(a){ return a.reduce((s,x)=>s+x,0); }
+
+// ---- 選択期間に絞った統計を計算 ----------------------------------------
+// targetRows : 集計対象の行配列（フィルター済み or 全体）
+// vcols      : 表示中の稼働日列配列
+// 返値       : { tasks, people, actH, wdH }
+function calcPeriodStats(targetRows, vcols) {
+  // vcols 内に按分値が存在する行だけを「アクティブ」とみなす
+  const active = targetRows.filter(r => vcols.some(c => (r.daily[c.col]||0) > 0));
+  const tasks  = active.length;
+  const people = new Set(active.filter(r => r.assignee).map(r => r.assignee)).size;
+  // 按分済時間：vcols 内の daily 値を合算
+  const wdH = r2(targetRows.reduce((s,r) =>
+    s + vcols.reduce((sv,c) => sv + (r.daily[c.col]||0), 0), 0));
+  // 実績時間：全稼働日数に対するvcols内比率で按分
+  const actH = r2(targetRows.reduce((s,r) => {
+    if (!r.actHours || !r.weekdayCount) return s;
+    const cnt = vcols.filter(c => (r.daily[c.col]||0) > 0).length;
+    return cnt ? s + r2(r.actHours * cnt / r.weekdayCount) : s;
+  }, 0));
+  return { tasks, people, actH, wdH };
+}
 function enc(r,c){ return XLSX.utils.encode_cell({r,c}); }
 function setLoad(on,msg){ document.getElementById('loading').style.display=on?'flex':'none'; if(msg)document.getElementById('loadMsg').textContent=msg; }
 function toast(msg,isErr){
@@ -1363,30 +1543,348 @@ fpStartDate = flatpickr('#startDateInput', {
   }
 });
 
-// ===== Password =====
+// ================================================================
+// 認証（一般ユーザー / 管理者の2段階）
+// ================================================================
+// パスワードはCloudflare Worker側で管理（GENERAL_PWD / ADMIN_PWD シークレット）
+
 (function(){
-  const KEY='bl_auth';
-  if(sessionStorage.getItem(KEY)==='ok'){
+  if(sessionStorage.getItem('bl_auth')==='ok'){
     document.getElementById('pw-overlay').style.display='none';
+    applyRole(sessionStorage.getItem('bl_role')||'user');
   }
   document.getElementById('pw-input').addEventListener('keydown',e=>{
     if(e.key==='Enter') checkPw();
   });
 })();
 
-function checkPw(){
-  const val=document.getElementById('pw-input').value;
-  const inp=document.getElementById('pw-input');
-  const err=document.getElementById('pw-err');
-  if(val==='multi'){
-    sessionStorage.setItem('bl_auth','ok');
-    document.getElementById('pw-overlay').style.display='none';
-    err.textContent='';
-  } else {
-    inp.value='';
-    inp.classList.add('error');
-    err.textContent='パスワードが正しくありません';
-    setTimeout(()=>inp.classList.remove('error'),400);
+async function checkPw() {
+  const val = document.getElementById('pw-input').value;
+  const inp = document.getElementById('pw-input');
+  const err = document.getElementById('pw-err');
+  const btn = document.getElementById('pw-btn');
+  btn.disabled = true;
+  btn.textContent = '確認中...';
+  try {
+    const res  = await fetch(`${WORKER_URL}/auth`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: val })
+    });
+    const data = await res.json();
+    if (data.role) {
+      sessionStorage.setItem('bl_auth', 'ok');
+      sessionStorage.setItem('bl_role', data.role);
+      if (data.adminToken) sessionStorage.setItem('bl_admin_token', data.adminToken);
+      document.getElementById('pw-overlay').style.display = 'none';
+      err.textContent = '';
+      applyRole(data.role);
+    } else {
+      inp.value = '';
+      inp.classList.add('error');
+      setTimeout(() => inp.classList.remove('error'), 400);
+      err.textContent = 'パスワードが正しくありません';
+    }
+  } catch(e) {
+    err.textContent = '接続エラーが発生しました';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'ログイン';
+  }
+}
+
+function applyRole(role) {
+  // 管理者ギアボタン
+  const gear = document.getElementById('adminGearBtn');
+  if (gear) gear.style.display = (role==='admin') ? 'inline-flex' : 'none';
+  // APIボタン表示更新（常にWorker利用可能）
+  initApiButton();
+  // 祝日・会社カレンダーをバックグラウンドで取得
+  Promise.all([
+    loadNationalHolidays(),
+    loadCompanyHolidays(),
+  ]).catch(console.warn);
+}
+
+// ================================================================
+// 管理者設定パネル
+// ================================================================
+function openAdminPanel() {
+  renderCompanyHolidayList();
+  document.getElementById('admin-modal').classList.add('open');
+  // Flatpickr 初期化（初回のみ）
+  const fpBase = {
+    dateFormat: 'Y-m-d',
+    altInput: true,
+    altFormat: 'Y/m/d',
+    locale: Object.assign({}, flatpickr.l10ns.ja, { firstDayOfWeek: 1 }),
+    disableMobile: true,
+    appendTo: document.body,
+    onReady(_d, _s, inst) {
+      // カレンダーを最前面に
+      inst.calendarContainer.style.zIndex = '99999';
+      // altInput のスタイルを元の input に合わせる
+      const ai = inst.altInput;
+      ai.style.padding      = '7px 8px';
+      ai.style.border       = '1.5px solid #d0dae6';
+      ai.style.borderRadius = '6px';
+      ai.style.fontSize     = '12px';
+      ai.style.cursor       = 'pointer';
+      ai.style.background   = '#fff';
+      ai.readOnly           = true;
+    }
+  };
+  if (!fpHolStart) {
+    fpHolStart = flatpickr('#newHolStart', Object.assign({}, fpBase, {
+      onChange(dates) {
+        // 開始日が変わったら終了日の最小値を連動
+        if (fpHolEnd) fpHolEnd.set('minDate', dates[0] || null);
+      },
+      onReady(_d, _s, inst) {
+        fpBase.onReady(_d, _s, inst);
+        inst.altInput.style.width = '110px';
+        inst.altInput.placeholder = '開始日';
+      }
+    }));
+  }
+  if (!fpHolEnd) {
+    fpHolEnd = flatpickr('#newHolEnd', Object.assign({}, fpBase, {
+      onReady(_d, _s, inst) {
+        fpBase.onReady(_d, _s, inst);
+        inst.altInput.style.width = '130px';
+        inst.altInput.placeholder = '終了日（省略可）';
+      }
+    }));
+  }
+}
+
+function closeAdminPanel() {
+  document.getElementById('admin-modal').classList.remove('open');
+  // パスワード変更アコーディオンをリセット（閉じる）
+  document.getElementById('pwChangeTgl')?.classList.remove('open');
+  document.getElementById('pwChangeBody')?.classList.remove('open');
+  const pwInput = document.getElementById('newPwInput');
+  const pwMsg   = document.getElementById('pwChangeMsg');
+  if (pwInput) pwInput.value = '';
+  if (pwMsg)   pwMsg.textContent = '';
+}
+
+// ================================================================
+// 会社カレンダー管理
+// ================================================================
+function renderCompanyHolidayList() {
+  const list = getCompanyHolidays();
+  const container = document.getElementById('companyHolidayList');
+  if (!list.length) {
+    container.innerHTML = '<div style="font-size:11px;color:#b0bec5;padding:6px 0">登録なし</div>';
+    return;
+  }
+  container.innerHTML = list.map((h, i) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:#f5f7fa;border-radius:6px;margin-bottom:4px">
+      <span style="flex:1;font-size:12px;font-weight:600;color:#333">${esc(h.label || '（ラベルなし）')}</span>
+      <span style="font-size:11px;color:#607d8b;white-space:nowrap">${h.start}${h.start !== h.end ? ' 〜 ' + h.end : ''}</span>
+      <button onclick="deleteCompanyHoliday(${i})" style="flex-shrink:0;background:#fce4ec;color:#c62828;border:none;border-radius:5px;padding:3px 8px;font-size:10px;cursor:pointer;font-weight:700">削除</button>
+    </div>
+  `).join('');
+}
+
+async function addCompanyHoliday() {
+  const start = document.getElementById('newHolStart').value;
+  const rawEnd = document.getElementById('newHolEnd').value;
+  const end   = rawEnd || start;
+  const label = document.getElementById('newHolLabel').value.trim();
+  const msg   = document.getElementById('companyHolMsg');
+
+  if (!start) {
+    msg.style.color = '#c62828'; msg.textContent = '開始日を入力してください'; return;
+  }
+  if (end < start) {
+    msg.style.color = '#c62828'; msg.textContent = '終了日は開始日以降にしてください'; return;
+  }
+  const list = getCompanyHolidays();
+  if (list.length >= 8) {
+    msg.style.color = '#c62828'; msg.textContent = '最大8件まで登録できます'; return;
+  }
+  list.push({ start, end, label: label || '会社休日' });
+  list.sort((a, b) => a.start < b.start ? -1 : a.start > b.start ? 1 : 0);
+
+  msg.style.color = '#607d8b'; msg.textContent = '保存中...';
+  try {
+    await saveCompanyHolidays(list);
+    renderCompanyHolidayList();
+    if (fpHolStart) fpHolStart.clear(); else document.getElementById('newHolStart').value = '';
+    if (fpHolEnd)   fpHolEnd.clear();   else document.getElementById('newHolEnd').value   = '';
+    if (fpHolEnd)   fpHolEnd.set('minDate', null);
+    document.getElementById('newHolLabel').value = '';
+    msg.style.color = '#2e7d32'; msg.textContent = '追加しました（全端末に反映）';
+    setTimeout(() => { msg.textContent = ''; }, 3000);
+  } catch(e) {
+    msg.style.color = '#c62828'; msg.textContent = e.message || '保存に失敗しました';
+  }
+}
+
+async function deleteCompanyHoliday(index) {
+  const list = getCompanyHolidays();
+  list.splice(index, 1);
+  const msg = document.getElementById('companyHolMsg');
+  msg.style.color = '#607d8b'; msg.textContent = '保存中...';
+  try {
+    await saveCompanyHolidays(list);
+    renderCompanyHolidayList();
+    msg.style.color = '#2e7d32'; msg.textContent = '削除しました（全端末に反映）';
+    setTimeout(() => { msg.textContent = ''; }, 2500);
+  } catch(e) {
+    msg.style.color = '#c62828'; msg.textContent = e.message || '保存に失敗しました';
+    companyHolidaysCache = list; // ロールバック不可のため再描画のみ
+  }
+}
+
+function togglePwChange() {
+  const tgl  = document.getElementById('pwChangeTgl');
+  const body = document.getElementById('pwChangeBody');
+  const isOpen = body.classList.toggle('open');
+  tgl.classList.toggle('open', isOpen);
+  if (!isOpen) {
+    document.getElementById('newPwInput').value = '';
+    document.getElementById('pwChangeMsg').textContent = '';
+  }
+}
+
+async function changeGeneralPassword() {
+  const newPw = document.getElementById('newPwInput').value;
+  const msg   = document.getElementById('pwChangeMsg');
+  if (!newPw || newPw.length < 4) {
+    msg.style.color = '#c62828'; msg.textContent = 'パスワードは4文字以上で入力してください'; return;
+  }
+  msg.style.color = '#607d8b'; msg.textContent = '変更中...';
+  try {
+    const token = sessionStorage.getItem('bl_admin_token') || '';
+    const res = await fetch(`${WORKER_URL}/auth/change-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ newPassword: newPw }),
+    });
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({}));
+      throw new Error(e.error || '変更に失敗しました');
+    }
+    document.getElementById('newPwInput').value = '';
+    msg.style.color = '#2e7d32'; msg.textContent = 'パスワードを変更しました（全端末に反映）';
+    setTimeout(() => { msg.textContent = ''; }, 4000);
+  } catch(e) {
+    msg.style.color = '#c62828'; msg.textContent = e.message;
+  }
+}
+
+// モーダル外クリックで閉じる
+document.getElementById('admin-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('admin-modal')) closeAdminPanel();
+});
+
+// ================================================================
+// APIボタン表示制御
+// ================================================================
+function initApiButton() {
+  const btn   = document.getElementById('apiFetchBtn');
+  const badge = document.getElementById('apiBadge');
+  // Workerが常に利用可能 → APIボタン・バッジ表示
+  if (btn)   btn.style.display   = 'inline-flex';
+  if (badge) {
+    badge.className   = 'api-badge ok';
+    badge.textContent = '● Backlog API 接続済';
+    badge.style.display = 'inline-block';
+  }
+  // Excelアップロード関連は非表示
+  const excelSection = document.getElementById('excelSection');
+  const excelNote    = document.getElementById('excelNote');
+  const runBtn       = document.getElementById('runBtn');
+  const dlBtn        = document.getElementById('dlBtn');
+  if (excelSection) excelSection.style.display = 'none';
+  if (excelNote)    excelNote.style.display    = 'none';
+  if (runBtn)       runBtn.style.display       = 'none';
+  if (dlBtn)        dlBtn.style.display        = 'none';
+}
+
+// ================================================================
+// Backlog API 取得・処理
+// ================================================================
+function mapApiToRawRows(issues) {
+  return issues.map(issue => ({
+    key:      issue.issueKey || '',
+    jobNo:    (issue.customFields || []).find(f => f.name === 'Job No.')?.value || '',
+    cat:      issue.issueType?.name  || '',
+    title:    issue.summary          || '',
+    status:   issue.status?.name     || '',
+    assignee: issue.assignee?.name   || '',
+    estHours: parseFloat(issue.estimatedHours) || 0,
+    actHours: parseFloat(issue.actualHours)    || 0,
+    startDs:  issue.startDate ? String(issue.startDate).slice(0, 10) : null,
+    endDs:    issue.dueDate   ? String(issue.dueDate).slice(0, 10)   : null,
+  }));
+}
+
+async function fetchBacklogIssues() {
+  setLoad(true, 'Backlog から課題取得中...');
+  const res = await fetch(`${WORKER_URL}/issues`);
+  if (!res.ok) {
+    const e = await res.json().catch(() => ({}));
+    throw new Error(`課題取得失敗: ${e.error || res.status}`);
+  }
+  const issues = await res.json();
+  return issues;
+}
+
+async function processFromApi() {
+  setLoad(true, 'Backlog APIへ接続中...');
+  document.getElementById('apiFetchBtn').disabled = true;
+  document.getElementById('runBtn').disabled = true;
+  document.getElementById('dlBtn').disabled  = true;
+  try {
+    const issues = await fetchBacklogIssues();
+    setLoad(true, `${issues.length}件取得。分析中...`);
+    await new Promise(r => setTimeout(r, 30)); // UI更新を待つ
+
+    const rawRows = mapApiToRawRows(issues);
+    const result  = buildFromRawRows(rawRows);
+
+    allRows    = result.rows;
+    allCols    = result.cols;
+    allMonths  = result.months;
+    processedWb = null;
+    origFileName = `API_BACKLOG_${TODAY}`;
+
+    // 表示開始日フィルター
+    const sdVal = document.getElementById('startDateInput').value;
+    if (sdVal) {
+      allCols   = allCols.filter(c => c.ds >= sdVal);
+      allMonths = [...new Set(allCols.map(c => c.mo))];
+    }
+    allWorkload = buildWorkload(allRows, allCols);
+
+    fillSel('fC', [...new Set(allRows.map(r=>r.cat))].sort());
+    fillSel('fA', [...new Set(allRows.map(r=>r.assignee))].sort());
+    fillSel('fS', [...new Set(allRows.map(r=>r.status))].sort());
+    fillJobNoSel();
+    activeJobNo = ''; activeMonth = '';
+    buildMonthNav();
+
+    document.getElementById('fileName').textContent =
+      `API取得: ${issues.length}件（${new Date().toLocaleString('ja-JP')}）`;
+    document.getElementById('statsRow').style.display  = 'flex';
+    document.getElementById('mainPanel').style.display = 'block';
+    document.getElementById('dlBtn').disabled   = false;
+    document.getElementById('clearBtn').disabled = false;
+
+    renderCurrent();
+    showZeroWarnBanner(result.zeroWorkdayTasks || []);
+    toast(`API取得完了: ${allRows.length}件 / ${allMonths.length}ヶ月分`, false);
+  } catch(err) {
+    toast('エラー: ' + err.message, true);
+    console.error(err);
+  } finally {
+    setLoad(false);
+    document.getElementById('apiFetchBtn').disabled = false;
+    document.getElementById('runBtn').disabled = false;
   }
 }
 </script>
