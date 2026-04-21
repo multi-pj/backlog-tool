@@ -1481,11 +1481,16 @@ function calcPeriodStats(targetRows, vcols) {
   // 按分済時間：vcols 内の daily 値を合算
   const wdH = r2(targetRows.reduce((s,r) =>
     s + vcols.reduce((sv,c) => sv + (r.daily[c.col]||0), 0), 0));
-  // 実績時間：全稼働日数に対するvcols内比率で按分
+  // 実績時間：本日以前の稼働日のみで按分（未来期間は常に0）
+  // pastTotal   = タスク全期間中の稼働日数のうち本日以前のもの（実績の分母）
+  // pastInPeriod = vcols 内かつ本日以前の稼働日数（実績の分子）
   const actH = r2(targetRows.reduce((s,r) => {
-    if (!r.actHours || !r.weekdayCount) return s;
-    const cnt = vcols.filter(c => (r.daily[c.col]||0) > 0).length;
-    return cnt ? s + r2(r.actHours * cnt / r.weekdayCount) : s;
+    if (!r.actHours) return s;
+    const pastTotal = allCols.filter(c => c.ds <= TODAY && (r.daily[c.col]||0) > 0).length;
+    if (!pastTotal) return s; // タスクが全て未来 → 実績なし
+    const pastInPeriod = vcols.filter(c => c.ds <= TODAY && (r.daily[c.col]||0) > 0).length;
+    if (!pastInPeriod) return s; // この期間に本日以前の稼働日なし
+    return s + r2(r.actHours * pastInPeriod / pastTotal);
   }, 0));
   return { tasks, people, actH, wdH };
 }
