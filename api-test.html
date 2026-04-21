@@ -1472,19 +1472,9 @@ function sum(a){ return a.reduce((s,x)=>s+x,0); }
 // vcols      : 表示中の稼働日列配列
 // 返値       : { tasks, people, actH, wdH }
 function calcPeriodStats(targetRows, vcols) {
-  const vFrom = vcols.length ? vcols[0].ds : null;
-  const vTo   = vcols.length ? vcols[vcols.length - 1].ds : null;
-
-  // アクティブ判定：
-  //  ① vcols内に按分値あり（予定時間が設定されているタスク）
-  //  ② 日程がvcols期間に重なる（予定時間0でも期間内に存在するタスク）
-  const active = targetRows.filter(r => {
-    if (vcols.some(c => (r.daily[c.col]||0) > 0)) return true;
-    if (r.startDs && r.endDs && vFrom && vTo) {
-      return r.startDs <= vTo && r.endDs >= vFrom;
-    }
-    return false;
-  });
+  // アクティブ判定：vcols内に按分値（daily > 0）が存在するタスクのみ
+  // ※ 予定時間0のタスク・期間外のタスクはカウントしない
+  const active = targetRows.filter(r => vcols.some(c => (r.daily[c.col]||0) > 0));
 
   const tasks  = active.length;
   const people = new Set(active.filter(r => r.assignee).map(r => r.assignee)).size;
