@@ -726,12 +726,14 @@ function buildFromRawRows(rawRows) {
     }
     // distHours: 実際に按分された時間（稼働日0ならば0）
     const distHours = weekdayCount > 0 ? raw.estHours : 0;
+    // noDate: 開始日または終了日が未設定
+    const noDate = !raw.startDs || !raw.endDs;
     return { key:raw.key, jobNo:raw.jobNo, cat:raw.cat, title:raw.title,
       status:raw.status, assignee:raw.assignee,
       startDs: raw.startDs||null, endDs: raw.endDs||null,
       estHours:raw.estHours, actHours:raw.actHours,
       grayTotal:0, weekdayTotal:raw.estHours, distHours,
-      newWeekdayValue, weekdayCount, monthTotals, daily };
+      newWeekdayValue, weekdayCount, noDate, monthTotals, daily };
   });
 
   // ── 問題2：稼働日0件タスク（祝日のみ期間など）を抽出 ──
@@ -1348,18 +1350,29 @@ function buildWorkloadSheet(XS) {
 function showZeroWarnBanner(zeroTasks) {
   const banner = document.getElementById('zeroWarnBanner');
   if (!zeroTasks.length) { banner.style.display = 'none'; return; }
-  document.getElementById('zeroWarnMsg').textContent =
-    `（${zeroTasks.length}件）：開始日〜終了日がすべて土日・祝日のため予定時間を按分できません。Backlog側で日程を確認してください。`;
+
+  // パターン別に分類
+  const noDateTasks  = zeroTasks.filter(r => r.noDate);   // 開始日 or 終了日が未設定
+  const holOnlyTasks = zeroTasks.filter(r => !r.noDate);  // 日程あり・期間内が全て土日祝
+
+  // メッセージ生成
+  let msg = `（${zeroTasks.length}件）：予定時間が設定されているにもかかわらず稼働日を計算できないタスクがあります。Backlog側で日程を確認してください。`;
+  const notes = [];
+  if (noDateTasks.length)  notes.push(`・開始日または終了日が未設定のため按分できない：${noDateTasks.length}件`);
+  if (holOnlyTasks.length) notes.push(`・期間内がすべて土日・祝日のため按分できない：${holOnlyTasks.length}件`);
+  document.getElementById('zeroWarnMsg').textContent = msg;
 
   // キー順にソートして1件1行で表示
+  const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const sorted = [...zeroTasks].sort((a, b) => a.key.localeCompare(b.key, undefined, { numeric: true }));
-  const rows = sorted.map(r => {
+  const listRows = sorted.map(r => {
     const assignee = r.assignee || '（担当者未設定）';
-    const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    return `<div style="padding:1px 0">${esc(r.key)}　／　${esc(r.title)}　／　担当者：${esc(assignee)}</div>`;
+    const reason   = r.noDate ? '日程未設定' : '期間内が全て土日祝';
+    return `<div style="padding:1px 0">${esc(r.key)}　／　${esc(r.title)}　／　担当者：${esc(assignee)}　<span style="color:#bf7000">［${reason}］</span></div>`;
   }).join('');
   document.getElementById('zeroWarnKeys').innerHTML =
-    `<div style="margin-top:6px;font-weight:600">▼対象案件</div>${rows}`;
+    `<div style="margin-top:6px;color:#7c5000">${notes.join('<br>')}</div>` +
+    `<div style="margin-top:6px;font-weight:600">▼対象案件</div>${listRows}`;
 
   banner.style.display = 'block';
   // 前回の折りたたみ状態を復元
