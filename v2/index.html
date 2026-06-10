@@ -1324,9 +1324,23 @@ function autoPopulateTalents(){
   renderCSVPreview('talents-preview',pendingTalents);
   document.getElementById('talents-preview').hidden=false;
   document.getElementById('talents-actions').hidden=false;
-  document.getElementById('talents-msg').textContent=`${newPeople.length}人を追加。役職・スキルをCSVで登録後「インポート実行」してください。`;
-  document.getElementById('talents-msg').style.color='#1a3a5c';
+  const talentsMsg=document.getElementById('talents-msg');
+  talentsMsg.style.whiteSpace='pre-line';
+  talentsMsg.textContent=`${newPeople.length}人を追加。役職・スキルをCSVで登録後「インポート実行」してください。`;
+  talentsMsg.style.color='#1a3a5c';
   toast(`${newPeople.length}人のBacklog担当者を追加しました`,false);
+  fetch(`${WORKER_URL}/accounts`,{headers:{Authorization:`Bearer ${currentUser?.token||''}`}})
+    .then(r=>r.ok?r.json():Promise.resolve([]))
+    .then(accountList=>{
+      if(!accountList.length) return;
+      const linked=newPeople.filter(n=>accountList.some(a=>a.talentName===n));
+      const unlinked=newPeople.filter(n=>!accountList.some(a=>a.talentName===n));
+      let note=`${newPeople.length}人を追加。役職・スキルをCSVで登録後「インポート実行」してください。`;
+      if(linked.length) note+=`\n✅ アカウント紐づき済み: ${linked.join('、')}`;
+      if(unlinked.length) note+=`\n⚠ アカウント未紐づき: ${unlinked.join('、')}`;
+      talentsMsg.textContent=note;
+    })
+    .catch(()=>{});
 }
 
 function onCapChange(){
@@ -1458,12 +1472,28 @@ async function updateAccount(username){
       body:JSON.stringify(body),
     });
     if(!res.ok){ const e=await res.json().catch(()=>({})); throw new Error(e.error||'更新失敗'); }
+    const stubCreated=await ensureTalentStub(talentName);
     editingAccountUsername=null;
-    toast(`${username} を更新しました`,false);
+    toast(`${username} を更新しました${stubCreated?`（タレント「${talentName}」を自動生成）`:''}`,false);
     renderSettingsAccountList();
   }catch(e){
     if(msg){ msg.style.color='#c62828'; msg.textContent='❌ '+e.message; }
   }
+}
+
+async function ensureTalentStub(talentName){
+  if(!talentName||talents.some(t=>t.name===talentName)) return false;
+  const newList=[...talents,{name:talentName,role:'',skills:[]}];
+  try{
+    const res=await fetch(`${WORKER_URL}/talents`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json',Authorization:`Bearer ${currentUser?.token||''}`},
+      body:JSON.stringify(newList),
+    });
+    if(!res.ok) return false;
+    talents=newList;
+    return true;
+  }catch{ return false; }
 }
 
 async function addAccount(){
@@ -1482,7 +1512,9 @@ async function addAccount(){
     });
     const data=await res.json();
     if(!res.ok) throw new Error(data.error||'追加失敗');
-    msg.textContent=`✅ ${u} を追加しました`; msg.style.color='#2e7d32';
+    const stubCreated=await ensureTalentStub(t);
+    msg.textContent=`✅ ${u} を追加しました${stubCreated?`（タレント「${t}」を自動生成）`:''}`;
+    msg.style.color='#2e7d32';
     ['new-acc-username','new-acc-password','new-acc-display','new-acc-talent'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
     renderSettingsAccountList();
   }catch(e){ msg.textContent='❌ '+e.message; msg.style.color='#c62828'; }
