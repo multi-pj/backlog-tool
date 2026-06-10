@@ -1128,6 +1128,13 @@ function applyLoadedData(rows, cols, months, workload, zeroTasks){
   if(upd) upd.textContent=`最終取得: ${TODAY}`;
   fillSel('ra-from',people); fillSel('ra-to',people);
   showZeroWarnBanner(zeroTasks||[]);
+  if(currentUser?.role==='staff' && currentUser.talentName){
+    const tn=currentUser.talentName;
+    ['fA','wl-fA'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el){ el.value=tn; el.disabled=true; el.style.opacity='.6'; el.title='自分のデータのみ表示'; }
+    });
+  }
   renderDashboard();
   if(activeMainTab==='gantt') renderGantt();
   if(activeMainTab==='workload') renderWorkload();
@@ -1389,6 +1396,10 @@ function fillPersonSelect(){
   const people=[...new Set(allRows.map(r=>r.assignee).filter(Boolean))].sort();
   sel.innerHTML='<option value="">-- 選択してください --</option>';
   people.forEach(p=>{ const o=document.createElement('option'); o.value=o.textContent=p; sel.appendChild(o); });
+  if(currentUser?.role==='staff' && currentUser.talentName){
+    sel.value=currentUser.talentName;
+    sel.disabled=true; sel.style.opacity='.6'; sel.title='自分のデータのみ表示';
+  }
   // 月選択
   const ms=document.getElementById('person-month-sel'); if(!ms) return;
   ms.innerHTML='<option value="">全期間</option>';
@@ -1863,9 +1874,13 @@ function renderDashboard(){
     document.getElementById('db-alert-count').textContent='-';
     return;
   }
-  const people=Object.keys(allWorkload);
+  const isStaff=currentUser?.role==='staff';
+  const staffName=currentUser?.talentName||'';
+  const allPeople=Object.keys(allWorkload);
+  const people=isStaff && staffName ? allPeople.filter(p=>p===staffName) : allPeople;
+  const dbRows=isStaff && staffName ? allRows.filter(r=>r.assignee===staffName) : allRows;
   const curMo=`${new Date().getFullYear()}/${pad(new Date().getMonth()+1)}`;
-  const moRows=allRows.filter(r=>r.monthTotals&&r.monthTotals[curMo]);
+  const moRows=dbRows.filter(r=>r.monthTotals&&r.monthTotals[curMo]);
   const wdH=r2(moRows.reduce((s,r)=>s+(r.monthTotals[curMo]||0),0));
   // 今後2週間の過負荷チェック
   const twoWeeksLater=new Date(TODAY+'T12:00:00'); twoWeeksLater.setDate(twoWeeksLater.getDate()+14);
@@ -1880,7 +1895,7 @@ function renderDashboard(){
   });
   overloadPeople.sort((a,b)=>b.pct-a.pct);
   document.getElementById('db-people').textContent=people.length;
-  document.getElementById('db-tasks').textContent=allRows.filter(r=>upcomingCols.some(c=>(r.daily[c.col]||0)>0)).length;
+  document.getElementById('db-tasks').textContent=dbRows.filter(r=>upcomingCols.some(c=>(r.daily[c.col]||0)>0)).length;
   document.getElementById('db-wdh').textContent=wdH.toFixed(1);
   document.getElementById('db-alert-count').textContent=overloadPeople.length;
   // アラートリスト
