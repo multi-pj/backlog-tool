@@ -1550,7 +1550,7 @@ function openAdminPanel(){
   renderCompanyHolidayList();
   document.getElementById('admin-modal').classList.add('open');
   const fpBase={
-    dateFormat:'Y-m-d', altInput:true, altFormat:'Y/m/d',
+    dateFormat:'Y-m-d', altInput:true, altFormat:'Y/m/d（D）',
     locale:Object.assign({},flatpickr.l10ns.ja,{firstDayOfWeek:1}),
     disableMobile:true, appendTo:document.body,
     onReady(_d,_s,inst){ inst.calendarContainer.style.zIndex='99999'; const ai=inst.altInput; ai.style.padding='7px 8px'; ai.style.border='1.5px solid #d0dae6'; ai.style.borderRadius='6px'; ai.style.fontSize='12px'; ai.style.cursor='pointer'; ai.style.background='#fff'; ai.readOnly=true; }
@@ -2220,10 +2220,12 @@ function scrollToToday(wrapId){
   },50);
 }
 
-// 期間設定カレンダー（月曜始まり）
+// 期間設定カレンダー（月曜始まり・日本語曜日表示）
 const FP_PERIOD_OPTS = {
   dateFormat: 'Y-m-d',
-  locale: { firstDayOfWeek: 1 },
+  altInput: true,
+  altFormat: 'Y/m/d（D）',
+  locale: { ...flatpickr.l10ns.ja, firstDayOfWeek: 1 },
   disableMobile: true,
   onChange: () => onPeriodChange(),
 };
