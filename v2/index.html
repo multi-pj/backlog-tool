@@ -1,0 +1,2093 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Backlog WFM v2</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ja.js"></script>
+<style>
+/* ===== Reset & Base ===== */
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI','Meiryo',Arial,sans-serif;background:#f0f2f5;color:#333;font-size:13px}
+
+/* ===== Login Overlay ===== */
+#login-overlay{position:fixed;inset:0;background:#1a3a5c;display:flex;align-items:center;justify-content:center;z-index:9999}
+#login-box{background:#fff;border-radius:16px;padding:44px 48px;box-shadow:0 8px 32px rgba(0,0,0,.25);text-align:center;width:340px}
+#login-box .logo{font-size:32px;margin-bottom:10px}
+#login-box h2{font-size:18px;font-weight:700;color:#1a3a5c;margin-bottom:4px}
+#login-box p{font-size:12px;color:#90a4ae;margin-bottom:26px}
+.login-field{margin-bottom:14px;text-align:left}
+.login-field label{font-size:11px;font-weight:700;color:#607d8b;display:block;margin-bottom:4px;letter-spacing:.4px}
+.login-field input{width:100%;padding:10px 14px;border:1.5px solid #d0dae6;border-radius:8px;font-size:14px;outline:none;transition:border-color .2s}
+.login-field input:focus{border-color:#1a3a5c}
+.login-field input.error{border-color:#e53935;animation:shake .3s}
+#login-btn{margin-top:8px;width:100%;padding:12px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;transition:opacity .15s}
+#login-btn:hover{opacity:.85}
+#login-btn:disabled{opacity:.45;cursor:not-allowed}
+#login-err{font-size:11px;color:#e53935;margin-top:8px;min-height:16px;font-weight:600}
+#setup-notice{display:none;margin-top:12px;padding:10px 14px;background:#fff8e1;border:1px solid #ffb300;border-radius:6px;font-size:11px;color:#5d4037;text-align:left;line-height:1.6}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+/* ===== Header ===== */
+header{background:#1a3a5c;color:#fff;padding:12px 20px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100}
+header h1{font-size:16px;font-weight:700;letter-spacing:.3px}
+.hdr-sep{width:1px;height:16px;background:rgba(255,255,255,.2)}
+.hdr-user{font-size:12px;opacity:.85;display:flex;align-items:center;gap:6px}
+.role-badge{padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+.role-badge.admin{background:rgba(255,165,0,.25);color:#ffe0b2;border:1px solid rgba(255,165,0,.4)}
+.role-badge.sales{background:rgba(100,220,100,.2);color:#b9f6ca;border:1px solid rgba(100,220,100,.3)}
+.role-badge.staff{background:rgba(255,255,255,.15);color:#e0e0e0;border:1px solid rgba(255,255,255,.2)}
+.hdr-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.btn-hdr{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);color:#fff;transition:background .15s}
+.btn-hdr:hover{background:rgba(255,255,255,.2)}
+.btn-hdr.warn{background:rgba(255,165,0,.2);border-color:rgba(255,165,0,.4);color:#ffe0b2}
+
+/* ===== Navigation ===== */
+nav{background:#fff;border-bottom:2px solid #e3e9f0;padding:0 20px;display:flex;align-items:center;gap:0;overflow-x:auto;position:sticky;top:48px;z-index:90}
+.nav-btn{padding:12px 18px;border:none;background:none;cursor:pointer;font-size:13px;font-weight:600;color:#90a4ae;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:color .2s}
+.nav-btn.active{color:#1a3a5c;border-bottom-color:#1a3a5c}
+.nav-btn:hover:not(.active){color:#1a3a5c}
+.nav-btn[hidden]{display:none}
+
+/* ===== Container ===== */
+.container{padding:20px;max-width:100%}
+
+/* ===== Card ===== */
+.card{background:#fff;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.07);padding:20px 24px;margin-bottom:16px}
+.card-title{font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:#78909c;margin-bottom:14px}
+.card-sub{font-size:12px;color:#607d8b;margin-bottom:12px}
+
+/* ===== Stats Row ===== */
+.stats-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+.stat{background:#fff;border-radius:10px;padding:14px 20px;box-shadow:0 2px 8px rgba(0,0,0,.07);flex:1;min-width:130px}
+.stat .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#90a4ae;margin-bottom:4px}
+.stat .lbl-sub{font-size:9px;color:#7898b8;text-transform:none}
+.stat .val{display:flex;align-items:baseline;gap:3px;flex-wrap:wrap}
+.stat .v-main{font-size:24px;font-weight:700;color:#1a3a5c}
+.stat .v-sep{font-size:14px;color:#7898b8}
+.stat .v-sub{font-size:13px;font-weight:500;color:#5a7f96}
+.stat.alert .v-main{color:#c62828}
+.stat.warn .v-main{color:#e65100}
+.stat.ok .v-main{color:#2e7d32}
+
+/* ===== Buttons ===== */
+.btn{padding:9px 20px;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:600;transition:opacity .15s}
+.btn:disabled{opacity:.38;cursor:not-allowed}
+.btn-primary{background:#1a3a5c;color:#fff}
+.btn-primary:hover:not(:disabled){opacity:.85}
+.btn-success{background:#27ae60;color:#fff}
+.btn-success:hover:not(:disabled){opacity:.85}
+.btn-danger{background:#e53935;color:#fff}
+.btn-danger:hover:not(:disabled){opacity:.85}
+.btn-secondary{background:#f0f0f0;color:#607d8b;border:1px solid #d0dae6}
+.btn-secondary:hover:not(:disabled){background:#e0e0e0}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-xs{padding:3px 8px;font-size:11px;border-radius:5px}
+
+/* ===== Toast ===== */
+.toast{position:fixed;bottom:20px;right:20px;padding:11px 18px;border-radius:8px;font-size:13px;color:#fff;display:none;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.2);max-width:320px}
+
+/* ===== Loading ===== */
+#loading-overlay{position:fixed;inset:0;background:rgba(255,255,255,.7);display:none;align-items:center;justify-content:center;z-index:8888;flex-direction:column;gap:12px}
+.spin{width:36px;height:36px;border:4px solid #d0dae6;border-top-color:#1a3a5c;border-radius:50%;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+#loading-msg{font-size:14px;color:#1a3a5c;font-weight:600}
+
+/* ===== Tooltip ===== */
+#gl-tip{position:fixed;background:#1a3a5c;color:#fff;padding:8px 12px;border-radius:8px;font-size:12px;line-height:1.6;max-width:320px;pointer-events:none;display:none;z-index:9990;box-shadow:0 4px 16px rgba(0,0,0,.3);word-break:break-all;white-space:pre-line}
+
+/* ===== Table base (gantt/workload) ===== */
+.table-panel{background:#fff;border-radius:0 0 10px 10px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.tw{overflow:auto;max-height:calc(100vh - 300px)}
+.tw::-webkit-scrollbar{width:8px;height:8px}
+.tw::-webkit-scrollbar-track{background:#f0f2f5}
+.tw::-webkit-scrollbar-thumb{background:#b0bec5;border-radius:4px}
+table{border-collapse:collapse;font-size:12px;white-space:nowrap}
+table th{background:#1a3a5c;color:#fff;padding:0;text-align:center;font-weight:600;position:sticky;top:0;z-index:2}
+table th.month-th{padding:6px 4px;border-right:1px solid #2a4a6c;font-size:11px}
+table th.day-th{padding:4px 2px;border-right:1px solid #2a4a6c;font-size:11px;min-width:44px;line-height:1.3}
+table th.info-th{padding:8px 10px;text-align:left;z-index:4;border-right:1px solid #c5d3e8;color:#1a3a5c}
+table td{padding:4px 4px;border-bottom:1px solid #edf0f5;border-right:1px solid #f0f2f5;text-align:center;vertical-align:middle}
+table td.info-td{text-align:left;padding:4px 10px;background:#fff;border-right:1px solid #c5d3e8}
+table tbody tr:nth-child(even) td:not(.sticky-bg){background:#fafbff}
+table tbody tr:hover td{background:#eef3fb!important}
+.s0{position:sticky;left:0;z-index:3}
+.s1{position:sticky;left:90px;z-index:3}
+.s2{position:sticky;left:270px;z-index:3}
+.s3{position:sticky;left:340px;z-index:3}
+.sticky-bg{background:#fff!important}
+th.s0,th.s1,th.s2,th.s3{z-index:5}
+.day-val{font-size:11px;font-weight:600;color:#1a3a5c}
+.day-zero{color:#ddd;font-size:10px}
+.ag-row td{background:#e8eef8!important;font-weight:700;color:#1a3a5c;border-bottom:2px solid #c5d3e8;font-size:12px;padding:6px 10px}
+th.today-th{background:#ffa726!important;color:#fff!important;border:2px solid #ffa726}
+td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ffa726!important}
+.empty-state{text-align:center;padding:60px;color:#7898b8;font-size:14px}
+
+/* ===== Workload cells ===== */
+.wl-cell{padding:3px 2px!important;min-width:44px;line-height:1.25}
+.wl-hours{font-size:11px;font-weight:700;color:#333}
+.wl-remain{font-size:10px;color:#90a4ae}
+.wl-over{color:#c62828!important}
+.rec-cell{cursor:pointer;transition:filter .1s}
+.rec-cell:hover{filter:brightness(.9)}
+
+/* ===== Tabs / month nav ===== */
+.tab-panel{background:#fff;border-radius:10px 10px 0 0;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:0 20px}
+.inner-tabs{display:flex;gap:0;border-bottom:2px solid #e3e9f0}
+.tab-btn{padding:10px 20px;border:none;background:none;cursor:pointer;font-size:13px;font-weight:600;color:#90a4ae;border-bottom:3px solid transparent;margin-bottom:-2px;transition:color .2s}
+.tab-btn.active{color:#1a3a5c;border-bottom-color:#1a3a5c}
+.tab-btn:hover:not(.active){color:#1a3a5c}
+.month-nav{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:12px 0 8px}
+.month-nav span{font-size:11px;color:#90a4ae;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.month-btn{padding:5px 12px;border:1px solid #d0dae6;border-radius:20px;background:#fff;cursor:pointer;font-size:12px;color:#607d8b;transition:all .15s}
+.month-btn:hover,.month-btn.active{background:#1a3a5c;color:#fff;border-color:#1a3a5c}
+.scroll-week-btn{padding:5px 10px;border:1px solid #b0bec5;border-radius:20px;background:#f5f7fa;cursor:pointer;font-size:11px;color:#546e7a;font-weight:700;transition:all .15s}
+.scroll-week-btn:hover{background:#546e7a;color:#fff}
+
+/* ===== Filter bar ===== */
+.filter-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 0 4px}
+.filter-bar label{font-size:12px;color:#607d8b;font-weight:600}
+.filter-bar select,.filter-bar input{padding:6px 10px;border:1px solid #d0dae6;border-radius:6px;font-size:12px;color:#333;background:#fff}
+
+/* ===== Legend ===== */
+.legend{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:11px;color:#607d8b;padding:8px 20px;background:#fff;border-top:1px solid #eee}
+.legend-item{display:flex;align-items:center;gap:5px}
+.legend-dot{width:14px;height:14px;border-radius:3px;border:1px solid rgba(0,0,0,.1)}
+
+/* ===== Badge ===== */
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:700}
+.b0{background:#d6e2ef;color:#1a3a5c}
+.b1{background:#ccffcc;color:#217a21}
+.b2{background:#ffd1d1;color:#a02020}
+.b3{background:#b4ddd7;color:#1d5c55}
+.b4{background:#fff3cd;color:#856404}
+.b5{background:#ede7f6;color:#5e35b1}
+
+/* ===== Dashboard ===== */
+.alert-list{display:flex;flex-direction:column;gap:8px}
+.alert-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:8px;background:#fff3e0;border-left:4px solid #ff6d00}
+.alert-item.red{background:#ffebee;border-left-color:#c62828}
+.alert-item .ai-name{font-weight:700;font-size:13px;min-width:100px}
+.ai-bar-wrap{flex:1;min-width:120px}
+.ai-bar-bg{background:#e0e0e0;border-radius:4px;height:10px;overflow:hidden;margin-bottom:3px}
+.ai-bar-fill{height:100%;border-radius:4px;transition:width .3s}
+.ai-label{font-size:11px;color:#607d8b}
+.ai-peak{font-size:12px;font-weight:700;min-width:60px;text-align:right}
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.summary-card{background:#f8faff;border:1px solid #d0dae6;border-radius:8px;padding:14px;text-align:center}
+.summary-card .sc-val{font-size:28px;font-weight:700;color:#1a3a5c}
+.summary-card .sc-lbl{font-size:11px;color:#90a4ae;margin-top:2px;text-transform:uppercase;letter-spacing:.4px}
+
+/* ===== Personal Summary ===== */
+.person-select-row{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.person-select-row select{padding:8px 14px;border:1.5px solid #1a3a5c;border-radius:8px;font-size:14px;font-weight:600;color:#1a3a5c;background:#fff;min-width:200px}
+.person-header{display:flex;align-items:center;gap:14px;padding:16px 20px;background:#1a3a5c;color:#fff;border-radius:10px;margin-bottom:16px}
+.ph-avatar{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;flex-shrink:0}
+.ph-name{font-size:18px;font-weight:700}
+.ph-role{font-size:12px;opacity:.75;margin-top:2px}
+.ph-skills{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.skill-tag{padding:2px 8px;border-radius:10px;background:rgba(255,255,255,.2);font-size:10px;font-weight:600}
+.chart-section{background:#fff;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.07);padding:20px 24px;margin-bottom:16px}
+.chart-title{font-size:12px;font-weight:700;color:#607d8b;margin-bottom:14px;text-transform:uppercase;letter-spacing:.5px}
+.month-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.mb-label{font-size:12px;color:#607d8b;min-width:52px;text-align:right}
+.mb-bar-wrap{flex:1;background:#e8ecf0;border-radius:4px;height:22px;overflow:hidden;position:relative}
+.mb-bar{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:6px;font-size:11px;font-weight:700;color:#fff;transition:width .3s;min-width:2px}
+.mb-val{font-size:12px;font-weight:700;min-width:46px;text-align:left;color:#1a3a5c}
+.cat-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.cb-label{font-size:12px;color:#333;min-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cb-bar-wrap{flex:1;background:#e8ecf0;border-radius:4px;height:16px;overflow:hidden}
+.cb-bar{height:100%;border-radius:4px;background:#4a90d9}
+.cb-val{font-size:12px;color:#607d8b;min-width:46px;text-align:right}
+.task-list-table{width:100%;border-collapse:collapse;font-size:12px}
+.task-list-table th{background:#f5f7fa;color:#607d8b;font-size:11px;padding:6px 10px;text-align:left;border-bottom:2px solid #e3e9f0}
+.task-list-table td{padding:7px 10px;border-bottom:1px solid #f0f2f5;vertical-align:middle}
+.task-list-table tr:hover td{background:#f5f7fa}
+
+/* ===== Estimate ===== */
+.rate-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:12px}
+.rate-table th{background:#1a3a5c;color:#fff;padding:8px 12px;text-align:left;font-size:11px}
+.rate-table td{padding:8px 12px;border-bottom:1px solid #edf0f5}
+.rate-table tr:hover td{background:#f5f7fa}
+.cost-over{color:#c62828;font-weight:700}
+.cost-ok{color:#2e7d32}
+.estimate-summary{display:flex;gap:20px;flex-wrap:wrap;padding:14px 20px;background:#f8faff;border-radius:8px;border:1px solid #d0dae6;margin-bottom:16px}
+.es-item{text-align:center}
+.es-val{font-size:20px;font-weight:700;color:#1a3a5c}
+.es-lbl{font-size:11px;color:#90a4ae;text-transform:uppercase;letter-spacing:.4px}
+
+/* ===== Reassignment Log ===== */
+.reassign-form{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.rf-field label{font-size:11px;font-weight:700;color:#607d8b;display:block;margin-bottom:4px}
+.rf-field input,.rf-field select,.rf-field textarea{width:100%;padding:8px 10px;border:1.5px solid #d0dae6;border-radius:6px;font-size:13px;outline:none;transition:border-color .2s}
+.rf-field input:focus,.rf-field select:focus,.rf-field textarea:focus{border-color:#1a3a5c}
+.rf-field.full{grid-column:1/-1}
+.reassign-log-item{padding:12px 16px;background:#fff;border-radius:8px;border-left:4px solid #1a3a5c;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.rli-header{display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap}
+.rli-date{font-size:11px;color:#90a4ae}
+.rli-from{font-weight:700;color:#c62828}
+.rli-to{font-weight:700;color:#2e7d32}
+.rli-body{font-size:12px;color:#607d8b}
+
+/* ===== Settings ===== */
+.settings-section{margin-bottom:24px}
+.settings-section h4{font-size:12px;font-weight:700;color:#607d8b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #e3e9f0}
+.csv-upload-area{border:2px dashed #b0bec5;border-radius:8px;padding:20px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:10px}
+.csv-upload-area:hover,.csv-upload-area.drag-over{border-color:#1a3a5c;background:#f0f5ff}
+.csv-upload-area p{font-size:13px;color:#607d8b;margin-bottom:6px}
+.csv-upload-area span{font-size:11px;color:#90a4ae}
+.csv-preview{background:#f8faff;border:1px solid #d0dae6;border-radius:6px;overflow:auto;max-height:200px;font-size:11px;font-family:monospace}
+.csv-preview table{width:100%}
+.csv-preview th{background:#e8ecf4;padding:4px 8px;text-align:left;font-size:11px;position:sticky;top:0}
+.csv-preview td{padding:4px 8px;border-bottom:1px solid #edf0f5}
+.settings-accounts-list{max-height:200px;overflow-y:auto}
+.sal-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid #f0f2f5}
+.sal-item:hover{background:#f5f7fa}
+.sal-name{font-weight:700;flex:1}
+.sal-role{font-size:11px;padding:2px 7px;border-radius:10px;font-weight:700}
+.sal-role.admin{background:#fff3cd;color:#856404}
+.sal-role.sales{background:#e8f5e9;color:#2e7d32}
+.sal-role.staff{background:#e8eaf6;color:#3949ab}
+
+/* ===== Recommendation Modal ===== */
+#recommend-modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:9998}
+#recommend-modal.open{display:flex}
+#recommend-box{background:#fff;border-radius:14px;padding:28px 32px;box-shadow:0 8px 32px rgba(0,0,0,.25);width:520px;max-width:95vw;max-height:88vh;overflow-y:auto}
+#recommend-box h3{font-size:15px;font-weight:700;color:#c62828;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.rec-info{font-size:12px;color:#607d8b;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #e3e9f0}
+.rec-tasks{margin-bottom:14px}
+.rec-tasks h4{font-size:11px;font-weight:700;color:#607d8b;margin-bottom:6px;text-transform:uppercase}
+.rec-task-item{padding:6px 10px;background:#fff8f8;border-left:3px solid #ef9a9a;border-radius:4px;margin-bottom:4px;font-size:12px}
+.rec-candidates h4{font-size:11px;font-weight:700;color:#607d8b;margin-bottom:8px;text-transform:uppercase}
+.rec-candidate{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;border:1px solid #e3e9f0;margin-bottom:6px}
+.rc-score{font-size:22px;font-weight:700;min-width:36px;text-align:center}
+.rc-name{font-weight:700;font-size:13px;flex:1}
+.rc-detail{font-size:11px;color:#607d8b}
+.rc-avail{font-size:12px;font-weight:700;padding:4px 10px;border-radius:10px;white-space:nowrap}
+.rc-avail.ok{background:#e8f5e9;color:#2e7d32}
+.rc-avail.warn{background:#fff8e1;color:#f57f17}
+.rc-match{font-size:10px;padding:2px 6px;border-radius:8px;background:#e8eaf6;color:#3949ab;margin-top:2px;display:inline-block}
+.no-candidates{text-align:center;padding:20px;color:#90a4ae;font-size:13px}
+
+/* ===== Report ===== */
+.report-controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+.report-table{width:100%;border-collapse:collapse;font-size:12px}
+.report-table th{background:#1a3a5c;color:#fff;padding:8px 12px;text-align:left}
+.report-table td{padding:8px 12px;border-bottom:1px solid #edf0f5}
+.report-table tr:nth-child(even) td{background:#f9fbff}
+
+/* ===== Admin panel modal ===== */
+#admin-modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:9997}
+#admin-modal.open{display:flex}
+#admin-box{background:#fff;border-radius:14px;padding:30px 34px;box-shadow:0 8px 32px rgba(0,0,0,.25);width:440px;max-width:94vw;max-height:90vh;overflow-y:auto}
+#admin-box h3{font-size:15px;font-weight:700;color:#1a3a5c;margin-bottom:18px;display:flex;align-items:center;gap:8px}
+.admin-section-toggle{cursor:pointer;user-select:none;display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#607d8b;padding:4px 0}
+.admin-section-toggle:hover{color:#1a3a5c}
+.admin-section-toggle .toggle-arrow{font-size:10px;transition:transform .2s;display:inline-block}
+.admin-section-toggle.open .toggle-arrow{transform:rotate(90deg)}
+.admin-section-body{overflow:hidden;max-height:0;transition:max-height .25s ease,margin-top .25s ease}
+.admin-section-body.open{max-height:400px;margin-top:10px}
+
+/* ===== Misc ===== */
+.scroll-hint{font-size:11px;color:#7898b8;padding:4px 0 8px;letter-spacing:.3px}
+.zero-warn-banner{background:#fff8e1;border:1px solid #ffb300;border-radius:8px;padding:10px 16px;margin-bottom:12px;font-size:12px;color:#5d4037;line-height:1.7}
+.csel{position:relative;display:inline-block;vertical-align:middle}
+.csel-cur{display:inline-flex;align-items:center;gap:4px;padding:4px 24px 4px 8px;border:1px solid #d0dae6;border-radius:6px;background:#fff;cursor:pointer;font-size:13px;white-space:nowrap;min-width:72px;color:#333;position:relative;line-height:1.6}
+.csel-cur::after{content:'▾';position:absolute;right:7px;top:50%;transform:translateY(-50%);color:#90a4ae;font-size:10px;pointer-events:none}
+.csel-open .csel-cur{border-color:#1a3a5c;box-shadow:0 0 0 2px rgba(26,58,92,.15)}
+.csel-list{display:none;position:absolute;top:calc(100% + 3px);left:0;min-width:120px;background:#fff;border:1px solid #d0dae6;border-radius:6px;box-shadow:0 4px 14px rgba(0,0,0,.15);z-index:600;max-height:240px;overflow-y:auto}
+.csel-open .csel-list{display:block}
+.csel-item{padding:6px 14px;font-size:13px;cursor:pointer;white-space:nowrap;color:#333}
+.csel-item:hover{background:#e8f0fe;color:#1a3a5c}
+.csel-item.sel{font-weight:700;color:#1a3a5c;background:#f0f5ff}
+.flatpickr-input.flatpickr-alt-input{width:190px!important;padding:6px 8px;border:1px solid #d0dae6;border-radius:6px;font-size:12px;color:#333;background:#fff;cursor:pointer}
+.file-label{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border:2px dashed #b0bec5;border-radius:8px;cursor:pointer;font-size:13px;color:#607d8b;transition:all .2s}
+.file-label:hover{border-color:#1a3a5c;background:#f0f5ff;color:#1a3a5c}
+@media print{
+  header,nav,#loading-overlay,.toast,.btn{display:none!important}
+  .no-print{display:none!important}
+  body{background:#fff}
+  .card{box-shadow:none;border:1px solid #ddd}
+}
+</style>
+</head>
+<body>
+
+<!-- ===================== LOGIN OVERLAY ===================== -->
+<div id="login-overlay">
+  <div id="login-box">
+    <div class="logo">📊</div>
+    <h2>Backlog WFM</h2>
+    <p>ユーザー名とパスワードを入力してください</p>
+    <div class="login-field">
+      <label>ユーザー名</label>
+      <input type="text" id="login-user" autocomplete="username" placeholder="username">
+    </div>
+    <div class="login-field">
+      <label>パスワード</label>
+      <input type="password" id="login-pass" autocomplete="current-password" placeholder="••••••">
+    </div>
+    <button id="login-btn" onclick="login()">ログイン</button>
+    <div id="login-err"></div>
+    <div id="setup-notice">
+      ⚠ アカウントが未設定です。管理者パスワードでログインし、設定タブからアカウントCSVをインポートしてください。
+    </div>
+  </div>
+</div>
+
+<!-- ===================== HEADER ===================== -->
+<header>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <rect x="3" y="4" width="18" height="18" rx="2"/>
+    <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+    <line x1="3" y1="10" x2="21" y2="10"/>
+  </svg>
+  <h1>Backlog WFM v2</h1>
+  <div class="hdr-sep"></div>
+  <div class="hdr-user">
+    <span id="hdr-name">-</span>
+    <span class="role-badge" id="hdr-role-badge">-</span>
+  </div>
+  <div class="hdr-right">
+    <button class="btn-hdr warn" id="admin-gear-btn" onclick="openAdminPanel()" hidden>⚙ 管理者設定</button>
+    <button class="btn-hdr" onclick="logout()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+        <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+      </svg>
+      ログアウト
+    </button>
+  </div>
+</header>
+
+<!-- ===================== NAVIGATION ===================== -->
+<nav id="main-nav">
+  <button class="nav-btn active" data-tab="dashboard" onclick="switchMainTab('dashboard',this)">🏠 ダッシュボード</button>
+  <button class="nav-btn" data-tab="gantt" onclick="switchMainTab('gantt',this)">📅 ガント</button>
+  <button class="nav-btn" data-tab="workload" onclick="switchMainTab('workload',this)">📊 ワークロード</button>
+  <button class="nav-btn" data-tab="personal" onclick="switchMainTab('personal',this)">👤 個人サマリー</button>
+  <button class="nav-btn" data-tab="estimate" id="nav-estimate" onclick="switchMainTab('estimate',this)" hidden>💴 見積・単価</button>
+  <button class="nav-btn" data-tab="reassign" id="nav-reassign" onclick="switchMainTab('reassign',this)" hidden>🔄 再アサイン</button>
+  <button class="nav-btn" data-tab="report" onclick="switchMainTab('report',this)">📋 月次レポート</button>
+  <button class="nav-btn" data-tab="settings" id="nav-settings" onclick="switchMainTab('settings',this)" hidden>⚙ 設定</button>
+</nav>
+
+<!-- ===================== MAIN CONTENT ===================== -->
+<div class="container">
+
+  <!-- ========== DASHBOARD ========== -->
+  <div id="sec-dashboard">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+      <h2 style="font-size:16px;font-weight:700;color:#1a3a5c">チームダッシュボード</h2>
+      <button class="btn btn-primary btn-sm" onclick="loadData()">🔗 Backlogと連携</button>
+      <span id="db-last-updated" style="font-size:11px;color:#90a4ae"></span>
+    </div>
+    <div class="stats-row" id="db-stats-row">
+      <div class="stat"><div class="lbl">担当者数</div><div class="val"><span class="v-main" id="db-people">-</span></div></div>
+      <div class="stat"><div class="lbl">稼働タスク</div><div class="val"><span class="v-main" id="db-tasks">-</span></div></div>
+      <div class="stat"><div class="lbl">今月 按分時間</div><div class="val"><span class="v-main" id="db-wdh">-</span><span class="v-sep">h</span></div></div>
+      <div class="stat alert"><div class="lbl">過負荷スタッフ <span class="lbl-sub">今後2週間</span></div><div class="val"><span class="v-main" id="db-alert-count">-</span><span class="v-sep">人</span></div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;flex-wrap:wrap" class="dash-grid">
+      <div class="card">
+        <div class="card-title">⚠ 負荷アラート（今後2週間）</div>
+        <div id="alert-list" class="alert-list">
+          <div style="text-align:center;padding:30px;color:#90a4ae;font-size:13px">データを読み込んでください</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📈 担当者別 今月稼働サマリー</div>
+        <div id="monthly-summary-list"></div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <div class="card-title">🔄 最近の再アサイン記録</div>
+      <div id="db-recent-reassign" style="font-size:12px;color:#90a4ae;text-align:center;padding:20px">再アサイン記録はありません</div>
+    </div>
+  </div>
+
+  <!-- ========== GANTT ========== -->
+  <div id="sec-gantt" hidden>
+    <div class="card" style="padding:16px 20px;margin-bottom:0;border-radius:10px 10px 0 0">
+      <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap" id="gantt-filters">
+          <label style="font-size:12px;color:#607d8b;font-weight:600">Job No.:</label>
+          <div class="csel" id="fJCsel"><div class="csel-cur" id="fJCur" onclick="toggleFJDrop(event)">全て</div><div class="csel-list" id="fJList"></div></div>
+          <label style="font-size:12px;color:#607d8b;font-weight:600">種別:</label>
+          <select id="fC" onchange="renderCurrent()"><option value="">全て</option></select>
+          <label style="font-size:12px;color:#607d8b;font-weight:600">状態:</label>
+          <select id="fS" onchange="renderCurrent()"><option value="">全て</option></select>
+          <input type="text" id="fT" placeholder="件名で検索" oninput="renderCurrent()" style="padding:6px 10px;border:1px solid #d0dae6;border-radius:6px;font-size:12px;min-width:150px">
+        </div>
+        <label style="font-size:12px;color:#607d8b;font-weight:600">担当者:</label>
+        <select id="fA" onchange="renderCurrent()"><option value="">全員</option></select>
+        <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+          <label style="font-size:12px;color:#607d8b;font-weight:600">1日稼働上限</label>
+          <input type="number" id="cap-input" value="8" min="1" max="24" step="0.5" onchange="onCapChange()" style="width:56px;padding:6px 8px;border:1px solid #d0dae6;border-radius:6px;font-size:13px;text-align:center">
+          <span style="font-size:12px;color:#607d8b">h</span>
+        </div>
+      </div>
+      <div class="month-nav" id="gantt-month-nav"></div>
+      <div class="scroll-hint" id="scroll-hint" hidden>💡 Shift + マウスホイールで横スクロール</div>
+    </div>
+    <!-- zero warn banner -->
+    <div id="zero-warn-banner" class="zero-warn-banner" hidden>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <b>⚠ 按分できないタスクがあります</b>
+        <button id="zero-warn-toggle" onclick="toggleZeroWarn()" style="background:none;border:1px solid #ffb300;border-radius:5px;cursor:pointer;padding:2px 8px;font-size:12px;color:#5d4037">▲</button>
+      </div>
+      <div id="zero-warn-detail"><span id="zero-warn-msg"></span><div id="zero-warn-keys" style="margin-top:4px;font-size:11px;color:#795548"></div></div>
+    </div>
+    <div class="table-panel">
+      <div class="tw" id="gantt-wrap">
+        <table><thead id="gantt-head"></thead><tbody id="gantt-body"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== WORKLOAD ========== -->
+  <div id="sec-workload" hidden>
+    <div class="card" style="padding:16px 20px;margin-bottom:0;border-radius:10px 10px 0 0">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <label style="font-size:12px;color:#607d8b;font-weight:600">担当者:</label>
+        <select id="wl-fA" onchange="renderWorkload()"><option value="">全員</option></select>
+      </div>
+      <div class="month-nav" id="wl-month-nav"></div>
+    </div>
+    <div class="legend" id="wl-legend">
+      <span style="font-weight:600;color:#607d8b">負荷:</span>
+      <div class="legend-item"><div class="legend-dot" style="background:#f5f5f5"></div>0h</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#e8f5e9"></div>〜25%</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#c8e6c9"></div>〜50%</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#fff9c4"></div>〜75%</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ffe082"></div>〜100%</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ef9a9a"></div>超過</div>
+      <span style="margin-left:8px;color:#90a4ae;font-size:11px">※ セルをクリックするとレコメンドスタッフを表示</span>
+    </div>
+    <div class="table-panel">
+      <div class="tw" id="wl-wrap">
+        <table><thead id="wl-head"></thead><tbody id="wl-body"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== PERSONAL SUMMARY ========== -->
+  <div id="sec-personal" hidden>
+    <div class="person-select-row">
+      <label style="font-size:13px;font-weight:700;color:#607d8b">担当者を選択:</label>
+      <select id="person-select" onchange="renderPersonal()"><option value="">-- 選択してください --</option></select>
+      <select id="person-month-sel" onchange="renderPersonal()" style="padding:8px 10px;border:1px solid #d0dae6;border-radius:6px;font-size:12px">
+        <option value="">全期間</option>
+      </select>
+    </div>
+    <div id="personal-content">
+      <div style="text-align:center;padding:60px;color:#90a4ae;font-size:14px">担当者を選択してください</div>
+    </div>
+  </div>
+
+  <!-- ========== ESTIMATE ========== -->
+  <div id="sec-estimate" hidden>
+    <div class="card">
+      <div class="card-title">レートカード</div>
+      <div id="rates-display">
+        <div style="font-size:12px;color:#90a4ae;text-align:center;padding:20px">レートデータがありません。設定タブからCSVをインポートしてください。</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">タスク別 見積・実績コスト</div>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+        <label style="font-size:12px;color:#607d8b;font-weight:600">担当者:</label>
+        <select id="est-fA" onchange="renderEstimate()" style="padding:6px 10px;border:1px solid #d0dae6;border-radius:6px;font-size:12px"><option value="">全員</option></select>
+        <label style="font-size:12px;color:#607d8b;font-weight:600">Job No.:</label>
+        <select id="est-fJ" onchange="renderEstimate()" style="padding:6px 10px;border:1px solid #d0dae6;border-radius:6px;font-size:12px"><option value="">全て</option></select>
+      </div>
+      <div class="estimate-summary" id="estimate-summary"></div>
+      <div style="overflow-x:auto">
+        <table class="rate-table" id="estimate-table">
+          <thead><tr>
+            <th>担当者</th><th>Job No.</th><th>件名</th><th>役職</th>
+            <th style="text-align:right">レート(¥/h)</th>
+            <th style="text-align:right">予定時間</th>
+            <th style="text-align:right">予算</th>
+            <th style="text-align:right">実績時間</th>
+            <th style="text-align:right">実費</th>
+            <th style="text-align:right">差異</th>
+          </tr></thead>
+          <tbody id="estimate-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== REASSIGNMENT ========== -->
+  <div id="sec-reassign" hidden>
+    <div class="card">
+      <div class="card-title">再アサイン記録</div>
+      <div class="reassign-form" id="reassign-form">
+        <div class="rf-field">
+          <label>移管元（過負荷スタッフ）</label>
+          <select id="ra-from"><option value="">-- 選択 --</option></select>
+        </div>
+        <div class="rf-field">
+          <label>移管先（引き継ぎスタッフ）</label>
+          <select id="ra-to"><option value="">-- 選択 --</option></select>
+        </div>
+        <div class="rf-field">
+          <label>対象タスク（課題キー）</label>
+          <input type="text" id="ra-task-key" placeholder="例: WLM-123">
+        </div>
+        <div class="rf-field">
+          <label>タスク名</label>
+          <input type="text" id="ra-task-title" placeholder="タスク名を入力">
+        </div>
+        <div class="rf-field full">
+          <label>理由・メモ</label>
+          <textarea id="ra-reason" rows="2" placeholder="移管の理由や背景を記入"></textarea>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="saveReassignment()">記録を保存</button>
+    </div>
+    <div class="card">
+      <div class="card-title">記録履歴</div>
+      <div id="reassign-log-list">
+        <div style="text-align:center;padding:30px;color:#90a4ae;font-size:13px">再アサイン記録はありません</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== MONTHLY REPORT ========== -->
+  <div id="sec-report" hidden>
+    <div class="card no-print">
+      <div class="report-controls">
+        <label style="font-size:12px;font-weight:700;color:#607d8b">対象月:</label>
+        <select id="report-month-sel" onchange="renderReport()" style="padding:7px 10px;border:1px solid #d0dae6;border-radius:6px;font-size:12px"></select>
+        <button class="btn btn-success btn-sm" onclick="printReport()">🖨 印刷 / PDF保存</button>
+        <button class="btn btn-secondary btn-sm" onclick="downloadReport()">⬇ HTMLダウンロード</button>
+      </div>
+    </div>
+    <div id="report-content" class="card">
+      <div style="text-align:center;padding:40px;color:#90a4ae">月を選択してください</div>
+    </div>
+  </div>
+
+  <!-- ========== SETTINGS ========== -->
+  <div id="sec-settings" hidden>
+    <div class="card">
+      <div class="card-title">アカウント管理</div>
+      <div class="settings-section">
+        <h4>CSVインポート</h4>
+        <p style="font-size:12px;color:#607d8b;margin-bottom:10px">
+          形式: <code>username,password,role,display_name,talent_name</code><br>
+          role: <code>admin</code> / <code>sales</code> / <code>staff</code>
+        </p>
+        <div class="csv-upload-area" id="accounts-drop" onclick="document.getElementById('accounts-file').click()">
+          <p>アカウントCSVをドロップまたはクリックして選択</p>
+          <span>accounts.csv</span>
+        </div>
+        <input type="file" id="accounts-file" accept=".csv" hidden onchange="onAccountsCsvChange(event)">
+        <div id="accounts-preview" hidden class="csv-preview" style="margin-bottom:10px"></div>
+        <div style="display:flex;gap:8px;align-items:center" id="accounts-actions" hidden>
+          <button class="btn btn-primary btn-sm" onclick="saveAccounts()">インポート実行</button>
+          <button class="btn btn-secondary btn-sm" onclick="exportAccountsTemplate()">テンプレートDL</button>
+          <span id="accounts-msg" style="font-size:11px;font-weight:600"></span>
+        </div>
+      </div>
+      <div class="settings-section">
+        <h4>現在のアカウント</h4>
+        <div id="accounts-list" class="settings-accounts-list">
+          <div style="font-size:12px;color:#90a4ae;padding:12px">読み込み中...</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">タレント管理（スキルセット）</div>
+      <div class="settings-section">
+        <h4>CSVインポート</h4>
+        <p style="font-size:12px;color:#607d8b;margin-bottom:10px">
+          形式: <code>name,role,skills</code><br>
+          skills: カテゴリー名をスラッシュ区切り（例: <code>WEB制作/UI設計/DTP</code>）
+        </p>
+        <div class="csv-upload-area" id="talents-drop" onclick="document.getElementById('talents-file').click()">
+          <p>タレントCSVをドロップまたはクリックして選択</p>
+          <span>talents.csv</span>
+        </div>
+        <input type="file" id="talents-file" accept=".csv" hidden onchange="onTalentsCsvChange(event)">
+        <div id="talents-preview" hidden class="csv-preview" style="margin-bottom:10px"></div>
+        <div style="display:flex;gap:8px;align-items:center" id="talents-actions" hidden>
+          <button class="btn btn-primary btn-sm" onclick="saveTalents()">インポート実行</button>
+          <button class="btn btn-secondary btn-sm" onclick="exportTalentsTemplate()">テンプレートDL</button>
+          <span id="talents-msg" style="font-size:11px;font-weight:600"></span>
+        </div>
+      </div>
+      <div id="talents-list" style="font-size:12px;color:#90a4ae;margin-top:8px"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">レートカード管理</div>
+      <div class="settings-section">
+        <h4>CSVインポート</h4>
+        <p style="font-size:12px;color:#607d8b;margin-bottom:10px">
+          形式: <code>client,role,hourly_rate</code><br>
+          例: <code>社内基準,ディレクター,8000</code>
+        </p>
+        <div class="csv-upload-area" id="rates-drop" onclick="document.getElementById('rates-file').click()">
+          <p>レートカードCSVをドロップまたはクリックして選択</p>
+          <span>rates.csv</span>
+        </div>
+        <input type="file" id="rates-file" accept=".csv" hidden onchange="onRatesCsvChange(event)">
+        <div id="rates-preview" hidden class="csv-preview" style="margin-bottom:10px"></div>
+        <div style="display:flex;gap:8px;align-items:center" id="rates-actions" hidden>
+          <button class="btn btn-primary btn-sm" onclick="saveRates()">インポート実行</button>
+          <button class="btn btn-secondary btn-sm" onclick="exportRatesTemplate()">テンプレートDL</button>
+          <span id="rates-msg" style="font-size:11px;font-weight:600"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">会社カレンダー・パスワード管理</div>
+      <button class="btn btn-secondary btn-sm" onclick="openAdminPanel()">会社カレンダー・PW設定を開く</button>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<!-- ===================== RECOMMEND MODAL ===================== -->
+<div id="recommend-modal">
+  <div id="recommend-box">
+    <h3>⚠ 負荷超過 — 引き継ぎレコメンド</h3>
+    <div class="rec-info" id="rec-info"></div>
+    <div class="rec-tasks" id="rec-tasks"></div>
+    <div class="rec-candidates" id="rec-candidates"></div>
+    <div style="margin-top:16px;display:flex;gap:8px">
+      <button class="btn btn-secondary btn-sm" onclick="closeRecommendModal()">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== ADMIN MODAL ===================== -->
+<div id="admin-modal">
+  <div id="admin-box">
+    <h3>⚙ 管理者設定</h3>
+    <div style="margin-bottom:16px">
+      <div class="card-title">会社カレンダー（休日追加）</div>
+      <div style="font-size:11px;color:#90a4ae;margin-bottom:8px">土日・祝日以外の会社固有の休日（最大8件）</div>
+      <div id="company-holiday-list" style="margin-bottom:10px"></div>
+      <form autocomplete="off" onsubmit="return false" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0">
+        <input type="text" id="new-hol-start" placeholder="開始日" readonly autocomplete="off" style="width:110px;padding:7px 8px;border:1.5px solid #d0dae6;border-radius:6px;font-size:12px;cursor:pointer;background:#fff">
+        <span style="font-size:12px;color:#607d8b">〜</span>
+        <input type="text" id="new-hol-end" placeholder="終了日（省略可）" readonly autocomplete="off" style="width:130px;padding:7px 8px;border:1.5px solid #d0dae6;border-radius:6px;font-size:12px;cursor:pointer;background:#fff">
+        <input type="text" id="new-hol-label" placeholder="例：夏季休暇" autocomplete="off" style="width:110px;padding:7px 8px;border:1.5px solid #d0dae6;border-radius:6px;font-size:12px">
+        <button type="button" class="btn btn-primary btn-sm" onclick="addCompanyHoliday()">追加</button>
+      </form>
+      <div id="company-hol-msg" style="font-size:11px;margin-top:6px;min-height:14px;font-weight:600"></div>
+    </div>
+    <div style="padding-top:14px;border-top:1px solid #e3e9f0">
+      <div class="admin-section-toggle" id="pw-change-tgl" onclick="togglePwChange()">
+        <span class="toggle-arrow">▶</span> 一般ユーザー パスワード変更
+      </div>
+      <div class="admin-section-body" id="pw-change-body">
+        <div style="font-size:11px;color:#90a4ae;margin-bottom:8px">一般ユーザーのパスワードを変更します。全端末に即時反映されます。</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input type="password" id="new-pw-input" autocomplete="new-password" placeholder="新しいパスワード（4文字以上）" style="flex:1;min-width:180px;padding:7px 10px;border:1.5px solid #d0dae6;border-radius:6px;font-size:12px">
+          <button class="btn btn-primary btn-sm" onclick="changeGeneralPassword()">変更</button>
+        </div>
+        <div id="pw-change-msg" style="font-size:11px;margin-top:6px;min-height:14px;font-weight:600"></div>
+        <p style="font-size:10px;color:#b0bec5;margin-top:6px;line-height:1.6">※ 管理者PWはCloudflareダッシュボード（ADMIN_PWD）から変更</p>
+      </div>
+    </div>
+    <div style="margin-top:16px">
+      <button class="btn btn-secondary btn-sm" onclick="closeAdminPanel()">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== UTILITIES ===================== -->
+<div class="toast" id="toast"></div>
+<div id="loading-overlay"><div class="spin"></div><div id="loading-msg">処理中...</div></div>
+<div id="gl-tip"></div>
+
+<script>
+// ==================== CONSTANTS & STATE ====================
+const WORKER_URL = 'https://backlog-proxy.multi-pj.workers.dev';
+const TODAY = new Date().toISOString().slice(0,10);
+const WD_JA = ['日','月','火','水','木','金','土'];
+let CAPACITY = 8;
+
+let currentUser   = null; // {token,role,displayName,talentName}
+let allRows       = [], allCols = [], allMonths = [], allWorkload = {};
+let talents       = []; // [{name,role,skills:[]}]
+let rates         = []; // [{client,role,hourlyRate}]
+let reassignments = [];
+let companyHolidaysCache = [];
+let useDemoTalents = false;
+let useDemoRates   = false;
+
+// ==================== DEMO / FALLBACK DATA ====================
+const DEMO_TALENTS = [
+  {name:'守屋 太郎',  role:'ディレクター',    skills:['WEB制作','プロジェクト管理','企画','コンサルティング']},
+  {name:'田中 花子',  role:'デザイナー',      skills:['WEB制作','UI設計','DTP','LP制作','バナー制作']},
+  {name:'山田 次郎',  role:'エンジニア',      skills:['フロントエンド開発','バックエンド開発','WEB制作']},
+  {name:'佐藤 美咲',  role:'コピーライター',  skills:['コピーライティング','企画','WEB制作','SNS運用']},
+  {name:'鈴木 健一',  role:'デザイナー',      skills:['UI設計','WEB制作','LP制作','動画編集']},
+  {name:'中村 浩二',  role:'ディレクター',    skills:['プロジェクト管理','WEB制作','企画','コンサルティング']},
+];
+const DEMO_RATES = [
+  {client:'社内基準',      role:'ディレクター',   hourlyRate:8000},
+  {client:'社内基準',      role:'デザイナー',     hourlyRate:6000},
+  {client:'社内基準',      role:'エンジニア',     hourlyRate:7000},
+  {client:'社内基準',      role:'コピーライター', hourlyRate:5500},
+  {client:'クライアントA', role:'ディレクター',   hourlyRate:12000},
+  {client:'クライアントA', role:'デザイナー',     hourlyRate:9000},
+  {client:'クライアントA', role:'エンジニア',     hourlyRate:11000},
+  {client:'クライアントB', role:'ディレクター',   hourlyRate:10000},
+  {client:'クライアントB', role:'デザイナー',     hourlyRate:8000},
+];
+const DEMO_ACCOUNTS = [
+  {username:'admin',  role:'admin', displayName:'守屋 太郎（管理者）', talentName:'守屋 太郎'},
+  {username:'sales1', role:'sales', displayName:'田中 花子（営業）',   talentName:'田中 花子'},
+  {username:'staff1', role:'staff', displayName:'山田 次郎',          talentName:'山田 次郎'},
+  {username:'staff2', role:'staff', displayName:'佐藤 美咲',          talentName:'佐藤 美咲'},
+  {username:'staff3', role:'staff', displayName:'鈴木 健一',          talentName:'鈴木 健一'},
+];
+let activeMainTab = 'dashboard';
+let activeGanttTab= 'gantt';  // 'gantt' | 'workload'  (内部タブ)
+let activeMonth   = '';
+let ganttSortDir  = 0;
+let activeJobNo   = '';
+let jobNoTips     = {};
+let fpHolStart    = null, fpHolEnd = null;
+// CSV pending data
+let pendingAccounts = null, pendingTalents = null, pendingRates = null;
+
+// ==================== UTILITIES ====================
+const r2  = v => Math.round(v*100)/100;
+const pad = n => String(n).padStart(2,'0');
+function esc(s){ const d=document.createElement('div');d.textContent=s||'';return d.innerHTML; }
+function trunc(s,n){ return s&&s.length>n?s.slice(0,n)+'…':(s||''); }
+function groupBy(arr,key){ return arr.reduce((m,x)=>{ (m[x[key]]||(m[x[key]]=[])).push(x); return m; },{}); }
+
+function toast(msg,isErr){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.style.background=isErr?'#c0392b':'#27ae60';
+  t.style.display='block'; setTimeout(()=>t.style.display='none',3500);
+}
+function setLoad(on,msg){
+  const el=document.getElementById('loading-overlay');
+  el.style.display=on?'flex':'none';
+  if(msg) document.getElementById('loading-msg').textContent=msg;
+}
+function fmtYen(v){ return v>=1?'¥'+Math.round(v).toLocaleString():'¥0'; }
+function fmtH(v){ return r2(v).toFixed(1)+'h'; }
+
+function fillSel(id, items){
+  const el=document.getElementById(id); if(!el) return;
+  const first=el.options[0]; el.innerHTML=''; el.appendChild(first);
+  items.forEach(v=>{ const o=document.createElement('option'); o.value=o.textContent=v; el.appendChild(o); });
+}
+function downloadText(filename, content, type='text/plain;charset=utf-8'){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([content],{type}));
+  a.download=filename; a.click(); URL.revokeObjectURL(a.href);
+}
+
+// CSV パーサー（クォート対応・シンプル版）
+function parseCSV(text){
+  const lines=text.trim().split(/\r?\n/);
+  if(!lines.length) return [];
+  const headers=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,''));
+  return lines.slice(1).filter(l=>l.trim()).map(line=>{
+    const vals=splitCSVLine(line);
+    const obj={}; headers.forEach((h,i)=>obj[h]=vals[i]||''); return obj;
+  });
+}
+function splitCSVLine(line){
+  const result=[]; let cur='', inQ=false;
+  for(let i=0;i<line.length;i++){
+    const c=line[i];
+    if(c==='"'){ inQ=!inQ; }
+    else if(c===','&&!inQ){ result.push(cur.trim()); cur=''; }
+    else cur+=c;
+  }
+  result.push(cur.trim()); return result;
+}
+function toCSV(data){
+  if(!data.length) return '';
+  const headers=Object.keys(data[0]);
+  return [headers.join(','),...data.map(r=>headers.map(h=>`"${(r[h]||'').toString().replace(/"/g,'""')}"`).join(','))].join('\n');
+}
+function renderCSVPreview(containerId, rows, maxRows=8){
+  const el=document.getElementById(containerId); if(!el||!rows.length) return;
+  const headers=Object.keys(rows[0]);
+  const shown=rows.slice(0,maxRows);
+  el.innerHTML=`<table><thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${
+    shown.map(r=>`<tr>${headers.map(h=>`<td>${esc(r[h]||'')}</td>`).join('')}</tr>`).join('')
+  }</tbody></table>`;
+  el.hidden=false;
+}
+
+// ==================== HOLIDAYS ====================
+let JP_HOL = new Set([
+  '2025-01-01','2025-01-13','2025-02-11','2025-02-23','2025-02-24',
+  '2025-03-20','2025-04-29','2025-05-03','2025-05-04','2025-05-05',
+  '2025-05-06','2025-07-21','2025-08-11','2025-09-15','2025-09-23',
+  '2025-10-13','2025-11-03','2025-11-23','2025-11-24',
+  '2026-01-01','2026-01-12','2026-02-11','2026-02-23',
+  '2026-03-20','2026-04-29','2026-05-03','2026-05-04','2026-05-05','2026-05-06',
+  '2026-07-20','2026-08-11','2026-09-21','2026-09-22','2026-09-23',
+  '2026-10-12','2026-11-03','2026-11-23',
+  '2027-01-01','2027-01-11','2027-02-11','2027-02-23',
+  '2027-03-21','2027-04-29','2027-05-03','2027-05-04','2027-05-05',
+  '2027-07-19','2027-08-11','2027-09-20','2027-09-23',
+  '2027-10-11','2027-11-03','2027-11-23',
+  '2028-01-01','2028-01-10','2028-02-11','2028-02-23',
+  '2028-03-20','2028-04-29','2028-05-03','2028-05-04','2028-05-05',
+  '2028-07-17','2028-08-11','2028-09-18','2028-09-22',
+  '2028-10-09','2028-11-03','2028-11-23',
+  '2029-01-01','2029-01-14','2029-02-11','2029-02-12','2029-02-23',
+  '2029-03-20','2029-04-29','2029-04-30','2029-05-03','2029-05-04','2029-05-05','2029-05-07',
+  '2029-07-16','2029-08-11','2029-08-12','2029-09-17','2029-09-23',
+  '2029-10-08','2029-11-03','2029-11-23',
+  '2030-01-01','2030-01-14','2030-02-11','2030-02-23',
+  '2030-03-20','2030-04-29','2030-05-03','2030-05-04','2030-05-05','2030-05-06',
+  '2030-07-15','2030-08-11','2030-09-16','2030-09-22',
+  '2030-10-14','2030-11-03','2030-11-23',
+]);
+function isCompanyHoliday(ds){ return companyHolidaysCache.some(h=>ds>=h.start&&ds<=h.end); }
+function isGray(ds){
+  const d=new Date(ds+'T12:00:00'),dow=d.getDay();
+  return dow===0||dow===6||JP_HOL.has(ds)||isCompanyHoliday(ds);
+}
+async function loadNationalHolidays(){
+  try{
+    const res=await fetch(`${WORKER_URL}/holidays/national`);
+    if(res.ok){ const d=await res.json(); if(Array.isArray(d)&&d.length>0) JP_HOL=new Set(d); }
+  }catch{}
+}
+async function loadCompanyHolidays(){
+  try{
+    const res=await fetch(`${WORKER_URL}/holidays/company`);
+    if(res.ok){ companyHolidaysCache=await res.json(); return; }
+  }catch{}
+  try{ companyHolidaysCache=JSON.parse(localStorage.getItem('bl_company_holidays')||'[]'); }catch{ companyHolidaysCache=[]; }
+}
+async function saveCompanyHolidays(list){
+  companyHolidaysCache=list;
+  localStorage.setItem('bl_company_holidays',JSON.stringify(list));
+  const res=await fetch(`${WORKER_URL}/holidays/company`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':`Bearer ${currentUser?.token||''}`},
+    body:JSON.stringify(list),
+  });
+  if(!res.ok) throw new Error('サーバーへの保存に失敗しました');
+}
+
+// ==================== AUTH ====================
+(function initAuth(){
+  const saved=sessionStorage.getItem('bl_v2_user');
+  if(saved){
+    currentUser=JSON.parse(saved);
+    document.getElementById('login-overlay').style.display='none';
+    applyRole(currentUser.role);
+  }
+  document.getElementById('login-user').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('login-pass').focus(); });
+  document.getElementById('login-pass').addEventListener('keydown',e=>{ if(e.key==='Enter') login(); });
+})();
+
+async function login(){
+  const username=document.getElementById('login-user').value.trim();
+  const password=document.getElementById('login-pass').value;
+  const errEl=document.getElementById('login-err');
+  const btn=document.getElementById('login-btn');
+  const passEl=document.getElementById('login-pass');
+  errEl.textContent=''; btn.disabled=true; btn.textContent='確認中...';
+  try{
+    const res=await fetch(`${WORKER_URL}/auth/v2`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username,password}),
+    });
+    const data=await res.json();
+    if(data.role){
+      currentUser={token:data.token,role:data.role,displayName:data.displayName||username,talentName:data.talentName||''};
+      sessionStorage.setItem('bl_v2_user',JSON.stringify(currentUser));
+      document.getElementById('login-overlay').style.display='none';
+      errEl.textContent='';
+      if(data.needsSetup) setTimeout(()=>toast('アカウント未設定です。設定タブからCSVをインポートしてください。',false),600);
+      applyRole(data.role);
+    } else {
+      passEl.value=''; passEl.classList.add('error');
+      setTimeout(()=>passEl.classList.remove('error'),400);
+      errEl.textContent='ユーザー名またはパスワードが正しくありません';
+    }
+  }catch(e){
+    errEl.textContent='接続エラー: '+e.message;
+  } finally{
+    btn.disabled=false; btn.textContent='ログイン';
+  }
+}
+
+function logout(){
+  sessionStorage.removeItem('bl_v2_user');
+  currentUser=null;
+  allRows=[]; allCols=[]; allMonths=[]; allWorkload={};
+  talents=[]; rates=[]; reassignments=[];
+  useDemoTalents=false; useDemoRates=false;
+  document.getElementById('login-overlay').style.display='flex';
+  document.getElementById('login-pass').value='';
+  document.getElementById('login-err').textContent='';
+  document.getElementById('login-user').focus();
+}
+
+function applyRole(role){
+  const r=role||'staff';
+  const nameEl=document.getElementById('hdr-name');
+  const badgeEl=document.getElementById('hdr-role-badge');
+  if(nameEl) nameEl.textContent=currentUser?.displayName||'';
+  if(badgeEl){ badgeEl.textContent=r; badgeEl.className='role-badge '+r; }
+  // 管理者ギア
+  const gear=document.getElementById('admin-gear-btn');
+  if(gear) gear.hidden=(r!=='admin');
+  // ロール別タブ表示
+  const canFinance=['admin','sales'].includes(r);
+  const isAdmin=r==='admin';
+  document.getElementById('nav-estimate').hidden=!canFinance;
+  document.getElementById('nav-reassign').hidden=!canFinance;
+  document.getElementById('nav-settings').hidden=!isAdmin;
+  // 初期データ読み込み
+  Promise.all([loadNationalHolidays(), loadCompanyHolidays()]).catch(()=>{});
+  loadSupportData(r);
+  renderDashboard();
+}
+
+// ==================== DATA LOADING ====================
+async function loadSupportData(role){
+  // タレント（全ロールで取得）
+  try{
+    const res=await fetch(`${WORKER_URL}/talents`);
+    if(res.ok){
+      const d=await res.json();
+      talents = d.length ? d : DEMO_TALENTS;
+      useDemoTalents = !d.length;
+    } else { talents=DEMO_TALENTS; useDemoTalents=true; }
+  }catch{ talents=DEMO_TALENTS; useDemoTalents=true; }
+
+  // レート・再アサイン（admin/sales）
+  if(['admin','sales'].includes(role)){
+    try{
+      const [rRes,raRes]=await Promise.all([
+        fetch(`${WORKER_URL}/rates`,{headers:{Authorization:`Bearer ${currentUser?.token||''}`}}),
+        fetch(`${WORKER_URL}/reassignments`,{headers:{Authorization:`Bearer ${currentUser?.token||''}`}}),
+      ]);
+      if(rRes.ok){
+        const d=await rRes.json();
+        rates = d.length ? d : DEMO_RATES;
+        useDemoRates = !d.length;
+      } else { rates=DEMO_RATES; useDemoRates=true; }
+      if(raRes.ok) reassignments=await raRes.json();
+    }catch{ rates=DEMO_RATES; useDemoRates=true; }
+  }
+
+  // デモ使用中はトースト通知
+  if(useDemoTalents || useDemoRates){
+    setTimeout(()=>toast('デモデータを使用中です。設定タブでCSVをインポートすると本番データに切り替わります。',false),800);
+  }
+}
+
+async function loadData(){
+  if(!currentUser){ toast('ログインしてください',true); return; }
+  setLoad(true,'Backlog APIへ接続中...');
+  try{
+    const res=await fetch(`${WORKER_URL}/issues`);
+    if(!res.ok){ const e=await res.json().catch(()=>({})); throw new Error(e.error||res.status); }
+    const issues=await res.json();
+    setLoad(true,`${issues.length}件取得。分析中...`);
+    await new Promise(r=>setTimeout(r,30));
+    const rawRows=mapApiToRawRows(issues);
+    const result=buildFromRawRows(rawRows);
+    allRows=result.rows; allCols=result.cols; allMonths=result.months;
+    allWorkload=buildWorkload(allRows,allCols);
+    // フィルター初期化
+    const people=[...new Set(allRows.map(r=>r.assignee).filter(Boolean))].sort();
+    fillSel('fA',people); fillSel('wl-fA',people);
+    fillSel('fC',[...new Set(allRows.map(r=>r.cat))].sort());
+    fillSel('fS',[...new Set(allRows.map(r=>r.status))].sort());
+    fillSel('est-fA',people);
+    fillSel('est-fJ',[...new Set(allRows.map(r=>r.jobNo).filter(Boolean))].sort());
+    fillPersonSelect();
+    fillJobNoSel();
+    buildMonthNav('gantt-month-nav', ()=>{renderGantt();});
+    buildMonthNav('wl-month-nav',    ()=>{renderWorkload();});
+    buildReportMonthSel();
+    document.getElementById('db-last-updated').textContent=`最終取得: ${TODAY}`;
+    showZeroWarnBanner(result.zeroWorkdayTasks||[]);
+    // 再アサインのfromTo select更新
+    fillSel('ra-from',people); fillSel('ra-to',people);
+    toast(`取得完了: ${allRows.length}件`,false);
+    renderDashboard();
+    if(activeMainTab==='gantt') renderGantt();
+    if(activeMainTab==='workload') renderWorkload();
+  }catch(e){
+    toast('エラー: '+e.message,true);
+  }finally{ setLoad(false); }
+}
+
+// ==================== CORE PROCESSING ====================
+function mapApiToRawRows(issues){
+  return issues.map(issue=>({
+    key:      issue.issueKey||'',
+    jobNo:    (issue.customFields||[]).find(f=>f.name==='Job No.')?.value||'',
+    cat:      issue.issueType?.name||'',
+    categories:(issue.category||[]).map(c=>c.name), // カテゴリー（タレントマッチング用）
+    title:    issue.summary||'',
+    status:   issue.status?.name||'',
+    assignee: issue.assignee?.name||'',
+    estHours: parseFloat(issue.estimatedHours)||0,
+    actHours: parseFloat(issue.actualHours)||0,
+    startDs:  issue.startDate?String(issue.startDate).slice(0,10):null,
+    endDs:    issue.dueDate?String(issue.dueDate).slice(0,10):null,
+  }));
+}
+
+function buildFromRawRows(rawRows){
+  let minDs=null,maxDs=null;
+  rawRows.forEach(r=>{
+    if(r.startDs&&(!minDs||r.startDs<minDs)) minDs=r.startDs;
+    if(r.endDs  &&(!maxDs||r.endDs  >maxDs)) maxDs=r.endDs;
+  });
+  if(!minDs||!maxDs) throw new Error('有効な日付データがありません');
+  const cols=[],dsToCol={};
+  let idx=0;
+  const cur=new Date(minDs+'T12:00:00'), endD=new Date(maxDs+'T12:00:00');
+  while(cur<=endD){
+    const ds=cur.toISOString().slice(0,10);
+    if(!isGray(ds)){
+      const mo=`${cur.getFullYear()}/${pad(cur.getMonth()+1)}`;
+      cols.push({col:idx,ds,lbl:`${cur.getMonth()+1}/${cur.getDate()}`,dayJa:WD_JA[cur.getDay()],mo});
+      dsToCol[ds]=idx; idx++;
+    }
+    cur.setDate(cur.getDate()+1);
+  }
+  const months=[...new Set(cols.map(c=>c.mo))];
+  const rows=rawRows.map(raw=>{
+    const daily={},monthTotals={};
+    let weekdayCount=0,newWeekdayValue=0;
+    if(raw.startDs&&raw.endDs&&raw.estHours>0){
+      const taskCols=cols.filter(c=>c.ds>=raw.startDs&&c.ds<=raw.endDs);
+      weekdayCount=taskCols.length;
+      if(weekdayCount>0){
+        newWeekdayValue=r2(raw.estHours/weekdayCount);
+        const lastVal=r2(raw.estHours-r2(newWeekdayValue*(weekdayCount-1)));
+        taskCols.forEach((c,i)=>{
+          const v=(i===taskCols.length-1)?lastVal:newWeekdayValue;
+          daily[c.col]=v; monthTotals[c.mo]=r2((monthTotals[c.mo]||0)+v);
+        });
+      }
+    }
+    const distHours=weekdayCount>0?raw.estHours:0;
+    const noDate=!raw.startDs||!raw.endDs;
+    return {
+      key:raw.key, jobNo:raw.jobNo, cat:raw.cat, categories:raw.categories||[],
+      title:raw.title, status:raw.status, assignee:raw.assignee,
+      startDs:raw.startDs||null, endDs:raw.endDs||null,
+      estHours:raw.estHours, actHours:raw.actHours,
+      distHours, newWeekdayValue, weekdayCount, noDate, monthTotals, daily,
+    };
+  });
+  const zeroWorkdayTasks=rows.filter(r=>r.estHours>0&&r.weekdayCount===0);
+  return {rows,cols,months,zeroWorkdayTasks};
+}
+
+function buildWorkload(rows,cols){
+  const cSet=new Set(cols.map(c=>c.col)), wl={};
+  rows.forEach(row=>{
+    if(!wl[row.assignee]) wl[row.assignee]={};
+    Object.entries(row.daily||{}).forEach(([c,v])=>{
+      const ci=+c;
+      if(cSet.has(ci)) wl[row.assignee][ci]=r2((wl[row.assignee][ci]||0)+v);
+    });
+  });
+  return wl;
+}
+
+function calcPeriodStats(targetRows,vcols){
+  const active=targetRows.filter(r=>vcols.some(c=>(r.daily[c.col]||0)>0));
+  const tasks=active.length;
+  const people=new Set(active.filter(r=>r.assignee).map(r=>r.assignee)).size;
+  const wdH=r2(targetRows.reduce((s,r)=>s+vcols.reduce((sv,c)=>sv+(r.daily[c.col]||0),0),0));
+  const actH=r2(targetRows.reduce((s,r)=>{
+    if(!r.actHours) return s;
+    const pastTotal=allCols.filter(c=>c.ds<=TODAY&&(r.daily[c.col]||0)>0).length;
+    if(!pastTotal) return s;
+    const pastInPeriod=vcols.filter(c=>c.ds<=TODAY&&(r.daily[c.col]||0)>0).length;
+    if(!pastInPeriod) return s;
+    return s+r2(r.actHours*pastInPeriod/pastTotal);
+  },0));
+  return {tasks,people,actH,wdH};
+}
+
+function wlColor(h,cap){
+  const p=h/cap;
+  if(p<=0)    return '#f5f5f5';
+  if(p<=0.25) return '#e8f5e9';
+  if(p<=0.5)  return '#c8e6c9';
+  if(p<=0.75) return '#fff9c4';
+  if(p<=1.0)  return '#ffe082';
+  return '#ef9a9a';
+}
+function badge(s){
+  const map={'処理中':'b0','完了':'b1','未対応':'b2','処理済み':'b3','レビュー待ち':'b4'};
+  return `<span class="badge ${map[s]||'b5'}">${esc(s)}</span>`;
+}
+function buildMonthGroups(vcols){
+  const g=[];
+  vcols.forEach(c=>{
+    if(g.length&&g[g.length-1].label===c.mo) g[g.length-1].count++;
+    else g.push({label:c.mo,count:1});
+  });
+  return g;
+}
+
+// ==================== NAVIGATION ====================
+function switchMainTab(name,btn){
+  activeMainTab=name;
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
+  ['dashboard','gantt','workload','personal','estimate','reassign','report','settings'].forEach(s=>{
+    const el=document.getElementById('sec-'+s);
+    if(el) el.hidden=(s!==name);
+  });
+  // 遅延レンダリング
+  if(name==='gantt'&&allRows.length)     renderGantt();
+  if(name==='workload'&&allRows.length)  renderWorkload();
+  if(name==='personal')                  renderPersonal();
+  if(name==='estimate')                  renderEstimate();
+  if(name==='reassign')                  renderReassignLog();
+  if(name==='report')                    renderReport();
+  if(name==='settings'){ renderSettingsAccountList(); renderTalentsList(); }
+}
+
+function onCapChange(){
+  CAPACITY=parseFloat(document.getElementById('cap-input').value)||8;
+  if(allRows.length) renderCurrent();
+}
+
+function buildMonthNav(navId, onMonthChange){
+  const nav=document.getElementById(navId); if(!nav) return;
+  const tw=navId.includes('gantt')?document.getElementById('gantt-wrap'):document.getElementById('wl-wrap');
+  nav.innerHTML='<span>表示月:</span>';
+  const allBtn=document.createElement('button');
+  allBtn.className='month-btn active'; allBtn.textContent='本日';
+  allBtn.onclick=()=>{ activeMonth=''; updateMonthNavActive(navId); onMonthChange(); };
+  nav.appendChild(allBtn);
+  if(tw){
+    const prev=document.createElement('button');
+    prev.className='scroll-week-btn'; prev.textContent='◀'; prev.title='1週前へ';
+    prev.onclick=()=>{ tw.scrollLeft-=44*5; }; nav.appendChild(prev);
+  }
+  allMonths.forEach(m=>{
+    const b=document.createElement('button');
+    b.className='month-btn'; b.textContent=m.replace('/','年')+'月'; b.dataset.month=m;
+    b.onclick=()=>{ activeMonth=m; updateMonthNavActive(navId); onMonthChange(); };
+    nav.appendChild(b);
+  });
+  if(tw){
+    const next=document.createElement('button');
+    next.className='scroll-week-btn'; next.textContent='▶'; next.title='1週後へ';
+    next.onclick=()=>{ tw.scrollLeft+=44*5; }; nav.appendChild(next);
+  }
+}
+function updateMonthNavActive(navId){
+  const nav=document.getElementById(navId); if(!nav) return;
+  nav.querySelectorAll('.month-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.month ? b.dataset.month===activeMonth : activeMonth==='');
+  });
+}
+function renderCurrent(){
+  if(activeMainTab==='gantt') renderGantt();
+  else if(activeMainTab==='workload') renderWorkload();
+}
+
+function fillPersonSelect(){
+  const sel=document.getElementById('person-select'); if(!sel) return;
+  const people=[...new Set(allRows.map(r=>r.assignee).filter(Boolean))].sort();
+  sel.innerHTML='<option value="">-- 選択してください --</option>';
+  people.forEach(p=>{ const o=document.createElement('option'); o.value=o.textContent=p; sel.appendChild(o); });
+  // 月選択
+  const ms=document.getElementById('person-month-sel'); if(!ms) return;
+  ms.innerHTML='<option value="">全期間</option>';
+  allMonths.forEach(m=>{ const o=document.createElement('option'); o.value=m; o.textContent=m.replace('/','年')+'月'; ms.appendChild(o); });
+}
+
+function buildReportMonthSel(){
+  const sel=document.getElementById('report-month-sel'); if(!sel) return;
+  sel.innerHTML='';
+  allMonths.forEach(m=>{ const o=document.createElement('option'); o.value=m; o.textContent=m.replace('/','年')+'月'; sel.appendChild(o); });
+  // デフォルト=当月
+  const cur=`${new Date().getFullYear()}/${pad(new Date().getMonth()+1)}`;
+  if(allMonths.includes(cur)) sel.value=cur;
+}
+
+// ==================== ACCOUNTS SETTINGS (段階3で描画) ====================
+async function renderSettingsAccountList(){
+  const container=document.getElementById('accounts-list'); if(!container) return;
+  if(!currentUser||currentUser.role!=='admin'){ container.innerHTML='<div style="color:#90a4ae;padding:12px;font-size:12px">管理者のみ閲覧可</div>'; return; }
+  try{
+    const res=await fetch(`${WORKER_URL}/accounts`,{headers:{Authorization:`Bearer ${currentUser.token}`}});
+    if(!res.ok){ container.innerHTML='<div style="color:#c62828;padding:12px;font-size:12px">取得失敗</div>'; return; }
+    const list=await res.json();
+    const displayList = list.length ? list : DEMO_ACCOUNTS;
+    const demoNote = !list.length ? '<div style="font-size:11px;color:#e65100;padding:6px 12px;background:#fff3e0;border-radius:4px;margin-bottom:6px">⚠ KV未設定のためデモデータを表示しています（実際のログインには使用できません）</div>' : '';
+    container.innerHTML=demoNote + displayList.map(a=>`
+      <div class="sal-item">
+        <span class="sal-name">${esc(a.displayName||a.username)}</span>
+        <span style="font-size:11px;color:#90a4ae">@${esc(a.username)}</span>
+        <span class="sal-role ${a.role}">${a.role}</span>
+        <span style="font-size:11px;color:#b0bec5">${esc(a.talentName||'-')}</span>
+      </div>`).join('');
+  }catch(e){ container.innerHTML=`<div style="color:#c62828;padding:12px;font-size:12px">${esc(e.message)}</div>`; }
+}
+
+// CSV インポート処理（共通パターン）
+function onAccountsCsvChange(e){
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    pendingAccounts=parseCSV(ev.target.result);
+    renderCSVPreview('accounts-preview',pendingAccounts);
+    document.getElementById('accounts-actions').hidden=false;
+    document.getElementById('accounts-msg').textContent=`${pendingAccounts.length}件 読み込み`;
+    document.getElementById('accounts-msg').style.color='#2e7d32';
+  };
+  reader.readAsText(file,'utf-8');
+}
+function onTalentsCsvChange(e){
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    pendingTalents=parseCSV(ev.target.result);
+    renderCSVPreview('talents-preview',pendingTalents);
+    document.getElementById('talents-actions').hidden=false;
+    document.getElementById('talents-msg').textContent=`${pendingTalents.length}件 読み込み`;
+    document.getElementById('talents-msg').style.color='#2e7d32';
+  };
+  reader.readAsText(file,'utf-8');
+}
+function onRatesCsvChange(e){
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    pendingRates=parseCSV(ev.target.result);
+    renderCSVPreview('rates-preview',pendingRates);
+    document.getElementById('rates-actions').hidden=false;
+    document.getElementById('rates-msg').textContent=`${pendingRates.length}件 読み込み`;
+    document.getElementById('rates-msg').style.color='#2e7d32';
+  };
+  reader.readAsText(file,'utf-8');
+}
+
+async function saveAccounts(){
+  if(!pendingAccounts) return;
+  const list=pendingAccounts.map(a=>({
+    username:a.username||a['ユーザー名']||'',
+    password:a.password||a['パスワード']||'',
+    role:    a.role||a['役職']||'staff',
+    displayName:a.display_name||a.displayName||a['表示名']||a.username,
+    talentName: a.talent_name||a.talentName||a['タレント名']||'',
+  })).filter(a=>a.username&&a.password);
+  try{
+    const res=await fetch(`${WORKER_URL}/accounts`,{
+      method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${currentUser.token}`},
+      body:JSON.stringify(list),
+    });
+    if(!res.ok) throw new Error('保存失敗');
+    document.getElementById('accounts-msg').textContent=`✅ ${list.length}件 保存しました`;
+    document.getElementById('accounts-msg').style.color='#2e7d32';
+    renderSettingsAccountList();
+    toast('アカウントを保存しました',false);
+  }catch(e){ document.getElementById('accounts-msg').textContent='❌ '+e.message; document.getElementById('accounts-msg').style.color='#c62828'; }
+}
+
+async function saveTalents(){
+  if(!pendingTalents) return;
+  const list=pendingTalents.map(t=>({
+    name:  t.name||t['名前']||'',
+    role:  t.role||t['役職']||'',
+    skills:(t.skills||t['スキル']||'').split('/').map(s=>s.trim()).filter(Boolean),
+  })).filter(t=>t.name);
+  try{
+    const res=await fetch(`${WORKER_URL}/talents`,{
+      method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${currentUser.token}`},
+      body:JSON.stringify(list),
+    });
+    if(!res.ok) throw new Error('保存失敗');
+    talents=list;
+    document.getElementById('talents-msg').textContent=`✅ ${list.length}件 保存しました`;
+    document.getElementById('talents-msg').style.color='#2e7d32';
+    renderTalentsList();
+    toast('タレントデータを保存しました',false);
+  }catch(e){ document.getElementById('talents-msg').textContent='❌ '+e.message; document.getElementById('talents-msg').style.color='#c62828'; }
+}
+
+async function saveRates(){
+  if(!pendingRates) return;
+  const list=pendingRates.map(r=>({
+    client:    r.client||r['クライアント']||'社内基準',
+    role:      r.role||r['役職']||'',
+    hourlyRate:parseFloat(r.hourly_rate||r.hourlyRate||r['時間単価'])||0,
+  })).filter(r=>r.role&&r.hourlyRate>0);
+  try{
+    const res=await fetch(`${WORKER_URL}/rates`,{
+      method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${currentUser.token}`},
+      body:JSON.stringify(list),
+    });
+    if(!res.ok) throw new Error('保存失敗');
+    rates=list;
+    document.getElementById('rates-msg').textContent=`✅ ${list.length}件 保存しました`;
+    document.getElementById('rates-msg').style.color='#2e7d32';
+    if(activeMainTab==='estimate') renderEstimate();
+    toast('レートカードを保存しました',false);
+  }catch(e){ document.getElementById('rates-msg').textContent='❌ '+e.message; document.getElementById('rates-msg').style.color='#c62828'; }
+}
+
+function renderTalentsList(){
+  const el=document.getElementById('talents-list'); if(!el) return;
+  const displayList = talents.length ? talents : DEMO_TALENTS;
+  const demoNote = !talents.length
+    ? '<div style="font-size:11px;color:#e65100;padding:6px 12px;background:#fff3e0;border-radius:4px;margin-bottom:8px">⚠ デモデータ表示中。CSVをインポートすると本番データに切り替わります。</div>'
+    : '';
+  el.innerHTML=demoNote+'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-top:4px">'+
+    displayList.map(t=>`<div style="padding:10px 12px;background:#f8faff;border:1px solid #d0dae6;border-radius:8px">
+      <div style="font-weight:700;font-size:13px">${esc(t.name)}</div>
+      <div style="font-size:11px;color:#607d8b;margin-bottom:4px">${esc(t.role)}</div>
+      <div>${(t.skills||[]).map(s=>`<span class="skill-tag" style="background:#e8eaf6;color:#3949ab;padding:2px 6px;border-radius:8px;font-size:10px;font-weight:600;margin:2px 2px 0 0;display:inline-block">${esc(s)}</span>`).join('')}</div>
+    </div>`).join('')+'</div>';
+}
+
+function exportAccountsTemplate(){
+  downloadText('accounts_template.csv', 'username,password,role,display_name,talent_name\nadmin_user,password123,admin,管理者,管理者\nsales_user,password456,sales,営業担当,営業担当\nstaff_user,password789,staff,一般スタッフ,一般スタッフ');
+  toast('テンプレートをダウンロードしました',false);
+}
+function exportTalentsTemplate(){
+  downloadText('talents_template.csv','name,role,skills\n田中太郎,デザイナー,WEB制作/UI設計/DTP\n山田花子,ディレクター,WEB制作/プロジェクト管理/コピーライティング');
+  toast('テンプレートをダウンロードしました',false);
+}
+function exportRatesTemplate(){
+  downloadText('rates_template.csv','client,role,hourly_rate\n社内基準,ディレクター,8000\n社内基準,デザイナー,6000\nクライアントA,ディレクター,12000');
+  toast('テンプレートをダウンロードしました',false);
+}
+
+// CSV アップロードエリア ドラッグ＆ドロップ
+['accounts','talents','rates'].forEach(type=>{
+  const drop=document.getElementById(`${type}-drop`); if(!drop) return;
+  ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('drag-over');}));
+  ['dragleave','dragend'].forEach(ev=>drop.addEventListener(ev,()=>drop.classList.remove('drag-over')));
+  drop.addEventListener('drop',e=>{
+    e.preventDefault(); drop.classList.remove('drag-over');
+    const file=e.dataTransfer?.files[0]; if(!file) return;
+    document.getElementById(`${type}-file`).files; // reference
+    const fakeEvent={target:{files:[file]}};
+    if(type==='accounts') onAccountsCsvChange(fakeEvent);
+    if(type==='talents')  onTalentsCsvChange(fakeEvent);
+    if(type==='rates')    onRatesCsvChange(fakeEvent);
+  });
+});
+
+// ==================== ADMIN SETTINGS ====================
+function openAdminPanel(){
+  renderCompanyHolidayList();
+  document.getElementById('admin-modal').classList.add('open');
+  const fpBase={
+    dateFormat:'Y-m-d', altInput:true, altFormat:'Y/m/d',
+    locale:Object.assign({},flatpickr.l10ns.ja,{firstDayOfWeek:1}),
+    disableMobile:true, appendTo:document.body,
+    onReady(_d,_s,inst){ inst.calendarContainer.style.zIndex='99999'; const ai=inst.altInput; ai.style.padding='7px 8px'; ai.style.border='1.5px solid #d0dae6'; ai.style.borderRadius='6px'; ai.style.fontSize='12px'; ai.style.cursor='pointer'; ai.style.background='#fff'; ai.readOnly=true; }
+  };
+  if(!fpHolStart){
+    fpHolStart=flatpickr('#new-hol-start',Object.assign({},fpBase,{onChange(d){ if(fpHolEnd) fpHolEnd.set('minDate',d[0]||null); }, onReady(_d,_s,inst){ fpBase.onReady(_d,_s,inst); inst.altInput.style.width='110px'; inst.altInput.placeholder='開始日'; }}));
+  }
+  if(!fpHolEnd){
+    fpHolEnd=flatpickr('#new-hol-end',Object.assign({},fpBase,{onReady(_d,_s,inst){ fpBase.onReady(_d,_s,inst); inst.altInput.style.width='130px'; inst.altInput.placeholder='終了日（省略可）'; }}));
+  }
+}
+function closeAdminPanel(){ document.getElementById('admin-modal').classList.remove('open'); }
+document.getElementById('admin-modal').addEventListener('click',e=>{ if(e.target===document.getElementById('admin-modal')) closeAdminPanel(); });
+
+function renderCompanyHolidayList(){
+  const container=document.getElementById('company-holiday-list');
+  if(!companyHolidaysCache.length){ container.innerHTML='<div style="font-size:11px;color:#b0bec5;padding:6px 0">登録なし</div>'; return; }
+  container.innerHTML=companyHolidaysCache.map((h,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:#f5f7fa;border-radius:6px;margin-bottom:4px">
+      <span style="flex:1;font-size:12px;font-weight:600">${esc(h.label||'（ラベルなし）')}</span>
+      <span style="font-size:11px;color:#607d8b">${h.start}${h.start!==h.end?' 〜 '+h.end:''}</span>
+      <button onclick="deleteCompanyHoliday(${i})" class="btn btn-danger btn-xs">削除</button>
+    </div>`).join('');
+}
+async function addCompanyHoliday(){
+  const start=document.getElementById('new-hol-start').value;
+  const rawEnd=document.getElementById('new-hol-end').value;
+  const end=rawEnd||start;
+  const label=document.getElementById('new-hol-label').value.trim();
+  const msg=document.getElementById('company-hol-msg');
+  if(!start){ msg.style.color='#c62828'; msg.textContent='開始日を入力してください'; return; }
+  if(end<start){ msg.style.color='#c62828'; msg.textContent='終了日は開始日以降にしてください'; return; }
+  const list=companyHolidaysCache.slice();
+  if(list.length>=8){ msg.style.color='#c62828'; msg.textContent='最大8件まで登録できます'; return; }
+  list.push({start,end,label:label||'会社休日'});
+  list.sort((a,b)=>a.start<b.start?-1:a.start>b.start?1:0);
+  msg.style.color='#607d8b'; msg.textContent='保存中...';
+  try{
+    await saveCompanyHolidays(list);
+    renderCompanyHolidayList();
+    if(fpHolStart) fpHolStart.clear(); else document.getElementById('new-hol-start').value='';
+    if(fpHolEnd)   fpHolEnd.clear();   else document.getElementById('new-hol-end').value='';
+    if(fpHolEnd)   fpHolEnd.set('minDate',null);
+    document.getElementById('new-hol-label').value='';
+    msg.style.color='#2e7d32'; msg.textContent='追加しました'; setTimeout(()=>{msg.textContent='';},3000);
+  }catch(e){ msg.style.color='#c62828'; msg.textContent=e.message||'保存に失敗しました'; }
+}
+async function deleteCompanyHoliday(index){
+  const list=companyHolidaysCache.slice(); list.splice(index,1);
+  const msg=document.getElementById('company-hol-msg');
+  try{ await saveCompanyHolidays(list); renderCompanyHolidayList(); msg.style.color='#2e7d32'; msg.textContent='削除しました'; setTimeout(()=>{msg.textContent='';},2500); }
+  catch(e){ msg.style.color='#c62828'; msg.textContent=e.message||'保存に失敗しました'; }
+}
+function togglePwChange(){
+  const tgl=document.getElementById('pw-change-tgl'), body=document.getElementById('pw-change-body');
+  const isOpen=body.classList.toggle('open'); tgl.classList.toggle('open',isOpen);
+  if(!isOpen){ document.getElementById('new-pw-input').value=''; document.getElementById('pw-change-msg').textContent=''; }
+}
+async function changeGeneralPassword(){
+  const newPw=document.getElementById('new-pw-input').value;
+  const msg=document.getElementById('pw-change-msg');
+  if(!newPw||newPw.length<4){ msg.style.color='#c62828'; msg.textContent='4文字以上で入力してください'; return; }
+  msg.style.color='#607d8b'; msg.textContent='変更中...';
+  try{
+    const res=await fetch(`${WORKER_URL}/auth/change-password`,{
+      method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${currentUser?.token||''}`},
+      body:JSON.stringify({newPassword:newPw}),
+    });
+    if(!res.ok){ const e=await res.json().catch(()=>({})); throw new Error(e.error||'変更失敗'); }
+    document.getElementById('new-pw-input').value='';
+    msg.style.color='#2e7d32'; msg.textContent='変更しました（全端末に反映）'; setTimeout(()=>{msg.textContent='';},4000);
+  }catch(e){ msg.style.color='#c62828'; msg.textContent=e.message; }
+}
+
+// ==================== JOB NO. ドロップダウン ====================
+function toggleFJDrop(e){
+  e.stopPropagation();
+  document.getElementById('fJCsel').classList.toggle('csel-open');
+}
+function selectJobNo(val,lbl){
+  activeJobNo=val;
+  document.getElementById('fJCur').textContent=lbl||'全て';
+  document.getElementById('fJCsel').classList.remove('csel-open');
+  document.getElementById('fJList').querySelectorAll('.csel-item').forEach(el=>el.classList.toggle('sel',el.dataset.val===val));
+  renderCurrent();
+}
+document.addEventListener('click',e=>{
+  const wrap=document.getElementById('fJCsel');
+  if(wrap&&!wrap.contains(e.target)) wrap.classList.remove('csel-open');
+});
+function fillJobNoSel(){
+  const parents=new Set(); let hasBlank=false; jobNoTips={};
+  allRows.forEach(r=>{
+    if(!r.jobNo){ hasBlank=true; if(!jobNoTips['__blank__']) jobNoTips['__blank__']=[]; if(jobNoTips['__blank__'].length<30) jobNoTips['__blank__'].push(r.title); return; }
+    const parent=r.jobNo.split('-')[0]; parents.add(parent);
+    if(!jobNoTips[parent]) jobNoTips[parent]=[];
+    const line=r.jobNo===parent?r.title:`[${r.jobNo}] ${r.title}`;
+    if(jobNoTips[parent].length<30) jobNoTips[parent].push(line);
+  });
+  const sorted=[...parents].sort((a,b)=>{ const na=parseFloat(a),nb=parseFloat(b); return(!isNaN(na)&&!isNaN(nb))?na-nb:a.localeCompare(b); });
+  const items=[{val:'',lbl:'全て'}];
+  sorted.forEach(p=>items.push({val:p,lbl:p}));
+  if(hasBlank) items.push({val:'__blank__',lbl:'（空白）'});
+  const list=document.getElementById('fJList');
+  list.innerHTML=items.map(it=>`<div class="csel-item${it.val===activeJobNo?' sel':''}" data-val="${esc(it.val)}" data-lbl="${esc(it.lbl)}">${esc(it.lbl)}</div>`).join('');
+  list.onclick=e=>{ e.stopPropagation(); const el=e.target.closest('.csel-item'); if(el) selectJobNo(el.dataset.val,el.dataset.lbl); };
+  const tip=document.getElementById('gl-tip');
+  list.addEventListener('mouseover',e=>{ const el=e.target.closest('.csel-item[data-val]'); if(!el||el.dataset.val==='') return; const lines=jobNoTips[el.dataset.val]; if(!lines||!lines.length) return; tip.textContent=lines.join('\n'); tip.style.display='block'; tip.style.left=(e.clientX+14)+'px'; tip.style.top=(e.clientY-10)+'px'; });
+  list.addEventListener('mousemove',e=>{ if(tip.style.display==='block'){ tip.style.left=(e.clientX+14)+'px'; tip.style.top=(e.clientY-10)+'px'; } });
+  list.addEventListener('mouseleave',()=>tip.style.display='none');
+}
+
+// ==================== WARN BANNER ====================
+function showZeroWarnBanner(zeroTasks){
+  const banner=document.getElementById('zero-warn-banner'); if(!banner) return;
+  if(!zeroTasks.length){ banner.hidden=true; return; }
+  const noDate=zeroTasks.filter(r=>r.noDate), holOnly=zeroTasks.filter(r=>!r.noDate);
+  const notes=[]; if(noDate.length) notes.push(`・日程未設定: ${noDate.length}件`); if(holOnly.length) notes.push(`・全日が土日祝: ${holOnly.length}件`);
+  document.getElementById('zero-warn-msg').textContent=`（${zeroTasks.length}件）予定時間があるにもかかわらず按分できないタスクがあります。`;
+  const sorted=[...zeroTasks].sort((a,b)=>a.key.localeCompare(b.key,undefined,{numeric:true}));
+  document.getElementById('zero-warn-keys').innerHTML=`<div style="margin-top:6px">${notes.join('<br>')}</div><div style="margin-top:6px;font-weight:600">▼対象</div>`+sorted.map(r=>`<div style="padding:1px 0">${esc(r.key)} / ${esc(r.title)} / 担当: ${esc(r.assignee)} <span style="color:#bf7000">[${r.noDate?'日程未設定':'期間内が全て土日祝'}]</span></div>`).join('');
+  banner.hidden=false;
+  const collapsed=sessionStorage.getItem('zeroWarnCollapsed')==='1';
+  document.getElementById('zero-warn-detail').style.display=collapsed?'none':'';
+  document.getElementById('zero-warn-toggle').textContent=collapsed?'▼':'▲';
+}
+function toggleZeroWarn(){
+  const detail=document.getElementById('zero-warn-detail'), btn=document.getElementById('zero-warn-toggle');
+  const nowCollapsed=detail.style.display==='none';
+  detail.style.display=nowCollapsed?'':'none'; btn.textContent=nowCollapsed?'▲':'▼';
+  try{ sessionStorage.setItem('zeroWarnCollapsed',nowCollapsed?'0':'1'); }catch{}
+}
+
+// ==================== DASHBOARD ====================
+function renderDashboard(){
+  if(!allRows.length){
+    document.getElementById('db-people').textContent='-';
+    document.getElementById('db-tasks').textContent='-';
+    document.getElementById('db-wdh').textContent='-';
+    document.getElementById('db-alert-count').textContent='-';
+    return;
+  }
+  const people=Object.keys(allWorkload);
+  const curMo=`${new Date().getFullYear()}/${pad(new Date().getMonth()+1)}`;
+  const moRows=allRows.filter(r=>r.monthTotals&&r.monthTotals[curMo]);
+  const wdH=r2(moRows.reduce((s,r)=>s+(r.monthTotals[curMo]||0),0));
+  // 今後2週間の過負荷チェック
+  const twoWeeksLater=new Date(TODAY+'T12:00:00'); twoWeeksLater.setDate(twoWeeksLater.getDate()+14);
+  const twStr=twoWeeksLater.toISOString().slice(0,10);
+  const upcomingCols=allCols.filter(c=>c.ds>=TODAY&&c.ds<=twStr);
+  const overloadPeople=[];
+  people.forEach(name=>{
+    const pd=allWorkload[name]||{};
+    const overDays=upcomingCols.filter(c=>(pd[c.col]||0)>CAPACITY);
+    const maxH=Math.max(...upcomingCols.map(c=>pd[c.col]||0));
+    if(overDays.length>0) overloadPeople.push({name,overDays:overDays.length,maxH,pct:maxH/CAPACITY});
+  });
+  overloadPeople.sort((a,b)=>b.pct-a.pct);
+  document.getElementById('db-people').textContent=people.length;
+  document.getElementById('db-tasks').textContent=allRows.filter(r=>upcomingCols.some(c=>(r.daily[c.col]||0)>0)).length;
+  document.getElementById('db-wdh').textContent=wdH.toFixed(1);
+  document.getElementById('db-alert-count').textContent=overloadPeople.length;
+  // アラートリスト
+  const alertEl=document.getElementById('alert-list');
+  if(!overloadPeople.length){
+    alertEl.innerHTML='<div style="text-align:center;padding:24px;color:#2e7d32;font-size:13px">✅ 今後2週間に過負荷なし</div>';
+  } else {
+    alertEl.innerHTML=overloadPeople.map(p=>{
+      const pct=Math.min(p.pct,2); const barW=Math.min(pct*50,100);
+      const col=p.pct>1.3?'#c62828':p.pct>1?'#e65100':'#ffa726';
+      return `<div class="alert-item ${p.pct>1.3?'red':''}">
+        <div class="ai-name">${esc(p.name)}</div>
+        <div class="ai-bar-wrap">
+          <div class="ai-bar-bg"><div class="ai-bar-fill" style="width:${barW}%;background:${col}"></div></div>
+          <div class="ai-label">過負荷: <b>${p.overDays}日</b> / 最大 <b>${p.maxH.toFixed(1)}h</b></div>
+        </div>
+        <div class="ai-peak" style="color:${col}">${Math.round(p.pct*100)}%</div>
+      </div>`;
+    }).join('');
+  }
+  // 月次サマリー
+  const summaryEl=document.getElementById('monthly-summary-list');
+  const moCols=allCols.filter(c=>c.mo===curMo);
+  const utilList=people.map(name=>{
+    const pd=allWorkload[name]||{};
+    const h=r2(moCols.reduce((s,c)=>s+(pd[c.col]||0),0));
+    const cap=moCols.length*CAPACITY;
+    const pct=cap>0?Math.round(h/cap*100):0;
+    return {name,h,pct};
+  }).sort((a,b)=>b.h-a.h);
+  summaryEl.innerHTML=utilList.map(u=>{
+    const col=u.pct>100?'#c62828':u.pct>80?'#e65100':'#2e7d32';
+    return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid #f0f2f5">
+      <span style="min-width:90px;font-size:12px;font-weight:700">${esc(u.name)}</span>
+      <div style="flex:1;background:#e8ecf0;border-radius:4px;height:12px;overflow:hidden">
+        <div style="width:${Math.min(u.pct,100)}%;height:100%;background:${col};border-radius:4px"></div>
+      </div>
+      <span style="font-size:12px;font-weight:700;min-width:58px;text-align:right;color:${col}">${u.h.toFixed(1)}h (${u.pct}%)</span>
+    </div>`;
+  }).join('');
+  // 最近の再アサイン
+  renderDbRecentReassign();
+}
+
+function renderDbRecentReassign(){
+  const el=document.getElementById('db-recent-reassign'); if(!el) return;
+  if(!reassignments.length){ el.textContent='再アサイン記録はありません'; return; }
+  const recent=reassignments.slice(0,5);
+  el.innerHTML=recent.map(r=>`<div class="reassign-log-item" style="margin-bottom:8px;padding:8px 12px;background:#f8faff;border-radius:6px;border-left:3px solid #1a3a5c;font-size:12px">
+    <span style="color:#c62828;font-weight:700">${esc(r.fromAssignee)}</span> → <span style="color:#2e7d32;font-weight:700">${esc(r.toAssignee)}</span>
+    <span style="color:#90a4ae;margin-left:8px">${esc((r.recordedAt||'').slice(0,10))}</span>
+    <div style="color:#607d8b;margin-top:2px">${esc(r.taskKey||'')} ${esc(r.taskTitle||'')}</div>
+  </div>`).join('');
+}
+
+// ==================== GANTT ====================
+function renderGantt(){
+  if(!allRows.length){ document.getElementById('gantt-body').innerHTML=`<tr><td colspan="10" class="empty-state">Backlog APIに接続してデータを取得してください</td></tr>`; return; }
+  const fa=document.getElementById('fA')?.value||'';
+  const fs=document.getElementById('fS')?.value||'';
+  const fc=document.getElementById('fC')?.value||'';
+  const ft=(document.getElementById('fT')?.value||'').toLowerCase();
+  const fj=activeJobNo;
+  const todayMode=activeMonth==='';
+  let vcols;
+  if(activeMonth){ vcols=allCols.filter(c=>c.mo===activeMonth); }
+  else{
+    const dFrom=new Date(TODAY+'T12:00:00'); dFrom.setMonth(dFrom.getMonth()-3);
+    const dTo=new Date(TODAY+'T12:00:00'); dTo.setMonth(dTo.getMonth()+3);
+    vcols=allCols.filter(c=>c.ds>=dFrom.toISOString().slice(0,10)&&c.ds<=dTo.toISOString().slice(0,10));
+  }
+  const shint=document.getElementById('scroll-hint'); if(shint) shint.hidden=!todayMode;
+  const mGroups=buildMonthGroups(vcols);
+  const STICKY_W=[90,80,180,130,105];
+  const left=[0,90,170,350,480];
+  document.getElementById('gantt-head').innerHTML=`
+    <tr>
+      <th class="info-th s0 sticky-bg" style="left:${left[0]}px;min-width:${STICKY_W[0]}px;cursor:pointer;user-select:none" rowspan="2" onclick="toggleJobSort()">Job No. <span style="font-size:10px;opacity:.8">${ganttSortDir===1?'▲':ganttSortDir===-1?'▼':'⇅'}</span></th>
+      <th class="info-th s0 sticky-bg" style="left:${left[1]}px;min-width:${STICKY_W[1]}px" rowspan="2">種別</th>
+      <th class="info-th s1 sticky-bg" style="left:${left[2]}px;min-width:${STICKY_W[2]}px" rowspan="2">件名</th>
+      <th class="info-th s2 sticky-bg" style="left:${left[3]}px;min-width:${STICKY_W[3]}px" rowspan="2">状態</th>
+      <th class="info-th s3 sticky-bg" style="left:${left[4]}px;min-width:${STICKY_W[4]}px;text-align:right" rowspan="2">合計h</th>
+      ${mGroups.map(g=>`<th class="month-th" colspan="${g.count}">${g.label.replace('/','年')}月</th>`).join('')}
+    </tr>
+    <tr>${vcols.map(c=>`<th class="day-th${c.ds===TODAY?' today-th':''}">${c.lbl}<br><span style="font-weight:400;opacity:.8">${c.dayJa}</span></th>`).join('')}</tr>`;
+  const rows=allRows.filter(r=>{
+    if(fa&&r.assignee!==fa) return false;
+    if(fs&&r.status!==fs) return false;
+    if(fc&&r.cat!==fc) return false;
+    if(ft&&!r.key.toLowerCase().includes(ft)&&!(r.jobNo||'').toLowerCase().includes(ft)&&!r.title.toLowerCase().includes(ft)) return false;
+    if(fj==='__blank__'){ if(r.jobNo) return false; }
+    else if(fj){ if(r.jobNo!==fj&&!r.jobNo.startsWith(fj+'-')) return false; }
+    if(activeMonth&&r.weekdayCount>0&&!vcols.some(c=>(r.daily[c.col]||0)>0)) return false;
+    return true;
+  });
+  const byPerson=groupBy(rows,'assignee');
+  let html='';
+  if(!rows.length){ html=`<tr><td colspan="${vcols.length+5}" class="empty-state">条件に一致するデータがありません</td></tr>`; }
+  else {
+    let personEntries=Object.entries(byPerson).sort((a,b)=>a[0].localeCompare(b[0]));
+    personEntries.forEach(([name,tasksRaw])=>{
+      let tasks=ganttSortDir!==0?[...tasksRaw].sort((a,b)=>{ const aE=!a.jobNo,bE=!b.jobNo; if(aE&&bE) return 0; if(aE) return 1; if(bE) return -1; return ganttSortDir*(parseFloat(a.jobNo)-parseFloat(b.jobNo)); }):tasksRaw;
+      const personTotal=r2(tasks.reduce((s,r)=>s+r.distHours,0));
+      const personMonthTotal=activeMonth?r2(tasks.reduce((s,r)=>s+vcols.reduce((sv,c)=>sv+(r.daily[c.col]||0),0),0)):null;
+      const groupTotalCell=activeMonth?`<span style="font-weight:700;color:#546e7a">${personMonthTotal.toFixed(2)}</span><span style="color:#7898b8;font-size:10px"> /${personTotal.toFixed(2)}</span>`:`<span style="color:#9e9e9e;font-size:11px">合計</span>`;
+      const groupLabel=activeMonth?`${tasks.length}件 ／ 月計 <b>${personMonthTotal.toFixed(2)}h</b><span style="color:#7898b8;font-size:10px"> / ${personTotal.toFixed(2)}h</span>`:`${tasks.length}件 ／ 合計 ${personTotal.toFixed(2)}h`;
+      html+=`<tr class="ag-row">
+        <td colspan="4" class="s0 sticky-bg" style="left:0">👤 ${esc(name)} <span style="font-size:11px;font-weight:400;color:#607d8b;margin-left:8px">${groupLabel}</span></td>
+        <td class="s0 sticky-bg" style="left:${left[4]}px;text-align:right;padding-right:6px">${groupTotalCell}</td>
+        ${vcols.map(c=>{ const ds=r2(tasks.reduce((s,r)=>s+(r.daily[c.col]||0),0)); const ts=c.ds===TODAY?'border-left:2px solid #ffa726;border-right:2px solid #ffa726;':''; return ds>0?`<td style="background:#e8eef8;${ts}color:#546e7a;font-weight:700;font-size:11px;text-align:center">${ds.toFixed(2)}</td>`:`<td style="background:#e8eef8;${ts}"></td>`; }).join('')}
+      </tr>`;
+      tasks.forEach(row=>{
+        const total=row.distHours;
+        const monthTotal=activeMonth?r2(vcols.reduce((sv,c)=>sv+(row.daily[c.col]||0),0)):null;
+        const totalCell=activeMonth?`<span style="font-weight:700;color:#1a3a5c">${monthTotal.toFixed(2)}</span><span style="color:#7898b8;font-size:10px"> /${total.toFixed(2)}</span>`:`${total.toFixed(2)}`;
+        html+=`<tr>
+          <td class="info-td s0 sticky-bg" style="left:${left[0]}px"><code style="font-size:10px;color:#607d8b">${esc(row.jobNo||'')}</code></td>
+          <td class="info-td s0 sticky-bg tip-cell" style="left:${left[1]}px;max-width:${STICKY_W[1]}px;overflow:hidden;text-overflow:ellipsis;font-size:11px;color:#607d8b;cursor:default" data-tip="${esc(row.cat)}">${esc(trunc(row.cat,10))}</td>
+          <td class="info-td s1 sticky-bg tip-cell" style="left:${left[2]}px;max-width:${STICKY_W[2]}px;overflow:hidden;text-overflow:ellipsis;cursor:default" data-tip="${esc(row.title)}">${esc(trunc(row.title,22))}</td>
+          <td class="info-td s2 sticky-bg" style="left:${left[3]}px">${badge(row.status)}</td>
+          <td class="info-td s3 sticky-bg" style="left:${left[4]}px;text-align:right;padding-right:6px;font-weight:700">${totalCell}</td>
+          ${vcols.map(c=>{ const v=row.daily[c.col]; const tc=c.ds===TODAY?' today-cell':''; return v>0?`<td class="day-val${tc}">${v.toFixed(2)}</td>`:`<td class="day-zero${tc}">-</td>`; }).join('')}
+        </tr>`;
+      });
+    });
+  }
+  document.getElementById('gantt-body').innerHTML=html;
+  if(todayMode) scrollToToday('gantt-wrap');
+}
+function toggleJobSort(){ ganttSortDir=ganttSortDir===0?1:ganttSortDir===1?-1:0; renderGantt(); }
+
+// ==================== WORKLOAD ====================
+function renderWorkload(){
+  if(!allRows.length){ document.getElementById('wl-body').innerHTML=`<tr><td colspan="10" class="empty-state">Backlog APIに接続してデータを取得してください</td></tr>`; return; }
+  const fa=document.getElementById('wl-fA')?.value||'';
+  const todayMode=activeMonth==='';
+  let vcols;
+  if(activeMonth){ vcols=allCols.filter(c=>c.mo===activeMonth); }
+  else{
+    const dFrom=new Date(TODAY+'T12:00:00'); dFrom.setMonth(dFrom.getMonth()-3);
+    const dTo=new Date(TODAY+'T12:00:00'); dTo.setMonth(dTo.getMonth()+3);
+    vcols=allCols.filter(c=>c.ds>=dFrom.toISOString().slice(0,10)&&c.ds<=dTo.toISOString().slice(0,10));
+  }
+  const mGroups=buildMonthGroups(vcols);
+  const people=Object.keys(allWorkload).sort().filter(p=>!fa||p===fa);
+  document.getElementById('wl-head').innerHTML=`
+    <tr>
+      <th class="info-th s0 sticky-bg" style="left:0;min-width:140px" rowspan="2">担当者</th>
+      ${mGroups.map(g=>`<th class="month-th" colspan="${g.count}">${g.label.replace('/','年')}月</th>`).join('')}
+    </tr>
+    <tr>${vcols.map(c=>`<th class="day-th${c.ds===TODAY?' today-th':''}">${c.lbl}<br><span style="font-weight:400;opacity:.8">${c.dayJa}</span></th>`).join('')}</tr>`;
+  let html='';
+  if(!people.length){ html=`<tr><td colspan="${vcols.length+1}" class="empty-state">データがありません</td></tr>`; }
+  else {
+    people.forEach(name=>{
+      const pd=allWorkload[name]||{};
+      html+=`<tr>
+        <td class="info-td s0 sticky-bg" style="left:0;font-weight:700;color:#1a3a5c">${esc(name)}</td>
+        ${vcols.map(c=>{
+          const h=r2(pd[c.col]||0);
+          const rem=r2(CAPACITY-h);
+          const bg=wlColor(h,CAPACITY);
+          const overCap=h>CAPACITY;
+          const tc=c.ds===TODAY?' today-cell':'';
+          const recClass=h>0?' rec-cell':'';
+          if(h===0) return `<td class="wl-cell${tc}${recClass}" style="background:#f5f5f5" data-person="${esc(name)}" data-ds="${c.ds}" data-col="${c.col}"></td>`;
+          const remStr=rem>=0?`残${rem.toFixed(1)}`:`<span style="color:#c62828;font-weight:700">超${Math.abs(rem).toFixed(1)}</span>`;
+          return `<td class="wl-cell${tc}${recClass}" style="background:${bg}" data-person="${esc(name)}" data-ds="${c.ds}" data-col="${c.col}" title="${c.ds}  ${h}h稼働 / 残${rem}h">
+            <div class="wl-hours ${overCap?'wl-over':''}">${h.toFixed(2)}</div>
+            <div class="wl-remain">${remStr}</div>
+          </td>`;
+        }).join('')}
+      </tr>`;
+    });
+    if(people.length>1){
+      html+=`<tr style="border-top:2px solid #1a3a5c">
+        <td class="info-td s0 sticky-bg" style="left:0;font-weight:700;color:#607d8b">チーム合計</td>
+        ${vcols.map(c=>{ const total=r2(people.reduce((s,p)=>s+(allWorkload[p]?.[c.col]||0),0)); return total>0?`<td class="wl-cell" style="background:#e3f2fd;color:#1a3a5c;font-weight:700;font-size:11px">${total.toFixed(2)}</td>`:`<td class="wl-cell" style="background:#f5f5f5"></td>`; }).join('')}
+      </tr>`;
+    }
+  }
+  document.getElementById('wl-body').innerHTML=html;
+  if(todayMode) scrollToToday('wl-wrap');
+}
+
+// ワークロードセルクリック → レコメンドモーダル
+document.getElementById('wl-body').addEventListener('click',e=>{
+  const cell=e.target.closest('.rec-cell[data-person]'); if(!cell) return;
+  const h=parseFloat(cell.querySelector('.wl-hours')?.textContent||'0');
+  if(h>0) openRecommendModal(cell.dataset.person, cell.dataset.ds, h, +cell.dataset.col);
+});
+
+// ==================== PERSONAL SUMMARY ====================
+function renderPersonal(){
+  const sel=document.getElementById('person-select')?.value||'';
+  const mo=document.getElementById('person-month-sel')?.value||'';
+  const content=document.getElementById('personal-content');
+  if(!sel||!allRows.length){ content.innerHTML='<div style="text-align:center;padding:60px;color:#90a4ae;font-size:14px">担当者を選択してください</div>'; return; }
+  const pRows=allRows.filter(r=>r.assignee===sel);
+  const talent=talents.find(t=>t.name===sel);
+  const vcols=mo?allCols.filter(c=>c.mo===mo):allCols;
+  // KPIカード
+  const activeTasks=pRows.filter(r=>vcols.some(c=>(r.daily[c.col]||0)>0));
+  const totalDistH=r2(pRows.reduce((s,r)=>s+vcols.reduce((sv,c)=>sv+(r.daily[c.col]||0),0),0));
+  const capH=vcols.length*CAPACITY;
+  const util=capH>0?Math.round(totalDistH/capH*100):0;
+  const pd=allWorkload[sel]||{};
+  const overDays=allCols.filter(c=>(pd[c.col]||0)>CAPACITY).length;
+  // 月別稼働（全期間モードのみ）
+  const monthlyData=allMonths.map(mo=>{
+    const mCols=allCols.filter(c=>c.mo===mo);
+    const h=r2(mCols.reduce((s,c)=>s+(pd[c.col]||0),0));
+    const cap=mCols.length*CAPACITY;
+    return {mo,h,cap,pct:cap>0?h/cap:0};
+  });
+  const maxMoH=Math.max(...monthlyData.map(m=>m.h),1);
+  // カテゴリー別時間
+  const catMap={};
+  pRows.forEach(r=>{ (r.categories||[]).forEach(cat=>{ catMap[cat]=(catMap[cat]||0)+r.distHours; }); });
+  const catList=Object.entries(catMap).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const maxCatH=catList.length?catList[0][1]:1;
+  // 担当タスク一覧
+  const taskRows=pRows.sort((a,b)=>(a.startDs||'').localeCompare(b.startDs||''));
+  const skillTags=(talent?.skills||[]).map(s=>`<span class="skill-tag">${esc(s)}</span>`).join('');
+  content.innerHTML=`
+    <div class="person-header">
+      <div class="ph-avatar">${(sel[0]||'?').toUpperCase()}</div>
+      <div>
+        <div class="ph-name">${esc(sel)}</div>
+        <div class="ph-role">${esc(talent?.role||'-')}</div>
+        <div class="ph-skills">${skillTags||'<span style="opacity:.6;font-size:11px">スキルデータ未登録</span>'}</div>
+      </div>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><div class="lbl">担当タスク</div><div class="val"><span class="v-main">${activeTasks.length}</span><span class="v-sep"> / </span><span class="v-sub">${pRows.length}</span></div></div>
+      <div class="stat"><div class="lbl">按分済時間 <span class="lbl-sub">${mo||'全期間'}</span></div><div class="val"><span class="v-main">${totalDistH.toFixed(1)}</span><span class="v-sep">h</span></div></div>
+      <div class="stat ${util>100?'alert':util>80?'warn':'ok'}"><div class="lbl">稼働率</div><div class="val"><span class="v-main">${util}</span><span class="v-sep">%</span></div></div>
+      <div class="stat ${overDays>5?'alert':overDays>0?'warn':'ok'}"><div class="lbl">過負荷日数 <span class="lbl-sub">全期間</span></div><div class="val"><span class="v-main">${overDays}</span><span class="v-sep">日</span></div></div>
+    </div>
+    ${!mo?`
+    <div class="chart-section">
+      <div class="chart-title">月別稼働時間</div>
+      ${monthlyData.map(m=>{
+        const w=Math.round(m.h/maxMoH*100);
+        const col=m.pct>1?'#c62828':m.pct>0.8?'#ffa726':'#42a5f5';
+        return `<div class="month-bar-row">
+          <div class="mb-label">${m.mo.replace(/^\d{4}\//,'').replace('/','年')}月</div>
+          <div class="mb-bar-wrap"><div class="mb-bar" style="width:${w}%;background:${col}">${m.h>2?m.h.toFixed(1)+'h':''}</div></div>
+          <div class="mb-val">${m.h.toFixed(1)}h</div>
+        </div>`;
+      }).join('')}
+    </div>`:''}
+    ${catList.length?`
+    <div class="chart-section">
+      <div class="chart-title">カテゴリー別 按分時間</div>
+      ${catList.map(([cat,h])=>`<div class="cat-bar-row">
+        <div class="cb-label" title="${esc(cat)}">${esc(trunc(cat,16))}</div>
+        <div class="cb-bar-wrap"><div class="cb-bar" style="width:${Math.round(h/maxCatH*100)}%"></div></div>
+        <div class="cb-val">${h.toFixed(1)}h</div>
+      </div>`).join('')}
+    </div>`:'<div class="chart-section"><div class="chart-title">カテゴリー別按分時間</div><div style="color:#90a4ae;font-size:12px;text-align:center;padding:16px">カテゴリーデータがありません（Backlogの「カテゴリー」を設定するか、タレントデータのスキルが課題カテゴリーと一致するか確認）</div></div>'}
+    <div class="chart-section">
+      <div class="chart-title">担当タスク一覧</div>
+      <div style="overflow-x:auto">
+        <table class="task-list-table">
+          <thead><tr><th>課題キー</th><th>件名</th><th>状態</th><th>開始</th><th>期限</th><th style="text-align:right">予定h</th><th style="text-align:right">实績h</th><th>カテゴリー</th></tr></thead>
+          <tbody>${taskRows.map(r=>`<tr>
+            <td><code style="font-size:11px;color:#607d8b">${esc(r.key)}</code></td>
+            <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r.title)}">${esc(trunc(r.title,28))}</td>
+            <td>${badge(r.status)}</td>
+            <td style="font-size:11px">${r.startDs||'-'}</td>
+            <td style="font-size:11px">${r.endDs||'-'}</td>
+            <td style="text-align:right;font-weight:700">${r.estHours}</td>
+            <td style="text-align:right">${r.actHours}</td>
+            <td style="font-size:11px;color:#607d8b">${(r.categories||[]).join(', ')||'-'}</td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+// ==================== ESTIMATE ====================
+function getRate(assignee, client){
+  const talent=talents.find(t=>t.name===assignee);
+  const role=talent?.role||'';
+  if(!role) return 0;
+  // クライアント指定 → 社内基準フォールバック
+  let r=rates.find(r=>r.client===client&&r.role===role);
+  if(!r) r=rates.find(r=>r.client==='社内基準'&&r.role===role);
+  return r?.hourlyRate||0;
+}
+
+function renderEstimate(){
+  if(!['admin','sales'].includes(currentUser?.role||'')){
+    document.getElementById('estimate-body').innerHTML=`<tr><td colspan="10" class="empty-state">閲覧権限がありません</td></tr>`; return;
+  }
+  // レートカード表示
+  const ratesEl=document.getElementById('rates-display');
+  if(!rates.length){ ratesEl.innerHTML='<div style="font-size:12px;color:#90a4ae;text-align:center;padding:16px">レートデータなし。設定タブからインポートしてください。</div>'; }
+  else{
+    const byClient=groupBy(rates,'client');
+    ratesEl.innerHTML=Object.entries(byClient).map(([client,rs])=>`
+      <div style="margin-bottom:12px">
+        <div style="font-size:11px;font-weight:700;color:#607d8b;margin-bottom:6px">${esc(client)}</div>
+        <table class="rate-table" style="width:auto">
+          <thead><tr><th>役職</th><th style="text-align:right">¥/h</th></tr></thead>
+          <tbody>${rs.map(r=>`<tr><td>${esc(r.role)}</td><td style="text-align:right;font-weight:700">${r.hourlyRate.toLocaleString()}</td></tr>`).join('')}</tbody>
+        </table>
+      </div>`).join('');
+  }
+  const fa=document.getElementById('est-fA')?.value||'';
+  const fj=document.getElementById('est-fJ')?.value||'';
+  const rows=allRows.filter(r=>{
+    if(fa&&r.assignee!==fa) return false;
+    if(fj&&r.jobNo!==fj) return false;
+    return true;
+  });
+  let totalBudget=0, totalActual=0, totalEst=0, totalAct=0;
+  const rowsHtml=rows.map(r=>{
+    const rate=getRate(r.assignee,'社内基準');
+    const budget=r2(r.estHours*rate);
+    const actual=r2(r.actHours*rate);
+    const diff=r2(actual-budget);
+    totalBudget+=budget; totalActual+=actual; totalEst+=r.estHours; totalAct+=r.actHours;
+    return `<tr>
+      <td>${esc(r.assignee)}</td>
+      <td><code style="font-size:10px;color:#607d8b">${esc(r.jobNo||'')}</code></td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r.title)}">${esc(trunc(r.title,26))}</td>
+      <td style="font-size:11px;color:#607d8b">${esc(talents.find(t=>t.name===r.assignee)?.role||'-')}</td>
+      <td style="text-align:right">${rate>0?rate.toLocaleString():'-'}</td>
+      <td style="text-align:right">${r.estHours}</td>
+      <td style="text-align:right;font-weight:700">${rate>0?fmtYen(budget):'-'}</td>
+      <td style="text-align:right">${r.actHours}</td>
+      <td style="text-align:right">${rate>0?fmtYen(actual):'-'}</td>
+      <td style="text-align:right;font-weight:700" class="${diff>0?'cost-over':diff<0?'cost-ok':''}">${rate>0?(diff>0?'+':'')+fmtYen(diff):'-'}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('estimate-body').innerHTML=rowsHtml||`<tr><td colspan="10" class="empty-state">データなし</td></tr>`;
+  document.getElementById('estimate-summary').innerHTML=`
+    <div class="es-item"><div class="es-val">${totalEst.toFixed(1)}h</div><div class="es-lbl">予定時間</div></div>
+    <div class="es-item"><div class="es-val">${fmtYen(totalBudget)}</div><div class="es-lbl">予算合計</div></div>
+    <div class="es-item"><div class="es-val">${totalAct.toFixed(1)}h</div><div class="es-lbl">実績時間</div></div>
+    <div class="es-item"><div class="es-val ${totalActual>totalBudget?'':'cost-ok'}">${fmtYen(totalActual)}</div><div class="es-lbl">実費合計</div></div>
+    <div class="es-item"><div class="es-val ${totalActual-totalBudget>0?'cost-over':'cost-ok'}">${totalActual>=totalBudget?'+':''}${fmtYen(totalActual-totalBudget)}</div><div class="es-lbl">差異</div></div>`;
+}
+
+// ==================== REASSIGNMENT ====================
+async function saveReassignment(){
+  const from=document.getElementById('ra-from')?.value;
+  const to=document.getElementById('ra-to')?.value;
+  const taskKey=document.getElementById('ra-task-key')?.value.trim();
+  const taskTitle=document.getElementById('ra-task-title')?.value.trim();
+  const reason=document.getElementById('ra-reason')?.value.trim();
+  if(!from||!to){ toast('移管元・移管先を選択してください',true); return; }
+  if(from===to){ toast('移管元と移管先が同じです',true); return; }
+  const body={fromAssignee:from, toAssignee:to, taskKey, taskTitle, reason, recordedBy:currentUser?.displayName||''};
+  try{
+    const res=await fetch(`${WORKER_URL}/reassignments`,{
+      method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${currentUser?.token||''}`},
+      body:JSON.stringify(body),
+    });
+    if(!res.ok) throw new Error('保存失敗');
+    reassignments.unshift({...body, recordedAt:new Date().toISOString()});
+    renderReassignLog();
+    renderDbRecentReassign();
+    document.getElementById('ra-from').value='';
+    document.getElementById('ra-to').value='';
+    document.getElementById('ra-task-key').value='';
+    document.getElementById('ra-task-title').value='';
+    document.getElementById('ra-reason').value='';
+    toast('再アサイン記録を保存しました',false);
+  }catch(e){ toast('エラー: '+e.message,true); }
+}
+
+function renderReassignLog(){
+  const el=document.getElementById('reassign-log-list'); if(!el) return;
+  if(!reassignments.length){ el.innerHTML='<div style="text-align:center;padding:30px;color:#90a4ae;font-size:13px">再アサイン記録はありません</div>'; return; }
+  el.innerHTML=reassignments.map(r=>`
+    <div class="reassign-log-item">
+      <div class="rli-header">
+        <span class="rli-date">${esc((r.recordedAt||'').slice(0,10))}</span>
+        <span class="rli-from">${esc(r.fromAssignee)}</span>
+        <span style="color:#90a4ae">→</span>
+        <span class="rli-to">${esc(r.toAssignee)}</span>
+        ${r.recordedBy?`<span style="font-size:11px;color:#b0bec5">記録: ${esc(r.recordedBy)}</span>`:''}
+      </div>
+      <div class="rli-body">
+        ${r.taskKey?`<b>${esc(r.taskKey)}</b> `:''} ${esc(r.taskTitle||'')}
+        ${r.reason?`<div style="margin-top:3px;color:#78909c">${esc(r.reason)}</div>`:''}
+      </div>
+    </div>`).join('');
+}
+
+// ==================== MONTHLY REPORT ====================
+function renderReport(){
+  const mo=document.getElementById('report-month-sel')?.value; if(!mo||!allRows.length) return;
+  const mCols=allCols.filter(c=>c.mo===mo);
+  const people=Object.keys(allWorkload).sort();
+  const rows=people.map(name=>{
+    const pd=allWorkload[name]||{};
+    const h=r2(mCols.reduce((s,c)=>s+(pd[c.col]||0),0));
+    const cap=mCols.length*CAPACITY;
+    const util=cap>0?Math.round(h/cap*100):0;
+    const overD=mCols.filter(c=>(pd[c.col]||0)>CAPACITY).length;
+    const pRows=allRows.filter(r=>r.assignee===name&&mCols.some(c=>(r.daily[c.col]||0)>0));
+    return {name,h,cap,util,overD,tasks:pRows.length};
+  }).filter(r=>r.h>0);
+  const totalH=r2(rows.reduce((s,r)=>s+r.h,0));
+  document.getElementById('report-content').innerHTML=`
+    <h2 style="font-size:16px;font-weight:700;color:#1a3a5c;margin-bottom:16px">${mo.replace('/','年')}月 稼働レポート</h2>
+    <div style="font-size:12px;color:#90a4ae;margin-bottom:20px">出力日: ${TODAY} ／ 所定労働時間: ${CAPACITY}h/日</div>
+    <table class="report-table" style="margin-bottom:20px">
+      <thead><tr><th>担当者</th><th style="text-align:right">按分時間</th><th style="text-align:right">稼働日数</th><th style="text-align:right">稼働率</th><th style="text-align:right">過負荷日</th><th style="text-align:right">担当タスク</th></tr></thead>
+      <tbody>
+        ${rows.map(r=>{
+          const col=r.util>100?'color:#c62828':r.util>80?'color:#e65100':'';
+          return `<tr>
+            <td style="font-weight:700">${esc(r.name)}</td>
+            <td style="text-align:right;font-weight:700">${r.h.toFixed(1)}h</td>
+            <td style="text-align:right">${Math.round(r.h/CAPACITY)}日相当</td>
+            <td style="text-align:right;font-weight:700;${col}">${r.util}%</td>
+            <td style="text-align:right;${r.overD>0?'color:#c62828;font-weight:700':''}">${r.overD}日</td>
+            <td style="text-align:right">${r.tasks}</td>
+          </tr>`;
+        }).join('')}
+        <tr style="border-top:2px solid #1a3a5c;font-weight:700">
+          <td>合計</td><td style="text-align:right">${totalH.toFixed(1)}h</td><td colspan="4"></td>
+        </tr>
+      </tbody>
+    </table>`;
+}
+
+function printReport(){ window.print(); }
+function downloadReport(){
+  const content=document.getElementById('report-content')?.innerHTML||'';
+  const mo=document.getElementById('report-month-sel')?.value||'';
+  downloadText(`report_${mo.replace('/','')}.html`,
+    `<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>${mo}稼働レポート</title><style>body{font-family:Meiryo,sans-serif;font-size:12px;padding:20px}table{border-collapse:collapse;width:100%}th{background:#1a3a5c;color:#fff;padding:8px 12px}td{padding:8px 12px;border-bottom:1px solid #eee}</style></head><body>${content}</body></html>`,
+    'text/html;charset=utf-8');
+  toast('HTMLをダウンロードしました',false);
+}
+
+// ==================== RECOMMEND MODAL ====================
+function openRecommendModal(person, ds, h, colIdx){
+  const overH=r2(h-CAPACITY);
+  // その日の過負荷担当者タスク
+  const tasks=allRows.filter(r=>r.assignee===person&&(r.daily[colIdx]||0)>0);
+  const cats=[...new Set(tasks.flatMap(r=>r.categories||[]))];
+  // 候補スタッフ計算
+  const candidates=Object.keys(allWorkload)
+    .filter(name=>name!==person)
+    .map(name=>{
+      const dayH=r2(allWorkload[name]?.[colIdx]||0);
+      const avail=r2(CAPACITY-dayH);
+      const talent=talents.find(t=>t.name===name);
+      const skills=talent?.skills||[];
+      const matchScore=cats.filter(c=>skills.includes(c)).length;
+      return {name,dayH,avail,matchScore,role:talent?.role||'-'};
+    })
+    .filter(c=>c.avail>0||c.matchScore>0)
+    .sort((a,b)=>b.matchScore-a.matchScore||(b.avail>0?1:0)-(a.avail>0?1:0)||b.avail-a.avail)
+    .slice(0,6);
+  const d=new Date(ds+'T12:00:00');
+  const dateLabel=`${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())}（${WD_JA[d.getDay()]}）`;
+  document.getElementById('rec-info').innerHTML=
+    `<b>${esc(person)}</b> ／ ${dateLabel} ／ 稼働 <b style="color:#c62828">${h.toFixed(1)}h</b> ／ 超過 <b style="color:#c62828">${overH.toFixed(1)}h</b>`;
+  document.getElementById('rec-tasks').innerHTML=tasks.length?`
+    <h4>この日の担当タスク（カテゴリー: ${cats.length?cats.map(c=>`<span style="background:#e8eaf6;color:#3949ab;padding:1px 6px;border-radius:8px;font-size:10px">${esc(c)}</span>`).join(' '):'なし'}）</h4>
+    ${tasks.map(t=>`<div class="rec-task-item">${esc(t.key)} ${esc(trunc(t.title,40))} — <b>${(t.daily[colIdx]||0).toFixed(2)}h</b></div>`).join('')}`
+    :'<h4>タスク情報なし</h4>';
+  document.getElementById('rec-candidates').innerHTML=`<h4>引き継ぎ候補スタッフ</h4>`+
+    (candidates.length?candidates.map(c=>{
+      const matchColor=c.matchScore>0?'#3949ab':'#b0bec5';
+      return `<div class="rec-candidate">
+        <div class="rc-score" style="color:${matchColor}">${c.matchScore>0?'★'.repeat(Math.min(c.matchScore,3)):'—'}</div>
+        <div style="flex:1">
+          <div class="rc-name">${esc(c.name)}</div>
+          <div class="rc-detail">${esc(c.role)} ／ 当日稼働: ${c.dayH.toFixed(1)}h
+            ${c.matchScore>0?`<span class="rc-match">カテゴリー ${c.matchScore}件一致</span>`:''}
+          </div>
+        </div>
+        <div class="rc-avail ${c.avail>0?'ok':'warn'}">${c.avail>0?`余力 ${c.avail.toFixed(1)}h`:'余力なし'}</div>
+      </div>`;
+    }).join('')
+    :`<div class="no-candidates">引き継ぎ可能なスタッフが見つかりません<br><span style="font-size:12px">設定タブからタレントデータをインポートするとスキルマッチングが有効になります</span></div>`);
+  document.getElementById('recommend-modal').classList.add('open');
+}
+
+// ==================== SCROLL TO TODAY ====================
+function scrollToToday(wrapId){
+  const todayMode=activeMonth===''; if(!todayMode) return;
+  const tw=document.getElementById(wrapId); if(!tw) return;
+  setTimeout(()=>{
+    const dayThs=tw.querySelectorAll('th.day-th');
+    const vcols=activeMonth?allCols.filter(c=>c.mo===activeMonth):allCols;
+    const todayIdx=vcols.findIndex(c=>c.ds===TODAY);
+    if(todayIdx>=0&&dayThs[todayIdx]){
+      tw.scrollLeft=0;
+      const fl=dayThs[0].getBoundingClientRect().left;
+      const tl=dayThs[todayIdx].getBoundingClientRect().left;
+      tw.scrollLeft=Math.max(0,tl-fl);
+    }
+  },50);
+}
+
+// モーダル
+function closeRecommendModal(){ document.getElementById('recommend-modal').classList.remove('open'); }
+document.getElementById('recommend-modal').addEventListener('click',e=>{ if(e.target===document.getElementById('recommend-modal')) closeRecommendModal(); });
+
+// Shift+ホイールで横スクロール
+['gantt-wrap','wl-wrap'].forEach(id=>{
+  const el=document.getElementById(id); if(!el) return;
+  el.addEventListener('wheel',e=>{ if(!e.shiftKey||Math.abs(e.deltaX)>0) return; e.preventDefault(); el.scrollLeft+=e.deltaY; },{passive:false});
+});
+
+// ツールチップ
+(function(){
+  const tip=document.getElementById('gl-tip'); let visible=false;
+  function moveTip(e){ const tw=tip.offsetWidth,th=tip.offsetHeight; let x=e.clientX+14,y=e.clientY-th-16; if(x+tw>window.innerWidth-10) x=e.clientX-tw-14; if(y<8) y=e.clientY+20; tip.style.left=x+'px'; tip.style.top=y+'px'; }
+  ['gantt-body','wl-body'].forEach(id=>{
+    const tb=document.getElementById(id); if(!tb) return;
+    tb.addEventListener('mouseover',e=>{ const cell=e.target.closest('.tip-cell'); if(!cell) return; tip.textContent=cell.dataset.tip||''; tip.style.display='block'; visible=true; moveTip(e); });
+    tb.addEventListener('mousemove',e=>{ if(visible) moveTip(e); });
+    tb.addEventListener('mouseout',e=>{ if(!e.target.closest('.tip-cell')) return; tip.style.display='none'; visible=false; });
+  });
+})();
+</script>
+</body>
+</html>
