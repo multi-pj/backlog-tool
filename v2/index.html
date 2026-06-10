@@ -85,6 +85,8 @@ nav{background:#fff;border-bottom:2px solid #e3e9f0;padding:0 20px;display:flex;
 .btn-secondary{background:#f0f0f0;color:#607d8b;border:1px solid #d0dae6}
 .btn-secondary:hover:not(:disabled){background:#e0e0e0}
 .btn-sm{padding:6px 12px;font-size:12px}
+.btn-connected{background:#00bcd4;color:#fff;border:none}
+.btn-connected:hover{background:#00acc1;opacity:1}
 .btn-xs{padding:3px 8px;font-size:11px;border-radius:5px}
 
 /* ===== Toast ===== */
@@ -208,6 +210,11 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 .task-list-table td{padding:7px 10px;border-bottom:1px solid #f0f2f5;vertical-align:middle}
 .task-list-table tr:hover td{background:#f5f7fa}
 
+/* ===== Period Range ===== */
+.period-range{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;padding:8px 12px;background:#f0f5ff;border-radius:6px;border:1px solid #d0dae6}
+.period-range input[type=date]{padding:5px 8px;border:1px solid #b0bec5;border-radius:5px;font-size:12px;color:#1a3a5c}
+.period-range input[type=date]:focus{outline:none;border-color:#1a3a5c}
+
 /* ===== Estimate ===== */
 .rate-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:12px}
 .rate-table th{background:#1a3a5c;color:#fff;padding:8px 12px;text-align:left;font-size:11px}
@@ -215,10 +222,23 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 .rate-table tr:hover td{background:#f5f7fa}
 .cost-over{color:#c62828;font-weight:700}
 .cost-ok{color:#2e7d32}
-.estimate-summary{display:flex;gap:20px;flex-wrap:wrap;padding:14px 20px;background:#f8faff;border-radius:8px;border:1px solid #d0dae6;margin-bottom:16px}
-.es-item{text-align:center}
+/* レートカード横並び表 */
+.rate-cross-table{border-collapse:collapse;font-size:12px;width:auto;min-width:420px}
+.rate-cross-table th{background:#1a3a5c;color:#fff;padding:8px 16px;text-align:center;font-size:11px;white-space:nowrap}
+.rate-cross-table th:first-child{text-align:left;background:#2c4d70}
+.rate-cross-table td{padding:8px 16px;border-bottom:1px solid #edf0f5;text-align:right;font-weight:700;white-space:nowrap}
+.rate-cross-table td:first-child{text-align:left;font-weight:600;color:#37474f;background:#f8faff;border-right:2px solid #d0dae6}
+.rate-cross-table tr:hover td{background:#f0f5ff}
+.rate-cross-table tr:hover td:first-child{background:#e8eef8}
+.rate-cross-table .rate-empty{color:#b0bec5;font-weight:400;text-align:center}
+/* 見積サマリー改善 */
+.estimate-summary{display:flex;align-items:stretch;gap:0;background:#f8faff;border-radius:10px;border:1px solid #d0dae6;margin-bottom:16px;overflow:hidden}
+.es-group{display:flex;gap:0;flex:1}
+.es-item{text-align:center;padding:14px 20px;flex:1;border-right:1px solid #e3e9f0}
+.es-item:last-child{border-right:none}
+.es-group-divider{width:2px;background:#d0dae6;flex-shrink:0}
 .es-val{font-size:20px;font-weight:700;color:#1a3a5c}
-.es-lbl{font-size:11px;color:#90a4ae;text-transform:uppercase;letter-spacing:.4px}
+.es-lbl{font-size:10px;color:#90a4ae;text-transform:uppercase;letter-spacing:.4px;margin-top:2px}
 
 /* ===== Reassignment Log ===== */
 .reassign-form{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
@@ -383,7 +403,7 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
   <div id="sec-dashboard">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
       <h2 style="font-size:16px;font-weight:700;color:#1a3a5c">チームダッシュボード</h2>
-      <button class="btn btn-primary btn-sm" onclick="loadData()">🔗 Backlogと連携</button>
+      <button id="connect-btn" class="btn btn-primary btn-sm" onclick="loadData()">🔗 Backlogと連携</button>
       <span id="db-last-updated" style="font-size:11px;color:#90a4ae"></span>
     </div>
     <div class="stats-row" id="db-stats-row">
@@ -432,6 +452,14 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
         </div>
       </div>
       <div class="month-nav" id="gantt-month-nav"></div>
+      <div class="period-range">
+        <span style="font-size:12px;color:#607d8b;font-weight:600">📅 表示期間:</span>
+        <input type="date" id="period-from" onchange="onPeriodChange()">
+        <span style="font-size:12px;color:#90a4ae">〜</span>
+        <input type="date" id="period-to" onchange="onPeriodChange()">
+        <button class="btn btn-secondary btn-sm" onclick="resetPeriod()">リセット</button>
+        <span id="period-hint" style="font-size:11px;color:#90a4ae">未設定時は本日±3ヶ月を表示</span>
+      </div>
       <div class="scroll-hint" id="scroll-hint" hidden>💡 Shift + マウスホイールで横スクロール</div>
     </div>
     <!-- zero warn banner -->
@@ -457,6 +485,14 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
         <select id="wl-fA" onchange="renderWorkload()"><option value="">全員</option></select>
       </div>
       <div class="month-nav" id="wl-month-nav"></div>
+      <div class="period-range">
+        <span style="font-size:12px;color:#607d8b;font-weight:600">📅 表示期間:</span>
+        <input type="date" id="wl-period-from" onchange="onPeriodChange()">
+        <span style="font-size:12px;color:#90a4ae">〜</span>
+        <input type="date" id="wl-period-to" onchange="onPeriodChange()">
+        <button class="btn btn-secondary btn-sm" onclick="resetPeriod()">リセット</button>
+        <span style="font-size:11px;color:#90a4ae">未設定時は本日±3ヶ月を表示</span>
+      </div>
     </div>
     <div class="legend" id="wl-legend">
       <span style="font-weight:600;color:#607d8b">負荷:</span>
@@ -606,11 +642,19 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 
     <div class="card">
       <div class="card-title">タレント管理（スキルセット）</div>
+      <div style="background:#e8f5e9;border:1px solid #a5d6a7;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#2e7d32">
+        <b>💡 name は Backlog の担当者名と完全一致させてください。</b><br>
+        Backlogと連携後「Backlog担当者から自動生成」で担当者名を自動入力できます。
+      </div>
+      <div style="margin-bottom:12px">
+        <button class="btn btn-secondary btn-sm" onclick="autoPopulateTalents()">📋 Backlog担当者から自動生成</button>
+        <span style="font-size:11px;color:#90a4ae;margin-left:8px">Backlog連携後に使用可。既存データは上書きしません。</span>
+      </div>
       <div class="settings-section">
         <h4>CSVインポート</h4>
         <p style="font-size:12px;color:#607d8b;margin-bottom:10px">
           形式: <code>name,role,skills</code><br>
-          skills: カテゴリー名をスラッシュ区切り（例: <code>WEB制作/UI設計/DTP</code>）
+          skills: Backlogのカテゴリー名をスラッシュ区切り（例: <code>WEB制作/UI設計/DTP</code>）
         </p>
         <div class="csv-upload-area" id="talents-drop" onclick="document.getElementById('talents-file').click()">
           <p>タレントCSVをドロップまたはクリックして選択</p>
@@ -760,6 +804,8 @@ let activeGanttTab= 'gantt';  // 'gantt' | 'workload'  (内部タブ)
 let activeMonth   = '';
 let ganttSortDir  = 0;
 let activeJobNo   = '';
+let periodFrom    = '';
+let periodTo      = '';
 let jobNoTips     = {};
 let fpHolStart    = null, fpHolEnd = null;
 // CSV pending data
@@ -1028,6 +1074,8 @@ async function loadData(){
     // 再アサインのfromTo select更新
     fillSel('ra-from',people); fillSel('ra-to',people);
     toast(`取得完了: ${allRows.length}件`,false);
+    const cb=document.getElementById('connect-btn');
+    if(cb){ cb.className='btn btn-connected btn-sm'; cb.textContent='✅ 連携済み'; }
     renderDashboard();
     if(activeMainTab==='gantt') renderGantt();
     if(activeMainTab==='workload') renderWorkload();
@@ -1168,6 +1216,52 @@ function switchMainTab(name,btn){
   if(name==='reassign')                  renderReassignLog();
   if(name==='report')                    renderReport();
   if(name==='settings'){ renderSettingsAccountList(); renderTalentsList(); }
+}
+
+function onPeriodChange(){
+  // ganttとworkloadで同じ入力を共有（どちらかの入力を更新したら両方に反映）
+  const gf=document.getElementById('period-from')?.value||'';
+  const gt=document.getElementById('period-to')?.value||'';
+  const wf=document.getElementById('wl-period-from')?.value||'';
+  const wt=document.getElementById('wl-period-to')?.value||'';
+  periodFrom = gf||wf;
+  periodTo   = gt||wt;
+  // 両方のinputを同期
+  ['period-from','wl-period-from'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=periodFrom; });
+  ['period-to','wl-period-to'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=periodTo; });
+  const hint=document.getElementById('period-hint');
+  if(hint) hint.textContent=periodFrom&&periodTo?`${periodFrom} 〜 ${periodTo}`:'未設定時は本日±3ヶ月を表示';
+  if(allRows.length) renderCurrent();
+}
+function resetPeriod(){
+  periodFrom=''; periodTo='';
+  ['period-from','wl-period-from','period-to','wl-period-to'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  const hint=document.getElementById('period-hint');
+  if(hint) hint.textContent='未設定時は本日±3ヶ月を表示';
+  if(allRows.length) renderCurrent();
+}
+function getViewCols(){
+  if(activeMonth) return allCols.filter(c=>c.mo===activeMonth);
+  if(periodFrom&&periodTo) return allCols.filter(c=>c.ds>=periodFrom&&c.ds<=periodTo);
+  const dFrom=new Date(TODAY+'T12:00:00'); dFrom.setMonth(dFrom.getMonth()-3);
+  const dTo=new Date(TODAY+'T12:00:00'); dTo.setMonth(dTo.getMonth()+3);
+  return allCols.filter(c=>c.ds>=dFrom.toISOString().slice(0,10)&&c.ds<=dTo.toISOString().slice(0,10));
+}
+function autoPopulateTalents(){
+  if(!allRows.length){ toast('先にBacklogと連携してください',true); return; }
+  const existing=new Set(talents.map(t=>t.name));
+  const newPeople=[...new Set(allRows.map(r=>r.assignee).filter(Boolean))].filter(n=>!existing.has(n));
+  if(!newPeople.length){ toast('新しい担当者はいません（全員登録済み）',false); renderTalentsList(); return; }
+  pendingTalents=[
+    ...talents,
+    ...newPeople.map(n=>({name:n,role:'',skills:[]}))
+  ];
+  renderCSVPreview('talents-preview',pendingTalents);
+  document.getElementById('talents-preview').hidden=false;
+  document.getElementById('talents-actions').hidden=false;
+  document.getElementById('talents-msg').textContent=`${newPeople.length}人を追加。役職・スキルをCSVで登録後「インポート実行」してください。`;
+  document.getElementById('talents-msg').style.color='#1a3a5c';
+  toast(`${newPeople.length}人のBacklog担当者を追加しました`,false);
 }
 
 function onCapChange(){
@@ -1625,14 +1719,8 @@ function renderGantt(){
   const fc=document.getElementById('fC')?.value||'';
   const ft=(document.getElementById('fT')?.value||'').toLowerCase();
   const fj=activeJobNo;
-  const todayMode=activeMonth==='';
-  let vcols;
-  if(activeMonth){ vcols=allCols.filter(c=>c.mo===activeMonth); }
-  else{
-    const dFrom=new Date(TODAY+'T12:00:00'); dFrom.setMonth(dFrom.getMonth()-3);
-    const dTo=new Date(TODAY+'T12:00:00'); dTo.setMonth(dTo.getMonth()+3);
-    vcols=allCols.filter(c=>c.ds>=dFrom.toISOString().slice(0,10)&&c.ds<=dTo.toISOString().slice(0,10));
-  }
+  const todayMode=activeMonth===''&&!periodFrom;
+  const vcols=getViewCols();
   const shint=document.getElementById('scroll-hint'); if(shint) shint.hidden=!todayMode;
   const mGroups=buildMonthGroups(vcols);
   const STICKY_W=[90,80,180,130,105];
@@ -1697,14 +1785,8 @@ function toggleJobSort(){ ganttSortDir=ganttSortDir===0?1:ganttSortDir===1?-1:0;
 function renderWorkload(){
   if(!allRows.length){ document.getElementById('wl-body').innerHTML=`<tr><td colspan="10" class="empty-state">Backlog APIに接続してデータを取得してください</td></tr>`; return; }
   const fa=document.getElementById('wl-fA')?.value||'';
-  const todayMode=activeMonth==='';
-  let vcols;
-  if(activeMonth){ vcols=allCols.filter(c=>c.mo===activeMonth); }
-  else{
-    const dFrom=new Date(TODAY+'T12:00:00'); dFrom.setMonth(dFrom.getMonth()-3);
-    const dTo=new Date(TODAY+'T12:00:00'); dTo.setMonth(dTo.getMonth()+3);
-    vcols=allCols.filter(c=>c.ds>=dFrom.toISOString().slice(0,10)&&c.ds<=dTo.toISOString().slice(0,10));
-  }
+  const todayMode=activeMonth===''&&!periodFrom;
+  const vcols=getViewCols();
   const mGroups=buildMonthGroups(vcols);
   const people=Object.keys(allWorkload).sort().filter(p=>!fa||p===fa);
   document.getElementById('wl-head').innerHTML=`
@@ -1858,20 +1940,25 @@ function renderEstimate(){
   if(!['admin','sales'].includes(currentUser?.role||'')){
     document.getElementById('estimate-body').innerHTML=`<tr><td colspan="10" class="empty-state">閲覧権限がありません</td></tr>`; return;
   }
-  // レートカード表示
+  // レートカード横並び表示
   const ratesEl=document.getElementById('rates-display');
-  if(!rates.length){ ratesEl.innerHTML='<div style="font-size:12px;color:#90a4ae;text-align:center;padding:16px">レートデータなし。設定タブからインポートしてください。</div>'; }
-  else{
-    const byClient=groupBy(rates,'client');
-    ratesEl.innerHTML=Object.entries(byClient).map(([client,rs])=>`
-      <div style="margin-bottom:12px">
-        <div style="font-size:11px;font-weight:700;color:#607d8b;margin-bottom:6px">${esc(client)}</div>
-        <table class="rate-table" style="width:auto">
-          <thead><tr><th>役職</th><th style="text-align:right">¥/h</th></tr></thead>
-          <tbody>${rs.map(r=>`<tr><td>${esc(r.role)}</td><td style="text-align:right;font-weight:700">${r.hourlyRate.toLocaleString()}</td></tr>`).join('')}</tbody>
-        </table>
-      </div>`).join('');
-  }
+  const displayRates=rates.length?rates:DEMO_RATES;
+  if(!rates.length) ratesEl.insertAdjacentHTML('beforebegin','<div style="font-size:11px;color:#e65100;padding:4px 8px;background:#fff3e0;border-radius:4px;margin-bottom:8px;display:inline-block">⚠ デモデータ表示中</div>');
+  const clients=[...new Set(displayRates.map(r=>r.client))].sort((a,b)=>a==='社内基準'?-1:b==='社内基準'?1:a.localeCompare(b,'ja'));
+  const roles=[...new Set(displayRates.map(r=>r.role))];
+  ratesEl.innerHTML=`<div style="overflow-x:auto"><table class="rate-cross-table">
+    <thead><tr>
+      <th style="min-width:120px">役職</th>
+      ${clients.map(c=>`<th style="min-width:110px">${esc(c)}</th>`).join('')}
+    </tr></thead>
+    <tbody>${roles.map(role=>`<tr>
+      <td>${esc(role)}</td>
+      ${clients.map(client=>{
+        const r=displayRates.find(r=>r.client===client&&r.role===role);
+        return r?`<td>¥${r.hourlyRate.toLocaleString()}</td>`:`<td class="rate-empty">—</td>`;
+      }).join('')}
+    </tr>`).join('')}
+    </tbody></table></div>`;
   const fa=document.getElementById('est-fA')?.value||'';
   const fj=document.getElementById('est-fJ')?.value||'';
   const rows=allRows.filter(r=>{
@@ -1901,11 +1988,19 @@ function renderEstimate(){
   }).join('');
   document.getElementById('estimate-body').innerHTML=rowsHtml||`<tr><td colspan="10" class="empty-state">データなし</td></tr>`;
   document.getElementById('estimate-summary').innerHTML=`
-    <div class="es-item"><div class="es-val">${totalEst.toFixed(1)}h</div><div class="es-lbl">予定時間</div></div>
-    <div class="es-item"><div class="es-val">${fmtYen(totalBudget)}</div><div class="es-lbl">予算合計</div></div>
-    <div class="es-item"><div class="es-val">${totalAct.toFixed(1)}h</div><div class="es-lbl">実績時間</div></div>
-    <div class="es-item"><div class="es-val ${totalActual>totalBudget?'':'cost-ok'}">${fmtYen(totalActual)}</div><div class="es-lbl">実費合計</div></div>
-    <div class="es-item"><div class="es-val ${totalActual-totalBudget>0?'cost-over':'cost-ok'}">${totalActual>=totalBudget?'+':''}${fmtYen(totalActual-totalBudget)}</div><div class="es-lbl">差異</div></div>`;
+    <div class="es-group">
+      <div class="es-item"><div class="es-val">${totalEst.toFixed(1)}h</div><div class="es-lbl">予定時間</div></div>
+      <div class="es-item"><div class="es-val">${fmtYen(totalBudget)}</div><div class="es-lbl">予算合計</div></div>
+    </div>
+    <div class="es-group-divider"></div>
+    <div class="es-group">
+      <div class="es-item"><div class="es-val">${totalAct.toFixed(1)}h</div><div class="es-lbl">実績時間</div></div>
+      <div class="es-item"><div class="es-val ${totalActual>totalBudget?'cost-over':''}">${fmtYen(totalActual)}</div><div class="es-lbl">実費合計</div></div>
+    </div>
+    <div class="es-group-divider"></div>
+    <div class="es-group">
+      <div class="es-item"><div class="es-val ${totalActual-totalBudget>0?'cost-over':'cost-ok'}">${totalActual>=totalBudget?'+':''}${fmtYen(totalActual-totalBudget)}</div><div class="es-lbl">予算差異</div></div>
+    </div>`;
 }
 
 // ==================== REASSIGNMENT ====================
