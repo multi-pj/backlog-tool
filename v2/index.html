@@ -85,8 +85,8 @@ nav{background:#fff;border-bottom:2px solid #e3e9f0;padding:0 20px;display:flex;
 .btn-secondary{background:#f0f0f0;color:#607d8b;border:1px solid #d0dae6}
 .btn-secondary:hover:not(:disabled){background:#e0e0e0}
 .btn-sm{padding:6px 12px;font-size:12px}
-.btn-connected{background:#00bcd4;color:#fff;border:none}
-.btn-connected:hover{background:#00acc1;opacity:1}
+.btn-connected{background:#0277bd;color:#fff;border:none}
+.btn-connected:hover{background:#01579b;opacity:1}
 .btn-xs{padding:3px 8px;font-size:11px;border-radius:5px}
 
 /* ===== Toast ===== */
@@ -210,9 +210,17 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 .task-list-table td{padding:7px 10px;border-bottom:1px solid #f0f2f5;vertical-align:middle}
 .task-list-table tr:hover td{background:#f5f7fa}
 
+/* ===== Filter Bar ===== */
+.filter-bar{background:#eef2fa;border-bottom:2px solid #c5cfe8;padding:14px 18px;border-radius:10px 10px 0 0}
+.filter-bar .filter-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.filter-bar label{font-size:12px;color:#455a64;font-weight:700;white-space:nowrap}
+.filter-bar select,.filter-bar input[type=text],.filter-bar input[type=number]{padding:6px 10px;border:1.5px solid #b0bec5;border-radius:6px;font-size:12px;background:#fff;color:#1a3a5c}
+.filter-bar select:focus,.filter-bar input:focus{outline:none;border-color:#1a3a5c}
+.filter-sep{width:1px;height:22px;background:#c5cfe8;flex-shrink:0}
+
 /* ===== Period Range ===== */
-.period-range{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;padding:8px 12px;background:#f0f5ff;border-radius:6px;border:1px solid #d0dae6}
-.period-range input[type=date]{padding:5px 8px;border:1px solid #b0bec5;border-radius:5px;font-size:12px;color:#1a3a5c}
+.period-range{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;padding:8px 14px;background:#fff;border-radius:6px;border:1.5px solid #b0bec5;width:fit-content}
+.period-range input[type=date]{padding:5px 8px;border:1px solid #b0bec5;border-radius:5px;font-size:12px;color:#1a3a5c;background:#fff}
 .period-range input[type=date]:focus{outline:none;border-color:#1a3a5c}
 
 /* ===== Estimate ===== */
@@ -231,6 +239,8 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 .rate-cross-table tr:hover td{background:#f0f5ff}
 .rate-cross-table tr:hover td:first-child{background:#e8eef8}
 .rate-cross-table .rate-empty{color:#b0bec5;font-weight:400;text-align:center}
+.rate-cross-table .col-internal th{background:#1b5e20!important}
+.rate-cross-table .col-internal td{background:#f1f8e9;color:#2e7d32}
 /* 見積サマリー改善 */
 .estimate-summary{display:flex;align-items:stretch;gap:0;background:#f8faff;border-radius:10px;border:1px solid #d0dae6;margin-bottom:16px;overflow:hidden}
 .es-group{display:flex;gap:0;flex:1}
@@ -401,10 +411,20 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 
   <!-- ========== DASHBOARD ========== -->
   <div id="sec-dashboard">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
-      <h2 style="font-size:16px;font-weight:700;color:#1a3a5c">チームダッシュボード</h2>
-      <button id="connect-btn" class="btn btn-primary btn-sm" onclick="loadData()">🔗 Backlogと連携</button>
-      <span id="db-last-updated" style="font-size:11px;color:#90a4ae"></span>
+    <div class="card" style="padding:14px 20px;margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <h2 style="font-size:16px;font-weight:700;color:#1a3a5c">チームダッシュボード</h2>
+        <button id="connect-btn" class="btn btn-primary btn-sm" onclick="loadData()">🔗 Backlogと連携</button>
+        <span id="db-last-updated" style="font-size:11px;color:#90a4ae"></span>
+      </div>
+      <div class="period-range">
+        <span style="font-size:12px;color:#455a64;font-weight:700">📅 表示期間:</span>
+        <input type="date" id="period-from" onchange="onPeriodChange()">
+        <span style="font-size:12px;color:#90a4ae">〜</span>
+        <input type="date" id="period-to" onchange="onPeriodChange()">
+        <button class="btn btn-secondary btn-sm" onclick="resetPeriod()">リセット</button>
+        <span id="period-hint" style="font-size:11px;color:#90a4ae">未設定時は本日±3ヶ月を表示</span>
+      </div>
     </div>
     <div class="stats-row" id="db-stats-row">
       <div class="stat"><div class="lbl">担当者数</div><div class="val"><span class="v-main" id="db-people">-</span></div></div>
@@ -432,35 +452,25 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 
   <!-- ========== GANTT ========== -->
   <div id="sec-gantt" hidden>
-    <div class="card" style="padding:16px 20px;margin-bottom:0;border-radius:10px 10px 0 0">
-      <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap" id="gantt-filters">
-          <label style="font-size:12px;color:#607d8b;font-weight:600">Job No.:</label>
-          <div class="csel" id="fJCsel"><div class="csel-cur" id="fJCur" onclick="toggleFJDrop(event)">全て</div><div class="csel-list" id="fJList"></div></div>
-          <label style="font-size:12px;color:#607d8b;font-weight:600">種別:</label>
-          <select id="fC" onchange="renderCurrent()"><option value="">全て</option></select>
-          <label style="font-size:12px;color:#607d8b;font-weight:600">状態:</label>
-          <select id="fS" onchange="renderCurrent()"><option value="">全て</option></select>
-          <input type="text" id="fT" placeholder="件名で検索" oninput="renderCurrent()" style="padding:6px 10px;border:1px solid #d0dae6;border-radius:6px;font-size:12px;min-width:150px">
-        </div>
-        <label style="font-size:12px;color:#607d8b;font-weight:600">担当者:</label>
+    <div class="filter-bar">
+      <div class="filter-row" id="gantt-filters">
+        <label>Job No.:</label>
+        <div class="csel" id="fJCsel"><div class="csel-cur" id="fJCur" onclick="toggleFJDrop(event)">全て</div><div class="csel-list" id="fJList"></div></div>
+        <div class="filter-sep"></div>
+        <label>種別:</label>
+        <select id="fC" onchange="renderCurrent()"><option value="">全て</option></select>
+        <label>状態:</label>
+        <select id="fS" onchange="renderCurrent()"><option value="">全て</option></select>
+        <input type="text" id="fT" placeholder="件名で検索" oninput="renderCurrent()" style="min-width:160px">
+        <div class="filter-sep"></div>
+        <label>担当者:</label>
         <select id="fA" onchange="renderCurrent()"><option value="">全員</option></select>
-        <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
-          <label style="font-size:12px;color:#607d8b;font-weight:600">1日稼働上限</label>
-          <input type="number" id="cap-input" value="8" min="1" max="24" step="0.5" onchange="onCapChange()" style="width:56px;padding:6px 8px;border:1px solid #d0dae6;border-radius:6px;font-size:13px;text-align:center">
-          <span style="font-size:12px;color:#607d8b">h</span>
-        </div>
+        <div class="filter-sep"></div>
+        <label>稼働上限</label>
+        <input type="number" id="cap-input" value="8" min="1" max="24" step="0.5" onchange="onCapChange()" style="width:56px;text-align:center">
+        <span style="font-size:12px;color:#607d8b">h/日</span>
       </div>
       <div class="month-nav" id="gantt-month-nav"></div>
-      <div class="period-range">
-        <span style="font-size:12px;color:#607d8b;font-weight:600">📅 表示期間:</span>
-        <input type="date" id="period-from" onchange="onPeriodChange()">
-        <span style="font-size:12px;color:#90a4ae">〜</span>
-        <input type="date" id="period-to" onchange="onPeriodChange()">
-        <button class="btn btn-secondary btn-sm" onclick="resetPeriod()">リセット</button>
-        <span id="period-hint" style="font-size:11px;color:#90a4ae">未設定時は本日±3ヶ月を表示</span>
-      </div>
-      <div class="scroll-hint" id="scroll-hint" hidden>💡 Shift + マウスホイールで横スクロール</div>
     </div>
     <!-- zero warn banner -->
     <div id="zero-warn-banner" class="zero-warn-banner" hidden>
@@ -470,6 +480,7 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
       </div>
       <div id="zero-warn-detail"><span id="zero-warn-msg"></span><div id="zero-warn-keys" style="margin-top:4px;font-size:11px;color:#795548"></div></div>
     </div>
+    <div id="scroll-hint" hidden style="font-size:11px;color:#607d8b;padding:6px 14px;background:#f5f7fa;border-top:1px solid #e0e6f0">💡 Shift + マウスホイールで横スクロール</div>
     <div class="table-panel">
       <div class="tw" id="gantt-wrap">
         <table><thead id="gantt-head"></thead><tbody id="gantt-body"></tbody></table>
@@ -479,21 +490,14 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 
   <!-- ========== WORKLOAD ========== -->
   <div id="sec-workload" hidden>
-    <div class="card" style="padding:16px 20px;margin-bottom:0;border-radius:10px 10px 0 0">
-      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-        <label style="font-size:12px;color:#607d8b;font-weight:600">担当者:</label>
+    <div class="filter-bar">
+      <div class="filter-row">
+        <label>担当者:</label>
         <select id="wl-fA" onchange="renderWorkload()"><option value="">全員</option></select>
       </div>
       <div class="month-nav" id="wl-month-nav"></div>
-      <div class="period-range">
-        <span style="font-size:12px;color:#607d8b;font-weight:600">📅 表示期間:</span>
-        <input type="date" id="wl-period-from" onchange="onPeriodChange()">
-        <span style="font-size:12px;color:#90a4ae">〜</span>
-        <input type="date" id="wl-period-to" onchange="onPeriodChange()">
-        <button class="btn btn-secondary btn-sm" onclick="resetPeriod()">リセット</button>
-        <span style="font-size:11px;color:#90a4ae">未設定時は本日±3ヶ月を表示</span>
-      </div>
     </div>
+    <div style="font-size:11px;color:#607d8b;padding:6px 14px;background:#f5f7fa;border-top:1px solid #e0e6f0">💡 Shift + マウスホイールで横スクロール</div>
     <div class="legend" id="wl-legend">
       <span style="font-weight:600;color:#607d8b">負荷:</span>
       <div class="legend-item"><div class="legend-dot" style="background:#f5f5f5"></div>0h</div>
@@ -631,6 +635,24 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
           <button class="btn btn-secondary btn-sm" onclick="exportAccountsTemplate()">テンプレートDL</button>
           <span id="accounts-msg" style="font-size:11px;font-weight:600"></span>
         </div>
+      </div>
+      <div class="settings-section">
+        <h4>アカウント追加（1件ずつ）</h4>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+          <div class="rf-field"><label>ユーザー名</label><input type="text" id="new-acc-username" placeholder="半角英数字"></div>
+          <div class="rf-field"><label>パスワード</label><input type="text" id="new-acc-password" placeholder="8文字以上推奨" autocomplete="off"></div>
+          <div class="rf-field"><label>ロール</label>
+            <select id="new-acc-role">
+              <option value="staff">staff（一般）</option>
+              <option value="sales">sales（営業）</option>
+              <option value="admin">admin（管理者）</option>
+            </select>
+          </div>
+          <div class="rf-field"><label>表示名</label><input type="text" id="new-acc-display" placeholder="例: 田中 花子"></div>
+          <div class="rf-field" style="grid-column:1/-1"><label>タレント名（Backlog担当者名と一致）</label><input type="text" id="new-acc-talent" placeholder="例: 田中 花子"></div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="addAccount()">追加</button>
+        <span id="add-acc-msg" style="font-size:11px;font-weight:600;margin-left:8px"></span>
       </div>
       <div class="settings-section">
         <h4>現在のアカウント</h4>
@@ -1335,14 +1357,51 @@ async function renderSettingsAccountList(){
     const list=await res.json();
     const displayList = list.length ? list : DEMO_ACCOUNTS;
     const demoNote = !list.length ? '<div style="font-size:11px;color:#e65100;padding:6px 12px;background:#fff3e0;border-radius:4px;margin-bottom:6px">⚠ KV未設定のためデモデータを表示しています（実際のログインには使用できません）</div>' : '';
+    const isReal = list.length > 0;
     container.innerHTML=demoNote + displayList.map(a=>`
       <div class="sal-item">
         <span class="sal-name">${esc(a.displayName||a.username)}</span>
         <span style="font-size:11px;color:#90a4ae">@${esc(a.username)}</span>
         <span class="sal-role ${a.role}">${a.role}</span>
-        <span style="font-size:11px;color:#b0bec5">${esc(a.talentName||'-')}</span>
+        <span style="font-size:11px;color:#b0bec5;flex:1">${esc(a.talentName||'-')}</span>
+        ${isReal&&a.username!==currentUser?.username?`<button onclick="deleteAccount('${esc(a.username)}')" style="padding:2px 8px;font-size:11px;border:1px solid #ef9a9a;border-radius:4px;background:#fff;color:#c62828;cursor:pointer">削除</button>`:''}
       </div>`).join('');
   }catch(e){ container.innerHTML=`<div style="color:#c62828;padding:12px;font-size:12px">${esc(e.message)}</div>`; }
+}
+
+async function addAccount(){
+  const u=document.getElementById('new-acc-username')?.value.trim();
+  const p=document.getElementById('new-acc-password')?.value.trim();
+  const r=document.getElementById('new-acc-role')?.value;
+  const d=document.getElementById('new-acc-display')?.value.trim();
+  const t=document.getElementById('new-acc-talent')?.value.trim();
+  const msg=document.getElementById('add-acc-msg');
+  if(!u||!p||!r){ msg.textContent='❌ ユーザー名・パスワード・ロールは必須'; msg.style.color='#c62828'; return; }
+  try{
+    const res=await fetch(`${WORKER_URL}/accounts/add`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json',Authorization:`Bearer ${currentUser?.token||''}`},
+      body:JSON.stringify({username:u,password:p,role:r,displayName:d||u,talentName:t||''}),
+    });
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error||'追加失敗');
+    msg.textContent=`✅ ${u} を追加しました`; msg.style.color='#2e7d32';
+    ['new-acc-username','new-acc-password','new-acc-display','new-acc-talent'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+    renderSettingsAccountList();
+  }catch(e){ msg.textContent='❌ '+e.message; msg.style.color='#c62828'; }
+}
+async function deleteAccount(username){
+  if(!confirm(`「${username}」を削除しますか？`)) return;
+  try{
+    const res=await fetch(`${WORKER_URL}/accounts/delete`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json',Authorization:`Bearer ${currentUser?.token||''}`},
+      body:JSON.stringify({username}),
+    });
+    if(!res.ok) throw new Error('削除失敗');
+    toast(`${username} を削除しました`,false);
+    renderSettingsAccountList();
+  }catch(e){ toast('削除エラー: '+e.message,true); }
 }
 
 // CSV インポート処理（共通パターン）
@@ -1723,8 +1782,8 @@ function renderGantt(){
   const vcols=getViewCols();
   const shint=document.getElementById('scroll-hint'); if(shint) shint.hidden=!todayMode;
   const mGroups=buildMonthGroups(vcols);
-  const STICKY_W=[90,80,180,130,105];
-  const left=[0,90,170,350,480];
+  const STICKY_W=[130,100,200,140,90];
+  const left=[0,130,230,430,570];
   document.getElementById('gantt-head').innerHTML=`
     <tr>
       <th class="info-th s0 sticky-bg" style="left:${left[0]}px;min-width:${STICKY_W[0]}px;cursor:pointer;user-select:none" rowspan="2" onclick="toggleJobSort()">Job No. <span style="font-size:10px;opacity:.8">${ganttSortDir===1?'▲':ganttSortDir===-1?'▼':'⇅'}</span></th>
@@ -1949,13 +2008,16 @@ function renderEstimate(){
   ratesEl.innerHTML=`<div style="overflow-x:auto"><table class="rate-cross-table">
     <thead><tr>
       <th style="min-width:120px">役職</th>
-      ${clients.map(c=>`<th style="min-width:110px">${esc(c)}</th>`).join('')}
+      ${clients.map(c=>`<th style="min-width:110px"${c==='社内基準'?' class="col-internal"':''}>
+        ${c==='社内基準'?'🏢 ':''}<b>${esc(c)}</b>${c==='社内基準'?'<br><span style="font-size:9px;font-weight:400;opacity:.8">（原価基準）</span>':''}
+      </th>`).join('')}
     </tr></thead>
     <tbody>${roles.map(role=>`<tr>
       <td>${esc(role)}</td>
       ${clients.map(client=>{
         const r=displayRates.find(r=>r.client===client&&r.role===role);
-        return r?`<td>¥${r.hourlyRate.toLocaleString()}</td>`:`<td class="rate-empty">—</td>`;
+        const cls=client==='社内基準'?' class="col-internal"':'';
+        return r?`<td${cls}>¥${r.hourlyRate.toLocaleString()}</td>`:`<td class="rate-empty${client==='社内基準'?' col-internal':''}">—</td>`;
       }).join('')}
     </tr>`).join('')}
     </tbody></table></div>`;
