@@ -327,6 +327,12 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 .zero-warn-banner{background:#fff8e1;border:1px solid #ffb300;border-radius:8px;padding:10px 16px;margin-bottom:12px;font-size:12px;color:#5d4037;line-height:1.7}
 .csel{position:relative;display:inline-block;vertical-align:middle}
 .csel-cur{display:inline-flex;align-items:center;gap:4px;padding:4px 24px 4px 8px;border:1px solid #d0dae6;border-radius:6px;background:#fff;cursor:pointer;font-size:13px;white-space:nowrap;min-width:72px;color:#333;position:relative;line-height:1.6}
+#fJCsel .csel-cur{min-width:130px}
+.sal-edit-row{background:#f0f5ff;border-bottom:2px solid #c5d3e8;padding:12px 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sal-edit-row .ef-label{font-size:11px;font-weight:700;color:#607d8b;display:block;margin-bottom:3px}
+.sal-edit-row input,.sal-edit-row select{width:100%;padding:6px 8px;border:1.5px solid #d0dae6;border-radius:5px;font-size:12px;outline:none}
+.sal-edit-row input:focus,.sal-edit-row select:focus{border-color:#1a3a5c}
+.sal-edit-footer{grid-column:1/-1;display:flex;gap:8px;padding-top:4px}
 .csel-cur::after{content:'▾';position:absolute;right:7px;top:50%;transform:translateY(-50%);color:#90a4ae;font-size:10px;pointer-events:none}
 .csel-open .csel-cur{border-color:#1a3a5c;box-shadow:0 0 0 2px rgba(26,58,92,.15)}
 .csel-list{display:none;position:absolute;top:calc(100% + 3px);left:0;min-width:120px;background:#fff;border:1px solid #d0dae6;border-radius:6px;box-shadow:0 4px 14px rgba(0,0,0,.15);z-index:600;max-height:240px;overflow-y:auto}
@@ -480,7 +486,7 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
       </div>
       <div id="zero-warn-detail"><span id="zero-warn-msg"></span><div id="zero-warn-keys" style="margin-top:4px;font-size:11px;color:#795548"></div></div>
     </div>
-    <div id="scroll-hint" hidden style="font-size:11px;color:#607d8b;padding:6px 14px;background:#f5f7fa;border-top:1px solid #e0e6f0">💡 Shift + マウスホイールで横スクロール</div>
+    <div id="scroll-hint" style="font-size:11px;color:#607d8b;padding:6px 14px;background:#f5f7fa;border-top:1px solid #e0e6f0">💡 Shift + マウスホイールで横スクロール</div>
     <div class="table-panel">
       <div class="tw" id="gantt-wrap">
         <table><thead id="gantt-head"></thead><tbody id="gantt-body"></tbody></table>
@@ -655,8 +661,10 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
         <span id="add-acc-msg" style="font-size:11px;font-weight:600;margin-left:8px"></span>
       </div>
       <div class="settings-section">
-        <h4>現在のアカウント</h4>
-        <div id="accounts-list" class="settings-accounts-list">
+        <h4 style="display:flex;align-items:center;justify-content:space-between">現在のアカウント
+          <button class="btn btn-secondary btn-xs" onclick="exportCurrentAccounts()">⬇ エクスポート</button>
+        </h4>
+        <div id="accounts-list" class="settings-accounts-list" style="max-height:320px;overflow-y:auto">
           <div style="font-size:12px;color:#90a4ae;padding:12px">読み込み中...</div>
         </div>
       </div>
@@ -690,7 +698,12 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
           <span id="talents-msg" style="font-size:11px;font-weight:600"></span>
         </div>
       </div>
-      <div id="talents-list" style="font-size:12px;color:#90a4ae;margin-top:8px"></div>
+      <div class="settings-section">
+        <h4 style="display:flex;align-items:center;justify-content:space-between">タレント一覧
+          <button class="btn btn-secondary btn-xs" onclick="exportCurrentTalents()">⬇ エクスポート</button>
+        </h4>
+        <div id="talents-list" style="font-size:12px;color:#90a4ae;margin-top:4px"></div>
+      </div>
     </div>
 
     <div class="card">
@@ -712,6 +725,12 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
           <button class="btn btn-secondary btn-sm" onclick="exportRatesTemplate()">テンプレートDL</button>
           <span id="rates-msg" style="font-size:11px;font-weight:600"></span>
         </div>
+      </div>
+      <div class="settings-section">
+        <h4 style="display:flex;align-items:center;justify-content:space-between">現在のレートカード
+          <button class="btn btn-secondary btn-xs" onclick="exportCurrentRates()">⬇ エクスポート</button>
+        </h4>
+        <div id="current-rates-list" style="font-size:12px;color:#90a4ae;margin-top:4px"></div>
       </div>
     </div>
 
@@ -964,6 +983,7 @@ async function saveCompanyHolidays(list){
     currentUser=JSON.parse(saved);
     document.getElementById('login-overlay').style.display='none';
     applyRole(currentUser.role);
+    tryRestoreFromSession();
   }
   document.getElementById('login-user').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('login-pass').focus(); });
   document.getElementById('login-pass').addEventListener('keydown',e=>{ if(e.key==='Enter') login(); });
@@ -1003,6 +1023,7 @@ async function login(){
 
 function logout(){
   sessionStorage.removeItem('bl_v2_user');
+  sessionStorage.removeItem('bl_v2_data');
   currentUser=null;
   allRows=[]; allCols=[]; allMonths=[]; allWorkload={};
   talents=[]; rates=[]; reassignments=[];
@@ -1079,33 +1100,59 @@ async function loadData(){
     await new Promise(r=>setTimeout(r,30));
     const rawRows=mapApiToRawRows(issues);
     const result=buildFromRawRows(rawRows);
-    allRows=result.rows; allCols=result.cols; allMonths=result.months;
-    allWorkload=buildWorkload(allRows,allCols);
-    // フィルター初期化
-    const people=[...new Set(allRows.map(r=>r.assignee).filter(Boolean))].sort();
-    fillSel('fA',people); fillSel('wl-fA',people);
-    fillSel('fC',[...new Set(allRows.map(r=>r.cat))].sort());
-    fillSel('fS',[...new Set(allRows.map(r=>r.status))].sort());
-    fillSel('est-fA',people);
-    fillSel('est-fJ',[...new Set(allRows.map(r=>r.jobNo).filter(Boolean))].sort());
-    fillPersonSelect();
-    fillJobNoSel();
-    buildMonthNav('gantt-month-nav', ()=>{renderGantt();});
-    buildMonthNav('wl-month-nav',    ()=>{renderWorkload();});
-    buildReportMonthSel();
-    document.getElementById('db-last-updated').textContent=`最終取得: ${TODAY}`;
-    showZeroWarnBanner(result.zeroWorkdayTasks||[]);
-    // 再アサインのfromTo select更新
-    fillSel('ra-from',people); fillSel('ra-to',people);
+    const zeroTasks=result.zeroWorkdayTasks||[];
+    applyLoadedData(result.rows, result.cols, result.months, buildWorkload(result.rows,result.cols), zeroTasks);
+    saveDataToSession(zeroTasks);
     toast(`取得完了: ${allRows.length}件`,false);
     const cb=document.getElementById('connect-btn');
     if(cb){ cb.className='btn btn-connected btn-sm'; cb.textContent='✅ 連携済み'; }
-    renderDashboard();
-    if(activeMainTab==='gantt') renderGantt();
-    if(activeMainTab==='workload') renderWorkload();
   }catch(e){
     toast('エラー: '+e.message,true);
   }finally{ setLoad(false); }
+}
+
+function applyLoadedData(rows, cols, months, workload, zeroTasks){
+  allRows=rows; allCols=cols; allMonths=months; allWorkload=workload;
+  const people=[...new Set(allRows.map(r=>r.assignee).filter(Boolean))].sort();
+  fillSel('fA',people); fillSel('wl-fA',people);
+  fillSel('fC',[...new Set(allRows.map(r=>r.cat))].sort());
+  fillSel('fS',[...new Set(allRows.map(r=>r.status))].sort());
+  fillSel('est-fA',people);
+  fillSel('est-fJ',[...new Set(allRows.map(r=>r.jobNo).filter(Boolean))].sort());
+  fillPersonSelect();
+  fillJobNoSel();
+  buildMonthNav('gantt-month-nav', ()=>{renderGantt();});
+  buildMonthNav('wl-month-nav',    ()=>{renderWorkload();});
+  buildReportMonthSel();
+  const upd=document.getElementById('db-last-updated');
+  if(upd) upd.textContent=`最終取得: ${TODAY}`;
+  fillSel('ra-from',people); fillSel('ra-to',people);
+  showZeroWarnBanner(zeroTasks||[]);
+  renderDashboard();
+  if(activeMainTab==='gantt') renderGantt();
+  if(activeMainTab==='workload') renderWorkload();
+}
+
+function saveDataToSession(zeroTasks){
+  try{
+    sessionStorage.setItem('bl_v2_data', JSON.stringify({
+      rows:allRows, cols:allCols, months:allMonths, workload:allWorkload,
+      zeroTasks:zeroTasks||[], savedAt:new Date().toISOString()
+    }));
+  }catch(e){}
+}
+
+function tryRestoreFromSession(){
+  try{
+    const raw=sessionStorage.getItem('bl_v2_data');
+    if(!raw) return false;
+    const d=JSON.parse(raw);
+    if(!d.rows||!d.rows.length) return false;
+    applyLoadedData(d.rows, d.cols, d.months, d.workload, d.zeroTasks||[]);
+    const cb=document.getElementById('connect-btn');
+    if(cb){ cb.className='btn btn-connected btn-sm'; cb.textContent='✅ 連携済み（キャッシュ）'; }
+    return true;
+  }catch(e){ return false; }
 }
 
 // ==================== CORE PROCESSING ====================
@@ -1239,7 +1286,7 @@ function switchMainTab(name,btn){
   if(name==='estimate')                  renderEstimate();
   if(name==='reassign')                  renderReassignLog();
   if(name==='report')                    renderReport();
-  if(name==='settings'){ renderSettingsAccountList(); renderTalentsList(); }
+  if(name==='settings'){ renderSettingsAccountList(); renderTalentsList(); renderCurrentRatesList(); }
 }
 
 function onPeriodChange(){
@@ -1344,6 +1391,8 @@ function buildReportMonthSel(){
 }
 
 // ==================== ACCOUNTS SETTINGS (段階3で描画) ====================
+let editingAccountUsername = null;
+
 async function renderSettingsAccountList(){
   const container=document.getElementById('accounts-list'); if(!container) return;
   if(!currentUser||currentUser.role!=='admin'){ container.innerHTML='<div style="color:#90a4ae;padding:12px;font-size:12px">管理者のみ閲覧可</div>'; return; }
@@ -1354,15 +1403,67 @@ async function renderSettingsAccountList(){
     const displayList = list.length ? list : DEMO_ACCOUNTS;
     const demoNote = !list.length ? '<div style="font-size:11px;color:#e65100;padding:6px 12px;background:#fff3e0;border-radius:4px;margin-bottom:6px">⚠ KV未設定のためデモデータを表示しています（実際のログインには使用できません）</div>' : '';
     const isReal = list.length > 0;
-    container.innerHTML=demoNote + displayList.map(a=>`
-      <div class="sal-item">
+    container.innerHTML=demoNote + displayList.map(a=>{
+      const isEditing=isReal&&editingAccountUsername===a.username;
+      const editForm=isEditing?`
+        <div class="sal-edit-row">
+          <div><label class="ef-label">ロール</label>
+            <select id="edit-acc-role">
+              <option value="staff"${a.role==='staff'?' selected':''}>staff（一般）</option>
+              <option value="sales"${a.role==='sales'?' selected':''}>sales（営業）</option>
+              <option value="admin"${a.role==='admin'?' selected':''}>admin（管理者）</option>
+            </select></div>
+          <div><label class="ef-label">表示名</label><input id="edit-acc-display" type="text" value="${esc(a.displayName||'')}" placeholder="表示名"></div>
+          <div><label class="ef-label">タレント名（Backlog担当者名と一致）</label><input id="edit-acc-talent" type="text" value="${esc(a.talentName||'')}" placeholder="例: 田中 花子"></div>
+          <div><label class="ef-label">新しいPW（変更する場合のみ）</label><input id="edit-acc-pw" type="text" value="" placeholder="4文字以上" autocomplete="off"></div>
+          <div class="sal-edit-footer">
+            <button class="btn btn-primary btn-xs" onclick="updateAccount('${esc(a.username)}')">保存</button>
+            <button class="btn btn-secondary btn-xs" onclick="cancelEditAccount()">キャンセル</button>
+            <span id="edit-acc-msg" style="font-size:11px;font-weight:600;margin-left:6px"></span>
+          </div>
+        </div>`:'';
+      return `<div class="sal-item">
         <span class="sal-name">${esc(a.displayName||a.username)}</span>
         <span style="font-size:11px;color:#90a4ae">@${esc(a.username)}</span>
         <span class="sal-role ${a.role}">${a.role}</span>
         <span style="font-size:11px;color:#b0bec5;flex:1">${esc(a.talentName||'-')}</span>
-        ${isReal&&a.username!==currentUser?.username?`<button onclick="deleteAccount('${esc(a.username)}')" style="padding:2px 8px;font-size:11px;border:1px solid #ef9a9a;border-radius:4px;background:#fff;color:#c62828;cursor:pointer">削除</button>`:''}
-      </div>`).join('');
+        ${isReal?`<button onclick="startEditAccount('${esc(a.username)}')" style="padding:2px 8px;font-size:11px;border:1px solid #90a4ae;border-radius:4px;background:#fff;color:#546e7a;cursor:pointer">${isEditing?'▲':'編集'}</button>`:''}
+        ${isReal&&a.username!==currentUser?.username?`<button onclick="deleteAccount('${esc(a.username)}')" style="padding:2px 8px;font-size:11px;border:1px solid #ef9a9a;border-radius:4px;background:#fff;color:#c62828;cursor:pointer;margin-left:4px">削除</button>`:''}
+      </div>${editForm}`;
+    }).join('');
   }catch(e){ container.innerHTML=`<div style="color:#c62828;padding:12px;font-size:12px">${esc(e.message)}</div>`; }
+}
+
+function startEditAccount(username){
+  editingAccountUsername = editingAccountUsername===username ? null : username;
+  renderSettingsAccountList();
+}
+function cancelEditAccount(){
+  editingAccountUsername = null;
+  renderSettingsAccountList();
+}
+async function updateAccount(username){
+  const role=document.getElementById('edit-acc-role')?.value;
+  const displayName=document.getElementById('edit-acc-display')?.value.trim();
+  const talentName=document.getElementById('edit-acc-talent')?.value.trim();
+  const password=document.getElementById('edit-acc-pw')?.value;
+  const msg=document.getElementById('edit-acc-msg');
+  if(msg){ msg.style.color='#607d8b'; msg.textContent='保存中...'; }
+  try{
+    const body={username,role,displayName,talentName};
+    if(password) body.password=password;
+    const res=await fetch(`${WORKER_URL}/accounts/update`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json',Authorization:`Bearer ${currentUser?.token||''}`},
+      body:JSON.stringify(body),
+    });
+    if(!res.ok){ const e=await res.json().catch(()=>({})); throw new Error(e.error||'更新失敗'); }
+    editingAccountUsername=null;
+    toast(`${username} を更新しました`,false);
+    renderSettingsAccountList();
+  }catch(e){
+    if(msg){ msg.style.color='#c62828'; msg.textContent='❌ '+e.message; }
+  }
 }
 
 async function addAccount(){
@@ -1498,6 +1599,7 @@ async function saveRates(){
     document.getElementById('rates-msg').textContent=`✅ ${list.length}件 保存しました`;
     document.getElementById('rates-msg').style.color='#2e7d32';
     if(activeMainTab==='estimate') renderEstimate();
+    renderCurrentRatesList();
     toast('レートカードを保存しました',false);
   }catch(e){ document.getElementById('rates-msg').textContent='❌ '+e.message; document.getElementById('rates-msg').style.color='#c62828'; }
 }
@@ -1527,6 +1629,42 @@ function exportTalentsTemplate(){
 function exportRatesTemplate(){
   downloadText('rates_template.csv','client,role,hourly_rate\n社内基準,ディレクター,8000\n社内基準,デザイナー,6000\nクライアントA,ディレクター,12000');
   toast('テンプレートをダウンロードしました',false);
+}
+
+async function exportCurrentAccounts(){
+  try{
+    const res=await fetch(`${WORKER_URL}/accounts`,{headers:{Authorization:`Bearer ${currentUser?.token||''}`}});
+    if(!res.ok) throw new Error('取得失敗');
+    const list=await res.json();
+    if(!list.length){ toast('アカウントデータがありません（KV未設定）',true); return; }
+    const csvData=list.map(a=>({username:a.username,role:a.role,display_name:a.displayName||'',talent_name:a.talentName||''}));
+    downloadText('accounts_export.csv','﻿'+toCSV(csvData),'text/csv;charset=utf-8');
+    toast(`アカウント${list.length}件をエクスポートしました`,false);
+  }catch(e){ toast('エクスポートエラー: '+e.message,true); }
+}
+function exportCurrentTalents(){
+  const list=talents.length?talents:DEMO_TALENTS;
+  const csvData=list.map(t=>({name:t.name,role:t.role||'',skills:(t.skills||[]).join('/')}));
+  downloadText('talents_export.csv','﻿'+toCSV(csvData),'text/csv;charset=utf-8');
+  toast(`タレント${list.length}件をエクスポートしました（${!talents.length?'デモデータ':'本番データ'}）`,false);
+}
+function exportCurrentRates(){
+  const list=rates.length?rates:DEMO_RATES;
+  const csvData=list.map(r=>({client:r.client||'',role:r.role||'',hourly_rate:r.hourlyRate||0}));
+  downloadText('rates_export.csv','﻿'+toCSV(csvData),'text/csv;charset=utf-8');
+  toast(`レート${list.length}件をエクスポートしました（${!rates.length?'デモデータ':'本番データ'}）`,false);
+}
+function renderCurrentRatesList(){
+  const el=document.getElementById('current-rates-list'); if(!el) return;
+  const list=rates.length?rates:DEMO_RATES;
+  if(!list.length){ el.textContent='データなし'; return; }
+  const demoNote=!rates.length?'<div style="font-size:11px;color:#e65100;margin-bottom:6px">⚠ デモデータ表示中</div>':'';
+  const clients=[...new Set(list.map(r=>r.client))];
+  el.innerHTML=demoNote+clients.map(c=>`
+    <div style="margin-bottom:8px"><b style="font-size:12px;color:#1a3a5c">${esc(c)}</b>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px">`+
+    list.filter(r=>r.client===c).map(r=>`<span style="padding:3px 10px;background:#f0f5ff;border:1px solid #d0dae6;border-radius:12px;font-size:11px"><b>${esc(r.role)}</b>: ${Number(r.hourlyRate).toLocaleString()}円/h</span>`).join('')+
+    `</div></div>`).join('');
 }
 
 // CSV アップロードエリア ドラッグ＆ドロップ
@@ -1776,10 +1914,10 @@ function renderGantt(){
   const fj=activeJobNo;
   const todayMode=activeMonth===''&&!periodFrom;
   const vcols=getViewCols();
-  const shint=document.getElementById('scroll-hint'); if(shint) shint.hidden=!todayMode;
+  const shint=document.getElementById('scroll-hint'); if(shint) shint.hidden=false;
   const mGroups=buildMonthGroups(vcols);
-  const STICKY_W=[130,100,200,140,90];
-  const left=[0,130,230,430,570];
+  const STICKY_W=[170,100,200,140,90];
+  const left=[0,170,270,470,610];
   document.getElementById('gantt-head').innerHTML=`
     <tr>
       <th class="info-th s0 sticky-bg" style="left:${left[0]}px;min-width:${STICKY_W[0]}px;cursor:pointer;user-select:none" rowspan="2" onclick="toggleJobSort()">Job No. <span style="font-size:10px;opacity:.8">${ganttSortDir===1?'▲':ganttSortDir===-1?'▼':'⇅'}</span></th>
