@@ -39,6 +39,7 @@ header h1{font-size:16px;font-weight:700;letter-spacing:.3px}
 .role-badge{padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
 .role-badge.admin{background:rgba(255,165,0,.25);color:#ffe0b2;border:1px solid rgba(255,165,0,.4)}
 .role-badge.sales{background:rgba(100,220,100,.2);color:#b9f6ca;border:1px solid rgba(100,220,100,.3)}
+.role-badge.leader{background:rgba(100,180,255,.2);color:#bbdefb;border:1px solid rgba(100,180,255,.35)}
 .role-badge.staff{background:rgba(255,255,255,.15);color:#e0e0e0;border:1px solid rgba(255,255,255,.2)}
 .hdr-right{margin-left:auto;display:flex;align-items:center;gap:8px}
 .btn-hdr{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);color:#fff;transition:background .15s}
@@ -292,6 +293,7 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 .sal-role{font-size:11px;padding:2px 7px;border-radius:10px;font-weight:700;width:42px;text-align:center;flex-shrink:0;box-sizing:border-box}
 .sal-role.admin{background:#fff3cd;color:#856404}
 .sal-role.sales{background:#e8f5e9;color:#2e7d32}
+.sal-role.leader{background:#e3f2fd;color:#1565c0}
 .sal-role.staff{background:#e8eaf6;color:#3949ab}
 
 /* ===== Recommendation Modal ===== */
@@ -302,6 +304,18 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 #confirm-overlay.open{display:flex}
 #confirm-box{background:#fff;border-radius:12px;padding:24px 28px;width:340px;max-width:92vw;box-shadow:0 8px 32px rgba(0,0,0,.3)}
 #confirm-msg{font-size:14px;color:#1a3a5c;margin-bottom:20px;line-height:1.6;font-weight:600}
+#pw-force-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:10100;display:none;align-items:center;justify-content:center}
+#pw-force-overlay.open{display:flex}
+#pw-force-box{background:#fff;border-radius:14px;padding:32px 36px;width:380px;max-width:94vw;box-shadow:0 8px 32px rgba(0,0,0,.35)}
+#pw-force-box h3{font-size:16px;font-weight:700;color:#1a3a5c;margin-bottom:6px}
+#pw-force-box p{font-size:12px;color:#607d8b;margin-bottom:18px;line-height:1.6}
+.pw-field{margin-bottom:12px}
+.pw-field label{font-size:11px;font-weight:700;color:#607d8b;display:block;margin-bottom:4px}
+.pw-field input{width:100%;padding:9px 11px;border:1.5px solid #d0dae6;border-radius:7px;font-size:13px;outline:none;box-sizing:border-box}
+.pw-field input:focus{border-color:#1a3a5c}
+#pw-self-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10050;display:none;align-items:center;justify-content:center}
+#pw-self-overlay.open{display:flex}
+#pw-self-box{background:#fff;border-radius:14px;padding:28px 32px;width:360px;max-width:94vw;box-shadow:0 8px 32px rgba(0,0,0,.3)}
 .confirm-btns{display:flex;gap:8px;justify-content:flex-end}
 .btn-danger{background:#c62828;color:#fff;border:none}
 .btn-danger:hover{opacity:.85}
@@ -397,6 +411,33 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
   </div>
 </div>
 
+<!-- ===================== FORCE PW CHANGE OVERLAY ===================== -->
+<div id="pw-force-overlay">
+  <div id="pw-force-box">
+    <h3>🔑 パスワードの変更が必要です</h3>
+    <p>初回ログインまたはパスワードリセット後のため、新しいパスワードを設定してください。</p>
+    <div class="pw-field"><label>新しいパスワード（6文字以上）</label><input type="password" id="pf-new" autocomplete="new-password" placeholder="新しいパスワード"></div>
+    <div class="pw-field"><label>新しいパスワード（確認）</label><input type="password" id="pf-confirm" autocomplete="new-password" placeholder="もう一度入力"></div>
+    <div id="pf-msg" style="font-size:12px;font-weight:600;margin-bottom:12px;min-height:18px"></div>
+    <button id="pf-btn" class="btn btn-primary" style="width:100%" onclick="submitForcePwChange()">変更して続ける</button>
+  </div>
+</div>
+
+<!-- ===================== SELF PW CHANGE OVERLAY ===================== -->
+<div id="pw-self-overlay">
+  <div id="pw-self-box">
+    <h3 style="font-size:15px;font-weight:700;color:#1a3a5c;margin-bottom:14px">🔑 パスワード変更</h3>
+    <div class="pw-field"><label>現在のパスワード</label><input type="password" id="ps-old" autocomplete="current-password" placeholder="現在のパスワード"></div>
+    <div class="pw-field"><label>新しいパスワード（6文字以上）</label><input type="password" id="ps-new" autocomplete="new-password" placeholder="新しいパスワード"></div>
+    <div class="pw-field"><label>新しいパスワード（確認）</label><input type="password" id="ps-confirm" autocomplete="new-password" placeholder="もう一度入力"></div>
+    <div id="ps-msg" style="font-size:12px;font-weight:600;margin-bottom:12px;min-height:18px"></div>
+    <div style="display:flex;gap:8px">
+      <button id="ps-btn" class="btn btn-primary" style="flex:1" onclick="submitSelfPwChange()">変更する</button>
+      <button class="btn btn-secondary" onclick="closeSelfPwChange()">キャンセル</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===================== HEADER ===================== -->
 <header>
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -412,6 +453,7 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
   </div>
   <div class="hdr-right">
     <button class="btn-hdr warn" id="admin-gear-btn" onclick="openAdminPanel()" hidden>⚙ 管理者設定</button>
+    <button class="btn-hdr" id="pw-self-btn" onclick="showSelfPwChange()" title="パスワード変更">🔑</button>
     <button class="btn-hdr" onclick="logout()">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
@@ -662,7 +704,7 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
         <h4>CSVインポート</h4>
         <p style="font-size:12px;color:#607d8b;margin-bottom:10px">
           形式: <code>username,password,role,display_name,talent_name</code><br>
-          role: <code>admin</code> / <code>sales</code> / <code>staff</code>
+          role: <code>admin</code> / <code>leader</code> / <code>sales</code> / <code>staff</code>
         </p>
         <div class="csv-upload-area" id="accounts-drop" onclick="document.getElementById('accounts-file').click()">
           <p>アカウントCSVをドロップまたはクリックして選択</p>
@@ -680,16 +722,21 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
         <h4>アカウント追加（1件ずつ）</h4>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
           <div class="rf-field"><label>ユーザー名</label><input type="text" id="new-acc-username" placeholder="半角英数字"></div>
-          <div class="rf-field"><label>パスワード</label><input type="text" id="new-acc-password" placeholder="8文字以上推奨" autocomplete="off"></div>
+          <div class="rf-field"><label>パスワード（仮）</label><input type="text" id="new-acc-password" placeholder="6文字以上" autocomplete="off"></div>
           <div class="rf-field"><label>ロール</label>
             <select id="new-acc-role">
               <option value="staff">staff（一般）</option>
+              <option value="leader">leader（リーダー）</option>
               <option value="sales">sales（営業）</option>
               <option value="admin">admin（管理者）</option>
             </select>
           </div>
           <div class="rf-field"><label>表示名</label><input type="text" id="new-acc-display" placeholder="例: 田中 花子"></div>
           <div class="rf-field" style="grid-column:1/-1"><label>タレント名（Backlog担当者名と一致）</label><input type="text" id="new-acc-talent" placeholder="例: 田中 花子"></div>
+          <div style="grid-column:1/-1;display:flex;align-items:center;gap:6px;font-size:12px;color:#37474f">
+            <input type="checkbox" id="new-acc-force-pw" checked>
+            <label for="new-acc-force-pw">初回ログイン時にパスワード変更を強制する（推奨）</label>
+          </div>
         </div>
         <button class="btn btn-primary btn-sm" onclick="addAccount()">追加</button>
         <span id="add-acc-msg" style="font-size:11px;font-weight:600;margin-left:8px"></span>
@@ -814,7 +861,7 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
       <div class="admin-section-body" id="pw-change-body">
         <div style="font-size:11px;color:#90a4ae;margin-bottom:8px">一般ユーザーのパスワードを変更します。全端末に即時反映されます。</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <input type="password" id="new-pw-input" autocomplete="new-password" placeholder="新しいパスワード（4文字以上）" style="flex:1;min-width:180px;padding:7px 10px;border:1.5px solid #d0dae6;border-radius:6px;font-size:12px">
+          <input type="password" id="new-pw-input" autocomplete="new-password" placeholder="新しいパスワード（6文字以上）" style="flex:1;min-width:180px;padding:7px 10px;border:1.5px solid #d0dae6;border-radius:6px;font-size:12px">
           <button class="btn btn-primary btn-sm" onclick="changeGeneralPassword()">変更</button>
         </div>
         <div id="pw-change-msg" style="font-size:11px;margin-top:6px;min-height:14px;font-weight:600"></div>
@@ -828,7 +875,7 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
         <div style="font-size:11px;color:#90a4ae;margin-bottom:8px">管理者ログインパスワードを変更します。全端末に即時反映されます。</div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <input type="password" id="admin-pw-current" autocomplete="current-password" placeholder="現在のパスワード" style="padding:7px 10px;border:1.5px solid #d0dae6;border-radius:6px;font-size:12px">
-          <input type="password" id="admin-pw-new" autocomplete="new-password" placeholder="新しいパスワード（4文字以上）" style="padding:7px 10px;border:1.5px solid #d0dae6;border-radius:6px;font-size:12px">
+          <input type="password" id="admin-pw-new" autocomplete="new-password" placeholder="新しいパスワード（6文字以上）" style="padding:7px 10px;border:1.5px solid #d0dae6;border-radius:6px;font-size:12px">
           <input type="password" id="admin-pw-confirm" autocomplete="new-password" placeholder="新しいパスワード（確認）" style="padding:7px 10px;border:1.5px solid #d0dae6;border-radius:6px;font-size:12px">
           <button class="btn btn-primary btn-sm" onclick="changeAdminPassword()" style="align-self:flex-start">変更</button>
         </div>
@@ -1065,12 +1112,13 @@ async function login(){
     });
     const data=await res.json();
     if(data.role){
-      currentUser={token:data.token,role:data.role,displayName:data.displayName||username,talentName:data.talentName||''};
+      currentUser={token:data.token,role:data.role,displayName:data.displayName||username,talentName:data.talentName||'',username:data.username||username};
       sessionStorage.setItem('bl_v2_user',JSON.stringify(currentUser));
       document.getElementById('login-overlay').style.display='none';
       errEl.textContent='';
       if(data.needsSetup) setTimeout(()=>toast('アカウント未設定です。設定タブからCSVをインポートしてください。',false),600);
       applyRole(data.role);
+      if(data.needsPwChange) setTimeout(()=>document.getElementById('pw-force-overlay').classList.add('open'),300);
     } else {
       passEl.value=''; passEl.classList.add('error');
       setTimeout(()=>passEl.classList.remove('error'),400);
@@ -1109,7 +1157,7 @@ function applyRole(role){
   const gear=document.getElementById('admin-gear-btn');
   if(gear) gear.hidden=(r!=='admin');
   // ロール別タブ表示
-  const canFinance=['admin','sales'].includes(r);
+  const canFinance=['admin','sales','leader'].includes(r);
   const isAdmin=r==='admin';
   document.getElementById('nav-estimate').hidden=!canFinance;
   document.getElementById('nav-reassign').hidden=!canFinance;
@@ -1189,8 +1237,8 @@ async function loadSupportData(role){
     } else { talents=DEMO_TALENTS; useDemoTalents=true; }
   }catch{ talents=DEMO_TALENTS; useDemoTalents=true; }
 
-  // レート・再アサイン（admin/sales）
-  if(['admin','sales'].includes(role)){
+  // レート・再アサイン（admin/sales/leader）
+  if(['admin','sales','leader'].includes(role)){
     try{
       const [rRes,raRes]=await Promise.all([
         fetch(`${WORKER_URL}/rates`,{headers:{Authorization:`Bearer ${currentUser?.token||''}`}}),
@@ -1567,12 +1615,17 @@ async function renderSettingsAccountList(){
           <div><label class="ef-label">ロール</label>
             <select id="edit-acc-role">
               <option value="staff"${a.role==='staff'?' selected':''}>staff（一般）</option>
+              <option value="leader"${a.role==='leader'?' selected':''}>leader（リーダー）</option>
               <option value="sales"${a.role==='sales'?' selected':''}>sales（営業）</option>
               <option value="admin"${a.role==='admin'?' selected':''}>admin（管理者）</option>
             </select></div>
           <div><label class="ef-label">表示名</label><input id="edit-acc-display" type="text" value="${esc(a.displayName||'')}" placeholder="表示名"></div>
           <div><label class="ef-label">タレント名（Backlog担当者名と一致）</label><input id="edit-acc-talent" type="text" value="${esc(a.talentName||'')}" placeholder="例: 田中 花子"></div>
-          <div><label class="ef-label">新しいPW（変更する場合のみ）</label><input id="edit-acc-pw" type="text" value="" placeholder="4文字以上" autocomplete="off"></div>
+          <div><label class="ef-label">パスワードリセット（変更する場合のみ入力）</label><input id="edit-acc-pw" type="text" value="" placeholder="6文字以上" autocomplete="off"></div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#37474f">
+            <input type="checkbox" id="edit-acc-force-pw" ${a.needsPwChange?' checked':''}>
+            <label for="edit-acc-force-pw">次回ログイン時にパスワード変更を強制する</label>
+          </div>
           <div class="sal-edit-footer">
             <button class="btn btn-primary btn-xs" onclick="updateAccount('${esc(a.username)}')">保存</button>
             <button class="btn btn-secondary btn-xs" onclick="cancelEditAccount()">キャンセル</button>
@@ -1607,10 +1660,12 @@ async function updateAccount(username){
   const displayName=document.getElementById('edit-acc-display')?.value.trim();
   const talentName=document.getElementById('edit-acc-talent')?.value.trim();
   const password=document.getElementById('edit-acc-pw')?.value;
+  const needsPwChange=document.getElementById('edit-acc-force-pw')?.checked;
   const msg=document.getElementById('edit-acc-msg');
+  if(password&&password.length<6){ if(msg){ msg.style.color='#c62828'; msg.textContent='❌ パスワードは6文字以上'; } return; }
   if(msg){ msg.style.color='#607d8b'; msg.textContent='保存中...'; }
   try{
-    const body={username,role,displayName,talentName};
+    const body={username,role,displayName,talentName,needsPwChange};
     if(password) body.password=password;
     const res=await fetch(`${WORKER_URL}/accounts/update`,{
       method:'POST',
@@ -1649,12 +1704,14 @@ async function addAccount(){
   const d=document.getElementById('new-acc-display')?.value.trim();
   const t=document.getElementById('new-acc-talent')?.value.trim();
   const msg=document.getElementById('add-acc-msg');
+  const forcePw=document.getElementById('new-acc-force-pw')?.checked!==false;
   if(!u||!p||!r){ msg.textContent='❌ ユーザー名・パスワード・ロールは必須'; msg.style.color='#c62828'; return; }
+  if(p.length<6){ msg.textContent='❌ パスワードは6文字以上で入力してください'; msg.style.color='#c62828'; return; }
   try{
     const res=await fetch(`${WORKER_URL}/accounts/add`,{
       method:'POST',
       headers:{'Content-Type':'application/json',Authorization:`Bearer ${currentUser?.token||''}`},
-      body:JSON.stringify({username:u,password:p,role:r,displayName:d||u,talentName:t||''}),
+      body:JSON.stringify({username:u,password:p,role:r,displayName:d||u,talentName:t||'',needsPwChange:forcePw}),
     });
     const data=await res.json();
     if(!res.ok) throw new Error(data.error||'追加失敗');
@@ -1854,7 +1911,7 @@ function exportAccountsTemplate(){
   const bom='﻿';
   const content=[
     '# Backlogリソース管理ツール - アカウントインポートテンプレート',
-    '# role は admin（管理者）/ sales（営業）/ staff（スタッフ）のいずれかを指定',
+    '# role は admin（管理者）/ leader（リーダー）/ sales（営業）/ staff（スタッフ）のいずれかを指定',
     '# display_name：ツール上の表示名　talent_name：Backlogの担当者名（完全一致）',
     '# ※パスワード列はエクスポートに含まれません。再インポート時は必ず入力してください。',
     'username,password,role,display_name,talent_name',
@@ -2080,7 +2137,7 @@ async function changeAdminPassword(){
   const cfm=document.getElementById('admin-pw-confirm').value;
   const msg=document.getElementById('admin-pw-change-msg');
   if(!cur){ msg.style.color='#c62828'; msg.textContent='現在のパスワードを入力してください'; return; }
-  if(!nw||nw.length<4){ msg.style.color='#c62828'; msg.textContent='新しいパスワードは4文字以上で入力してください'; return; }
+  if(!nw||nw.length<6){ msg.style.color='#c62828'; msg.textContent='新しいパスワードは6文字以上で入力してください'; return; }
   if(nw!==cfm){ msg.style.color='#c62828'; msg.textContent='新しいパスワードと確認用パスワードが一致しません'; return; }
   msg.style.color='#607d8b'; msg.textContent='変更中...';
   try{
@@ -2097,7 +2154,7 @@ async function changeAdminPassword(){
 async function changeGeneralPassword(){
   const newPw=document.getElementById('new-pw-input').value;
   const msg=document.getElementById('pw-change-msg');
-  if(!newPw||newPw.length<4){ msg.style.color='#c62828'; msg.textContent='4文字以上で入力してください'; return; }
+  if(!newPw||newPw.length<6){ msg.style.color='#c62828'; msg.textContent='6文字以上で入力してください'; return; }
   msg.style.color='#607d8b'; msg.textContent='変更中...';
   try{
     const res=await fetch(`${WORKER_URL}/auth/change-password`,{
@@ -2108,6 +2165,63 @@ async function changeGeneralPassword(){
     document.getElementById('new-pw-input').value='';
     msg.style.color='#2e7d32'; msg.textContent='変更しました（全端末に反映）'; setTimeout(()=>{msg.textContent='';},4000);
   }catch(e){ msg.style.color='#c62828'; msg.textContent=e.message; }
+}
+
+// ==================== パスワード変更（強制・自己） ====================
+async function submitForcePwChange(){
+  const nw=document.getElementById('pf-new').value;
+  const cfm=document.getElementById('pf-confirm').value;
+  const msg=document.getElementById('pf-msg');
+  const btn=document.getElementById('pf-btn');
+  if(!nw||nw.length<6){ msg.style.color='#c62828'; msg.textContent='6文字以上で入力してください'; return; }
+  if(nw!==cfm){ msg.style.color='#c62828'; msg.textContent='パスワードが一致しません'; return; }
+  msg.style.color='#607d8b'; msg.textContent='変更中...'; btn.disabled=true;
+  try{
+    const res=await fetch(`${WORKER_URL}/accounts/change-password`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json',Authorization:`Bearer ${currentUser?.token||''}`},
+      body:JSON.stringify({newPassword:nw}),
+    });
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data.error||'変更失敗');
+    document.getElementById('pw-force-overlay').classList.remove('open');
+    document.getElementById('pf-new').value='';
+    document.getElementById('pf-confirm').value='';
+    toast('パスワードを変更しました',false);
+  }catch(e){ msg.style.color='#c62828'; msg.textContent=e.message; }
+  finally{ btn.disabled=false; }
+}
+
+function showSelfPwChange(){
+  ['ps-old','ps-new','ps-confirm'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('ps-msg').textContent='';
+  document.getElementById('pw-self-overlay').classList.add('open');
+}
+function closeSelfPwChange(){
+  document.getElementById('pw-self-overlay').classList.remove('open');
+}
+async function submitSelfPwChange(){
+  const old=document.getElementById('ps-old').value;
+  const nw=document.getElementById('ps-new').value;
+  const cfm=document.getElementById('ps-confirm').value;
+  const msg=document.getElementById('ps-msg');
+  const btn=document.getElementById('ps-btn');
+  if(!old){ msg.style.color='#c62828'; msg.textContent='現在のパスワードを入力してください'; return; }
+  if(!nw||nw.length<6){ msg.style.color='#c62828'; msg.textContent='新しいパスワードは6文字以上で入力してください'; return; }
+  if(nw!==cfm){ msg.style.color='#c62828'; msg.textContent='パスワードが一致しません'; return; }
+  msg.style.color='#607d8b'; msg.textContent='変更中...'; btn.disabled=true;
+  try{
+    const res=await fetch(`${WORKER_URL}/accounts/change-password`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json',Authorization:`Bearer ${currentUser?.token||''}`},
+      body:JSON.stringify({oldPassword:old,newPassword:nw}),
+    });
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data.error||'変更失敗');
+    closeSelfPwChange();
+    toast('パスワードを変更しました',false);
+  }catch(e){ msg.style.color='#c62828'; msg.textContent=e.message; }
+  finally{ btn.disabled=false; }
 }
 
 // ==================== JOB NO. ドロップダウン ====================
@@ -2482,7 +2596,7 @@ function getRate(assignee, client){
 }
 
 function renderEstimate(){
-  if(!['admin','sales'].includes(currentUser?.role||'')){
+  if(!['admin','sales','leader'].includes(currentUser?.role||'')){
     document.getElementById('estimate-body').innerHTML=`<tr><td colspan="10" class="empty-state">閲覧権限がありません</td></tr>`; return;
   }
   // レートカード横並び表示
