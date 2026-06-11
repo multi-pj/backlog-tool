@@ -1812,11 +1812,13 @@ async function addAccount(){
     });
     const data=await res.json();
     if(!res.ok) throw new Error(data.error||'追加失敗');
+    if(t && (d||u)) displayNameMap[t]=d||u;
     const stubCreated=await ensureTalentStub(t);
-    msg.textContent=`✅ ${u} を追加しました${stubCreated?`（タレント「${t}」を自動生成）`:''}`;
+    msg.textContent=`✅ ${u} を追加しました${stubCreated?`（タレント「${dispName(t)||t}」を自動生成）`:''}`;
     msg.style.color='#2e7d32';
     clearNewAccountForm();
     renderSettingsAccountList();
+    if(stubCreated) renderTalentsList();
   }catch(e){ msg.textContent='❌ '+e.message; msg.style.color='#c62828'; }
 }
 function clearNewAccountForm(){
@@ -1977,10 +1979,12 @@ function renderTalentsList(){
             <span id="et-msg" style="font-size:11px;font-weight:600"></span>
           </div>
         </div>`:'' ;
+      const dispN=dispName(t.name);
       return `<div style="padding:10px 12px;background:#f8faff;border:1px solid #d0dae6;border-radius:8px">
         <div style="display:flex;justify-content:space-between;align-items:flex-start">
           <div>
-            <div style="font-weight:700;font-size:13px">${esc(t.name)}</div>
+            <div style="font-weight:700;font-size:13px">${esc(dispN)}</div>
+            ${dispN!==t.name?`<div style="font-size:10px;color:#b0bec5;margin-top:-1px">${esc(t.name)}</div>`:''}
             <div style="font-size:11px;color:#607d8b;margin-bottom:4px">${esc(t.role||'-')}</div>
             <div>${(t.skills||[]).map(s=>`<span class="skill-tag" style="background:#e8eaf6;color:#3949ab;padding:2px 6px;border-radius:8px;font-size:10px;font-weight:600;margin:2px 2px 0 0;display:inline-block">${esc(s)}</span>`).join('')}</div>
           </div>
