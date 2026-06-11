@@ -499,6 +499,10 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
         <button class="btn btn-primary btn-sm" onclick="onPeriodChange()">セット</button>
         <button class="btn btn-secondary btn-xs" onclick="resetPeriod()" style="margin-left:4px">リセット</button>
         <span id="period-hint" style="font-size:11px;color:#90a4ae">未設定時は本日±3ヶ月を表示</span>
+        <label style="font-size:11px;color:#607d8b;display:flex;align-items:center;gap:4px;cursor:pointer;margin-left:12px;white-space:nowrap">
+          <input type="checkbox" id="show-mgmt-cb" onchange="toggleMgmtPeople(this)">
+          管理者・営業を含む
+        </label>
       </div>
     </div>
     <div class="stats-row" id="db-stats-row">
@@ -918,6 +922,8 @@ let talents       = []; // [{name,role,skills:[]}]
 let rates         = []; // [{client,role,hourlyRate}]
 let reassignments = [];
 let displayNameMap= {}; // talentName → displayName（アカウント登録値）
+let talentRoleMap  = {}; // talentName → role（admin/sales/leader/staff）
+let showMgmtPeople = false; // 管理者・営業を担当者リストに含むか
 let unlinkedAssignees=[]; // Backlog担当者のうちアカウント未登録の人
 let companyHolidaysCache = [];
 let useDemoTalents = false;
@@ -1150,7 +1156,7 @@ function logout(){
     currentUser=null;
     allRows=[]; allCols=[]; allMonths=[]; allWorkload={};
     talents=[]; rates=[]; reassignments=[];
-    displayNameMap={}; unlinkedAssignees=[];
+    displayNameMap={}; talentRoleMap={}; showMgmtPeople=false; unlinkedAssignees=[];
     useDemoTalents=false; useDemoRates=false;
     document.getElementById('login-overlay').style.display='flex';
     document.getElementById('login-pass').value='';
@@ -1186,10 +1192,31 @@ async function loadDisplayNames(){
     const res=await fetch(`${WORKER_URL}/display-names`,{headers:{Authorization:`Bearer ${currentUser?.token||''}`}});
     if(res.ok){
       const list=await res.json();
-      displayNameMap={};
-      list.forEach(a=>{ if(a.talentName) displayNameMap[a.talentName]=a.displayName||a.talentName; });
+      displayNameMap={}; talentRoleMap={};
+      list.forEach(a=>{
+        if(a.talentName){
+          displayNameMap[a.talentName]=a.displayName||a.talentName;
+          talentRoleMap[a.talentName]=a.role||'';
+        }
+      });
     }
   }catch{}
+}
+function isMgmtPerson(name){
+  return ['admin','sales','leader'].includes(talentRoleMap[name]||'');
+}
+function filterPeople(people){
+  return showMgmtPeople ? people : people.filter(p=>!isMgmtPerson(p));
+}
+function toggleMgmtPeople(el){
+  showMgmtPeople=el.checked;
+  // すべてのセレクトを再構築
+  const people=filterPeople([...new Set(allRows.map(r=>r.assignee).filter(Boolean))].sort());
+  fillSel('fA',people,dispName); fillSel('wl-fA',people,dispName);
+  fillSel('est-fA',people,dispName);
+  fillSel('ra-from',people,dispName); fillSel('ra-to',people,dispName);
+  renderCurrent();
+  renderDashboard();
 }
 async function checkUnlinkedAssignees(){
   if(currentUser?.role!=='admin'||!allRows.length) return;
@@ -1293,9 +1320,10 @@ async function loadData(){
   }finally{ setLoad(false); }
 }
 
-function applyLoadedData(rows, cols, months, workload, zeroTasks){
+function applyLoadedData(rows, cols, months, workload, zeroTasks, fetchedAt){
   allRows=rows; allCols=cols; allMonths=months; allWorkload=workload;
-  const people=[...new Set(allRows.map(r=>r.assignee).filter(Boolean))].sort();
+  const allPeople=[...new Set(allRows.map(r=>r.assignee).filter(Boolean))].sort();
+  const people=filterPeople(allPeople);
   fillSel('fA',people,dispName); fillSel('wl-fA',people,dispName);
   fillSel('fC',[...new Set(allRows.map(r=>r.cat))].sort());
   fillSel('fS',[...new Set(allRows.map(r=>r.status))].sort());
@@ -1308,9 +1336,16 @@ function applyLoadedData(rows, cols, months, workload, zeroTasks){
   buildReportMonthSel();
   const upd=document.getElementById('db-last-updated');
   if(upd){
-    const now=new Date();
-    const hm=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-    upd.textContent=`最終取得日時: ${TODAY} ${hm}`;
+    if(fetchedAt){
+      const d=new Date(fetchedAt);
+      const ds=d.toISOString().slice(0,10);
+      const hm=`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+      upd.textContent=`最終取得日時: ${ds} ${hm}（キャッシュ）`;
+    } else {
+      const now=new Date();
+      const hm=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+      upd.textContent=`最終取得日時: ${TODAY} ${hm}`;
+    }
   }
   fillSel('ra-from',people,dispName); fillSel('ra-to',people,dispName);
   showZeroWarnBanner(zeroTasks||[]);
@@ -1342,7 +1377,7 @@ function tryRestoreFromSession(){
     if(!raw) return false;
     const d=JSON.parse(raw);
     if(!d.rows||!d.rows.length) return false;
-    applyLoadedData(d.rows, d.cols, d.months, d.workload, d.zeroTasks||[]);
+    applyLoadedData(d.rows, d.cols, d.months, d.workload, d.zeroTasks||[], d.savedAt||null);
     const cb=document.getElementById('connect-btn');
     if(cb){ cb.className='btn btn-connected btn-sm'; cb.textContent='✅ 連携済み（キャッシュ）'; }
     return true;
@@ -2328,7 +2363,7 @@ function renderDashboard(){
   }
   const isStaff=currentUser?.role==='staff';
   const staffName=currentUser?.talentName||'';
-  const allPeople=Object.keys(allWorkload);
+  const allPeople=filterPeople(Object.keys(allWorkload));
   const people=isStaff && staffName ? allPeople.filter(p=>p===staffName) : allPeople;
   const dbRows=isStaff && staffName ? allRows.filter(r=>r.assignee===staffName) : allRows;
   const curMo=`${new Date().getFullYear()}/${pad(new Date().getMonth()+1)}`;
@@ -2484,7 +2519,7 @@ function renderWorkload(){
   const todayMode=activeMonth===''&&!periodFrom;
   const vcols=getViewCols();
   const mGroups=buildMonthGroups(vcols);
-  const people=Object.keys(allWorkload).sort().filter(p=>!fa||p===fa);
+  const people=filterPeople(Object.keys(allWorkload)).sort().filter(p=>!fa||p===fa);
   document.getElementById('wl-head').innerHTML=`
     <tr>
       <th class="info-th s0 sticky-bg" style="left:0;min-width:140px" rowspan="2">担当者</th>
