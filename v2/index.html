@@ -389,6 +389,27 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
   body{background:#fff}
   .card{box-shadow:none;border:1px solid #ddd}
 }
+/* rec-task click/select */
+.rec-task-item{cursor:pointer;transition:background .15s,border-color .15s}
+.rec-task-item:hover{background:#ffebee;border-color:#e53935}
+.rec-task-item.selected{background:#fce4ec;border-color:#c62828;font-weight:700}
+.rec-candidate{cursor:pointer;transition:background .15s}
+.rec-candidate:hover{background:#f1f8f1}
+.rec-candidate.selected{background:#e8f5e9;border-color:#43a047}
+/* reassign log table */
+.reassign-log-table{width:100%;border-collapse:collapse;font-size:12px}
+.reassign-log-table th{background:#f0f4fa;color:#607d8b;font-size:11px;font-weight:700;padding:7px 10px;text-align:left;border-bottom:2px solid #d0dae6;white-space:nowrap}
+.reassign-log-table td{padding:7px 10px;border-bottom:1px solid #eef2f7;vertical-align:top;font-size:12px}
+.reassign-log-table tr:hover td{background:#fafbfe}
+.rlt-from{font-weight:700;color:#c62828}
+.rlt-to{font-weight:700;color:#2e7d32}
+.rlt-jobno,.rlt-key{font-family:monospace;font-size:11px;white-space:nowrap;color:#455a64}
+.rlt-title{color:#37474f}
+.rlt-reason{color:#90a4ae;font-size:11px;font-style:italic}
+.ra-pager{display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 0;font-size:12px;color:#607d8b}
+/* rec selected preview */
+#rec-selected-preview{margin:10px 0;padding:10px 12px;background:#e8f5e9;border:1px solid #c8e6c9;border-radius:8px;font-size:12px;display:none}
+#rec-selected-preview.visible{display:block}
 </style>
 </head>
 <body>
@@ -665,20 +686,31 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
           <label>移管先（引き継ぎスタッフ）</label>
           <select id="ra-to"><option value="">-- 選択 --</option></select>
         </div>
-        <div class="rf-field">
-          <label>対象タスク（課題キー）</label>
-          <input type="text" id="ra-task-key" placeholder="例: WLM-123">
-        </div>
-        <div class="rf-field">
-          <label>タスク名</label>
-          <input type="text" id="ra-task-title" placeholder="タスク名を入力">
+        <div class="rf-field full">
+          <div style="display:flex;gap:10px;align-items:flex-end">
+            <div style="flex:0 0 90px">
+              <label style="font-size:11px;font-weight:700;color:#607d8b;display:block;margin-bottom:4px">JOB No.</label>
+              <input type="text" id="ra-job-no" placeholder="例: 1.1" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1.5px solid #d0dae6;border-radius:6px;font-size:13px;outline:none;transition:border-color .2s">
+            </div>
+            <div style="flex:0 0 140px">
+              <label style="font-size:11px;font-weight:700;color:#607d8b;display:block;margin-bottom:4px">課題キー</label>
+              <input type="text" id="ra-task-key" placeholder="例: WLM-123" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1.5px solid #d0dae6;border-radius:6px;font-size:13px;outline:none;transition:border-color .2s">
+            </div>
+            <div style="flex:1">
+              <label style="font-size:11px;font-weight:700;color:#607d8b;display:block;margin-bottom:4px">タスク名</label>
+              <input type="text" id="ra-task-title" placeholder="タスク名を入力" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1.5px solid #d0dae6;border-radius:6px;font-size:13px;outline:none;transition:border-color .2s">
+            </div>
+          </div>
         </div>
         <div class="rf-field full">
           <label>理由・メモ</label>
           <textarea id="ra-reason" rows="2" placeholder="移管の理由や背景を記入"></textarea>
         </div>
       </div>
-      <button class="btn btn-primary" onclick="saveReassignment()">記録を保存</button>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="btn btn-primary" onclick="saveReassignment()">再アサインする</button>
+        <button class="btn btn-secondary" onclick="clearReassignForm()">クリア</button>
+      </div>
     </div>
     <div class="card">
       <div class="card-title">記録履歴</div>
@@ -847,7 +879,16 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
     <div class="rec-info" id="rec-info"></div>
     <div class="rec-tasks" id="rec-tasks"></div>
     <div class="rec-candidates" id="rec-candidates"></div>
-    <div style="margin-top:16px;display:flex;gap:8px">
+    <div id="rec-selected-preview">
+      <div style="font-size:11px;font-weight:700;color:#2e7d32;margin-bottom:6px">選択中の内容</div>
+      <div style="margin-bottom:4px"><span style="color:#607d8b;font-size:11px">タスク: </span><b id="rec-sel-task" style="color:#1a3a5c">（未選択）</b></div>
+      <div><span style="color:#607d8b;font-size:11px">移管先: </span><b id="rec-sel-candidate" style="color:#2e7d32">（未選択）</b></div>
+    </div>
+    <div style="margin:10px 0">
+      <input type="text" id="rec-memo" placeholder="理由・メモ（任意）" style="width:100%;box-sizing:border-box;padding:7px 10px;border:1.5px solid #d0dae6;border-radius:6px;font-size:12px;outline:none">
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button id="rec-reassign-btn" class="btn btn-primary btn-sm" onclick="saveReassignmentFromModal()" disabled>再アサインする</button>
       <button class="btn btn-secondary btn-sm" onclick="closeRecommendModal()">閉じる</button>
     </div>
   </div>
@@ -1644,6 +1685,10 @@ function buildReportMonthSel(){
 
 // ==================== ACCOUNTS SETTINGS (段階3で描画) ====================
 let editingAccountUsername = null;
+let reassignLogPage = 1;
+let modalFromPerson = '';
+let modalSelectedTask = null; // {key, title, jobNo}
+let modalSelectedCandidate = '';
 
 async function renderSettingsAccountList(){
   const container=document.getElementById('accounts-list'); if(!container) return;
@@ -2745,12 +2790,13 @@ function renderEstimate(){
 async function saveReassignment(){
   const from=document.getElementById('ra-from')?.value;
   const to=document.getElementById('ra-to')?.value;
+  const jobNo=document.getElementById('ra-job-no')?.value.trim()||'';
   const taskKey=document.getElementById('ra-task-key')?.value.trim();
   const taskTitle=document.getElementById('ra-task-title')?.value.trim();
   const reason=document.getElementById('ra-reason')?.value.trim();
   if(!from||!to){ toast('移管元・移管先を選択してください',true); return; }
   if(from===to){ toast('移管元と移管先が同じです',true); return; }
-  const body={fromAssignee:from, toAssignee:to, taskKey, taskTitle, reason, recordedBy:currentUser?.displayName||''};
+  const body={fromAssignee:from, toAssignee:to, jobNo, taskKey, taskTitle, reason, recordedBy:currentUser?.displayName||''};
   try{
     const res=await fetch(`${WORKER_URL}/reassignments`,{
       method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${currentUser?.token||''}`},
@@ -2758,34 +2804,57 @@ async function saveReassignment(){
     });
     if(!res.ok) throw new Error('保存失敗');
     reassignments.unshift({...body, recordedAt:new Date().toISOString()});
-    renderReassignLog();
+    renderReassignLog(1);
     renderDbRecentReassign();
-    document.getElementById('ra-from').value='';
-    document.getElementById('ra-to').value='';
-    document.getElementById('ra-task-key').value='';
-    document.getElementById('ra-task-title').value='';
-    document.getElementById('ra-reason').value='';
+    clearReassignForm();
     toast('再アサイン記録を保存しました',false);
   }catch(e){ toast('エラー: '+e.message,true); }
 }
 
-function renderReassignLog(){
+function clearReassignForm(){
+  ['ra-from','ra-to'].forEach(id=>{const el=document.getElementById(id); if(el) el.value='';});
+  ['ra-job-no','ra-task-key','ra-task-title','ra-reason'].forEach(id=>{const el=document.getElementById(id); if(el) el.value='';});
+}
+
+function renderReassignLog(page){
+  if(page!==undefined) reassignLogPage=page;
   const el=document.getElementById('reassign-log-list'); if(!el) return;
   if(!reassignments.length){ el.innerHTML='<div style="text-align:center;padding:30px;color:#90a4ae;font-size:13px">再アサイン記録はありません</div>'; return; }
-  el.innerHTML=reassignments.map(r=>`
-    <div class="reassign-log-item">
-      <div class="rli-header">
-        <span class="rli-date">${esc((r.recordedAt||'').slice(0,10))}</span>
-        <span class="rli-from">${esc(r.fromAssignee)}</span>
-        <span style="color:#90a4ae">→</span>
-        <span class="rli-to">${esc(r.toAssignee)}</span>
-        ${r.recordedBy?`<span style="font-size:11px;color:#b0bec5">記録: ${esc(r.recordedBy)}</span>`:''}
-      </div>
-      <div class="rli-body">
-        ${r.taskKey?`<b>${esc(r.taskKey)}</b> `:''} ${esc(r.taskTitle||'')}
-        ${r.reason?`<div style="margin-top:3px;color:#78909c">${esc(r.reason)}</div>`:''}
-      </div>
-    </div>`).join('');
+  const pageSize=20;
+  const total=reassignments.length;
+  const totalPages=Math.ceil(total/pageSize);
+  if(reassignLogPage<1) reassignLogPage=1;
+  if(reassignLogPage>totalPages) reassignLogPage=totalPages;
+  const start=(reassignLogPage-1)*pageSize;
+  const slice=reassignments.slice(start, start+pageSize);
+  el.innerHTML=`
+    <div style="overflow-x:auto">
+    <table class="reassign-log-table">
+      <thead><tr>
+        <th style="width:88px">日時</th>
+        <th>移管元 → 移管先</th>
+        <th style="width:72px">JOB No.</th>
+        <th style="width:88px">課題キー</th>
+        <th>タスク名</th>
+        <th style="width:140px">理由</th>
+      </tr></thead>
+      <tbody>
+        ${slice.map(r=>`<tr>
+          <td><span class="rli-date">${esc((r.recordedAt||'').slice(0,10))}</span></td>
+          <td><span class="rlt-from">${esc(dispName(r.fromAssignee))}</span><span style="color:#90a4ae;margin:0 4px">→</span><span class="rlt-to">${esc(dispName(r.toAssignee))}</span>${r.recordedBy?`<br><span style="font-size:10px;color:#b0bec5">by ${esc(r.recordedBy)}</span>`:''}</td>
+          <td class="rlt-jobno">${esc(r.jobNo||'')}</td>
+          <td class="rlt-key">${esc(r.taskKey||'')}</td>
+          <td class="rlt-title">${esc(r.taskTitle||'')}</td>
+          <td class="rlt-reason">${esc(r.reason||'')}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+    </div>
+    ${totalPages>1?`<div class="ra-pager">
+      <button class="btn btn-secondary btn-sm" onclick="renderReassignLog(${reassignLogPage-1})" ${reassignLogPage<=1?'disabled':''}>◀ 前へ</button>
+      <span>${reassignLogPage} / ${totalPages} ページ（全${total}件）</span>
+      <button class="btn btn-secondary btn-sm" onclick="renderReassignLog(${reassignLogPage+1})" ${reassignLogPage>=totalPages?'disabled':''}>次へ ▶</button>
+    </div>`:''}`;
 }
 
 // ==================== MONTHLY REPORT ====================
@@ -2839,13 +2908,22 @@ function downloadReport(){
 
 // ==================== RECOMMEND MODAL ====================
 function openRecommendModal(person, ds, h, colIdx){
+  // reset modal selection state
+  modalFromPerson=person;
+  modalSelectedTask=null;
+  modalSelectedCandidate='';
+  const prev=document.getElementById('rec-selected-preview');
+  if(prev) prev.classList.remove('visible');
+  const btn=document.getElementById('rec-reassign-btn');
+  if(btn) btn.disabled=true;
+  const memo=document.getElementById('rec-memo');
+  if(memo) memo.value='';
+
   const overH=r2(h-CAPACITY);
-  // その日の過負荷担当者タスク
   const tasks=allRows.filter(r=>r.assignee===person&&(r.daily[colIdx]||0)>0);
   const cats=[...new Set(tasks.flatMap(r=>r.categories||[]))];
-  // 候補スタッフ計算
   const candidates=Object.keys(allWorkload)
-    .filter(name=>name!==person)
+    .filter(name=>name!==person&&!isMgmtPerson(name))
     .map(name=>{
       const dayH=r2(allWorkload[name]?.[colIdx]||0);
       const avail=r2(CAPACITY-dayH);
@@ -2862,13 +2940,13 @@ function openRecommendModal(person, ds, h, colIdx){
   document.getElementById('rec-info').innerHTML=
     `<b>${esc(dispName(person))}</b> ／ ${dateLabel} ／ 稼働 <b style="color:#c62828">${h.toFixed(1)}h</b> ／ 超過 <b style="color:#c62828">${overH.toFixed(1)}h</b>`;
   document.getElementById('rec-tasks').innerHTML=tasks.length?`
-    <h4>この日の担当タスク（カテゴリー: ${cats.length?cats.map(c=>`<span style="background:#e8eaf6;color:#3949ab;padding:1px 6px;border-radius:8px;font-size:10px">${esc(c)}</span>`).join(' '):'なし'}）</h4>
-    ${tasks.map(t=>`<div class="rec-task-item">${esc(t.key)} ${esc(trunc(t.title,40))} — <b>${(t.daily[colIdx]||0).toFixed(2)}h</b></div>`).join('')}`
+    <h4>この日の担当タスク — クリックして選択（カテゴリー: ${cats.length?cats.map(c=>`<span style="background:#e8eaf6;color:#3949ab;padding:1px 6px;border-radius:8px;font-size:10px">${esc(c)}</span>`).join(' '):'なし'}）</h4>
+    ${tasks.map(t=>`<div class="rec-task-item" onclick="selectReassignTask(${JSON.stringify(t.key)},${JSON.stringify(t.title)},${JSON.stringify(t.jobNo||'')})">${t.jobNo?`<span class="rlt-jobno">[${esc(t.jobNo)}] </span>`:''}<b style="font-family:monospace;font-size:11px">${esc(t.key)}</b> ${esc(trunc(t.title,38))} — <b>${(t.daily[colIdx]||0).toFixed(2)}h</b></div>`).join('')}`
     :'<h4>タスク情報なし</h4>';
-  document.getElementById('rec-candidates').innerHTML=`<h4>引き継ぎ候補スタッフ</h4>`+
+  document.getElementById('rec-candidates').innerHTML=`<h4>引き継ぎ候補スタッフ — クリックして選択</h4>`+
     (candidates.length?candidates.map(c=>{
       const matchColor=c.matchScore>0?'#3949ab':'#b0bec5';
-      return `<div class="rec-candidate">
+      return `<div class="rec-candidate" onclick="selectReassignCandidate(${JSON.stringify(c.name)})">
         <div class="rc-score" style="color:${matchColor}">${c.matchScore>0?'★'.repeat(Math.min(c.matchScore,3)):'—'}</div>
         <div style="flex:1">
           <div class="rc-name">${esc(dispName(c.name))}</div>
@@ -2881,6 +2959,61 @@ function openRecommendModal(person, ds, h, colIdx){
     }).join('')
     :`<div class="no-candidates">引き継ぎ可能なスタッフが見つかりません<br><span style="font-size:12px">設定タブからタレントデータをインポートするとスキルマッチングが有効になります</span></div>`);
   document.getElementById('recommend-modal').classList.add('open');
+}
+
+function selectReassignTask(key, title, jobNo){
+  modalSelectedTask={key, title, jobNo};
+  document.querySelectorAll('.rec-task-item').forEach(el=>el.classList.remove('selected'));
+  const clicked=(event.target||event.srcElement).closest('.rec-task-item');
+  if(clicked) clicked.classList.add('selected');
+  const el=document.getElementById('rec-sel-task');
+  if(el) el.textContent=`${jobNo?'['+jobNo+'] ':''}${key} ${trunc(title,30)}`;
+  updateRecModalBtn();
+}
+
+function selectReassignCandidate(name){
+  modalSelectedCandidate=name;
+  document.querySelectorAll('.rec-candidate').forEach(el=>el.classList.remove('selected'));
+  const clicked=(event.target||event.srcElement).closest('.rec-candidate');
+  if(clicked) clicked.classList.add('selected');
+  const el=document.getElementById('rec-sel-candidate');
+  if(el) el.textContent=dispName(name);
+  updateRecModalBtn();
+}
+
+function updateRecModalBtn(){
+  const prev=document.getElementById('rec-selected-preview');
+  const btn=document.getElementById('rec-reassign-btn');
+  const bothSelected=!!modalSelectedTask&&!!modalSelectedCandidate;
+  if(prev){ if(modalSelectedTask||modalSelectedCandidate) prev.classList.add('visible'); }
+  if(btn) btn.disabled=!bothSelected;
+}
+
+async function saveReassignmentFromModal(){
+  if(!modalSelectedTask||!modalSelectedCandidate){ toast('タスクと移管先スタッフを選択してください',true); return; }
+  if(modalFromPerson===modalSelectedCandidate){ toast('移管元と移管先が同じです',true); return; }
+  const reason=document.getElementById('rec-memo')?.value.trim()||'';
+  const body={
+    fromAssignee: modalFromPerson,
+    toAssignee: modalSelectedCandidate,
+    jobNo: modalSelectedTask.jobNo||'',
+    taskKey: modalSelectedTask.key,
+    taskTitle: modalSelectedTask.title,
+    reason,
+    recordedBy: currentUser?.displayName||''
+  };
+  try{
+    const res=await fetch(`${WORKER_URL}/reassignments`,{
+      method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${currentUser?.token||''}`},
+      body:JSON.stringify(body),
+    });
+    if(!res.ok) throw new Error('保存失敗');
+    reassignments.unshift({...body, recordedAt:new Date().toISOString()});
+    renderReassignLog(1);
+    renderDbRecentReassign();
+    closeRecommendModal();
+    toast('再アサイン記録を保存しました',false);
+  }catch(e){ toast('エラー: '+e.message,true); }
 }
 
 // ==================== SCROLL TO TODAY ====================
