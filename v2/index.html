@@ -1574,6 +1574,7 @@ function updateMonthNavActive(navId){
 function renderCurrent(){
   if(activeMainTab==='gantt') renderGantt();
   else if(activeMainTab==='workload') renderWorkload();
+  else if(activeMainTab==='dashboard') renderDashboard();
 }
 
 function fillPersonSelect(){
@@ -2329,7 +2330,11 @@ function renderDashboard(){
   const curMo=`${new Date().getFullYear()}/${pad(new Date().getMonth()+1)}`;
   const moRows=dbRows.filter(r=>r.monthTotals&&r.monthTotals[curMo]);
   const wdH=r2(moRows.reduce((s,r)=>s+(r.monthTotals[curMo]||0),0));
-  // 今後2週間の過負荷チェック
+  // 表示期間で担当者数・稼働タスク数を絞る
+  const viewCols=getViewCols();
+  const activePeople=people.filter(name=>{ const pd=allWorkload[name]||{}; return viewCols.some(c=>(pd[c.col]||0)>0); });
+  const activeTasks=dbRows.filter(r=>viewCols.some(c=>(r.daily[c.col]||0)>0));
+  // 今後2週間の過負荷チェック（常に固定）
   const twoWeeksLater=new Date(TODAY+'T12:00:00'); twoWeeksLater.setDate(twoWeeksLater.getDate()+14);
   const twStr=twoWeeksLater.toISOString().slice(0,10);
   const upcomingCols=allCols.filter(c=>c.ds>=TODAY&&c.ds<=twStr);
@@ -2341,8 +2346,8 @@ function renderDashboard(){
     if(overDays.length>0) overloadPeople.push({name,overDays:overDays.length,maxH,pct:maxH/CAPACITY});
   });
   overloadPeople.sort((a,b)=>b.pct-a.pct);
-  document.getElementById('db-people').textContent=people.length;
-  document.getElementById('db-tasks').textContent=dbRows.filter(r=>upcomingCols.some(c=>(r.daily[c.col]||0)>0)).length;
+  document.getElementById('db-people').textContent=activePeople.length;
+  document.getElementById('db-tasks').textContent=activeTasks.length;
   document.getElementById('db-wdh').textContent=wdH.toFixed(1);
   document.getElementById('db-alert-count').textContent=overloadPeople.length;
   // アラートリスト
