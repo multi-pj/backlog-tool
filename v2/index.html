@@ -1031,7 +1031,7 @@ function setLoad(on,msg){
 function fmtYen(v){ return v>=1?'¥'+Math.round(v).toLocaleString():'¥0'; }
 function fmtH(v){ return r2(v).toFixed(1)+'h'; }
 
-function dispName(n){ return displayNameMap[n]||n; }
+function dispName(n){ if(!n) return '未設定'; return displayNameMap[n]||n; }
 function showConfirm(msg, onOk, okLabel='削除', danger=true){
   const overlay=document.getElementById('confirm-overlay');
   document.getElementById('confirm-msg').innerHTML=msg;
@@ -2528,7 +2528,10 @@ function renderGantt(){
   let html='';
   if(!rows.length){ html=`<tr><td colspan="${vcols.length+5}" class="empty-state">条件に一致するデータがありません</td></tr>`; }
   else {
-    let personEntries=Object.entries(byPerson).sort((a,b)=>a[0].localeCompare(b[0]));
+    let personEntries=Object.entries(byPerson).sort((a,b)=>{
+      if(!a[0]&&b[0]) return 1; if(a[0]&&!b[0]) return -1;
+      return a[0].localeCompare(b[0]);
+    });
     personEntries.forEach(([name,tasksRaw])=>{
       let tasks=ganttSortDir!==0?[...tasksRaw].sort((a,b)=>{ const aE=!a.jobNo,bE=!b.jobNo; if(aE&&bE) return 0; if(aE) return 1; if(bE) return -1; return ganttSortDir*(parseFloat(a.jobNo)-parseFloat(b.jobNo)); }):tasksRaw;
       const personTotal=r2(tasks.reduce((s,r)=>s+r.distHours,0));
@@ -2536,7 +2539,8 @@ function renderGantt(){
       const groupTotalCell=activeMonth?`<span style="font-weight:700;color:#546e7a">${personMonthTotal.toFixed(2)}</span><span style="color:#7898b8;font-size:10px"> /${personTotal.toFixed(2)}</span>`:`<span style="color:#9e9e9e;font-size:11px">合計</span>`;
       const groupLabel=activeMonth?`${tasks.length}件 ／ 月計 <b>${personMonthTotal.toFixed(2)}h</b><span style="color:#7898b8;font-size:10px"> / ${personTotal.toFixed(2)}h</span>`:`${tasks.length}件 ／ 合計 ${personTotal.toFixed(2)}h`;
       html+=`<tr class="ag-row">
-        <td colspan="4" class="s0 sticky-bg" style="left:0">👤 ${esc(dispName(name))} <span style="font-size:11px;font-weight:400;color:#607d8b;margin-left:8px">${groupLabel}</span></td>
+        <td colspan="4" class="s0 sticky-bg" style="left:0">👤 <span style="${!name?'color:#e65100':''}">
+          ${esc(dispName(name))}</span> <span style="font-size:11px;font-weight:400;color:#607d8b;margin-left:8px">${groupLabel}</span></td>
         <td class="s0 sticky-bg" style="left:${left[4]}px;text-align:right;padding-right:6px">${groupTotalCell}</td>
         ${vcols.map(c=>{ const ds=r2(tasks.reduce((s,r)=>s+(r.daily[c.col]||0),0)); const ts=c.ds===TODAY?'border-left:2px solid #ffa726;border-right:2px solid #ffa726;':''; return ds>0?`<td style="background:#e8eef8;${ts}color:#546e7a;font-weight:700;font-size:11px;text-align:center">${ds.toFixed(2)}</td>`:`<td style="background:#e8eef8;${ts}"></td>`; }).join('')}
       </tr>`;
@@ -2567,7 +2571,9 @@ function renderWorkload(){
   const todayMode=activeMonth===''&&!periodFrom;
   const vcols=getViewCols();
   const mGroups=buildMonthGroups(vcols);
-  const people=filterPeople(Object.keys(allWorkload)).sort().filter(p=>!fa||p===fa);
+  const people=filterPeople(Object.keys(allWorkload)).sort((a,b)=>{
+    if(!a&&b) return 1; if(a&&!b) return -1; return a.localeCompare(b);
+  }).filter(p=>!fa||p===fa);
   document.getElementById('wl-head').innerHTML=`
     <tr>
       <th class="info-th s0 sticky-bg" style="left:0;min-width:140px" rowspan="2">担当者</th>
@@ -2580,7 +2586,7 @@ function renderWorkload(){
     people.forEach(name=>{
       const pd=allWorkload[name]||{};
       html+=`<tr>
-        <td class="info-td s0 sticky-bg" style="left:0;font-weight:700;color:#1a3a5c">${esc(dispName(name))}</td>
+        <td class="info-td s0 sticky-bg" style="left:0;font-weight:700;color:${name?'#1a3a5c':'#e65100'}">${esc(dispName(name))}</td>
         ${vcols.map(c=>{
           const h=r2(pd[c.col]||0);
           const rem=r2(CAPACITY-h);
@@ -2836,8 +2842,8 @@ function renderReassignLog(page){
       <thead><tr>
         <th style="width:88px">日時</th>
         <th>移管元 → 移管先</th>
-        <th style="width:72px">JOB No.</th>
-        <th style="width:88px">課題キー</th>
+        <th style="width:108px">JOB No.</th>
+        <th style="width:132px">課題キー</th>
         <th>タスク名</th>
         <th style="width:140px">理由</th>
       </tr></thead>
