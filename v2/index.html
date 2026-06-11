@@ -340,6 +340,10 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 .csel-cur{display:inline-flex;align-items:center;gap:4px;padding:4px 24px 4px 8px;border:1px solid #d0dae6;border-radius:6px;background:#fff;cursor:pointer;font-size:13px;white-space:nowrap;min-width:72px;color:#333;position:relative;line-height:1.6}
 #fJCsel .csel-cur{min-width:130px}
 .sal-edit-row{background:#f0f5ff;border-bottom:2px solid #c5d3e8;padding:12px 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px;grid-column:1/-1}
+.unlinked-notice{background:#fff8e1;border:1.5px solid #ffca28;border-radius:8px;padding:12px 16px;margin-bottom:14px}
+.unlinked-notice-title{font-size:13px;font-weight:700;color:#e65100;margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.unlinked-list{display:flex;flex-wrap:wrap;gap:8px}
+.unlinked-item{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #ffe082;border-radius:6px;padding:5px 10px;font-size:12px;font-weight:600;color:#37474f}
 .sal-edit-row .ef-label{font-size:11px;font-weight:700;color:#607d8b;display:block;margin-bottom:3px}
 .sal-edit-row input,.sal-edit-row select{width:100%;padding:6px 8px;border:1.5px solid #d0dae6;border-radius:5px;font-size:12px;outline:none}
 .sal-edit-row input:focus,.sal-edit-row select:focus{border-color:#1a3a5c}
@@ -646,6 +650,7 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
   <div id="sec-settings" hidden>
     <div class="card">
       <div class="card-title">アカウント管理</div>
+      <div id="unlinked-assignees-notice" hidden></div>
       <div class="settings-section">
         <h4>CSVインポート</h4>
         <p style="font-size:12px;color:#607d8b;margin-bottom:10px">
@@ -847,6 +852,7 @@ let talents       = []; // [{name,role,skills:[]}]
 let rates         = []; // [{client,role,hourlyRate}]
 let reassignments = [];
 let displayNameMap= {}; // talentName → displayName（アカウント登録値）
+let unlinkedAssignees=[]; // Backlog担当者のうちアカウント未登録の人
 let companyHolidaysCache = [];
 let useDemoTalents = false;
 let useDemoRates   = false;
@@ -1105,6 +1111,52 @@ async function loadDisplayNames(){
     }
   }catch{}
 }
+async function checkUnlinkedAssignees(){
+  if(currentUser?.role!=='admin'||!allRows.length) return;
+  try{
+    const res=await fetch(`${WORKER_URL}/accounts`,{headers:{Authorization:`Bearer ${currentUser?.token||''}`}});
+    if(!res.ok) return;
+    const accountList=await res.json();
+    const allAssignees=[...new Set(allRows.map(r=>r.assignee).filter(Boolean))];
+    unlinkedAssignees=allAssignees.filter(n=>!accountList.some(a=>a.talentName===n));
+    renderUnlinkedNotice();
+  }catch{}
+}
+function renderUnlinkedNotice(){
+  const el=document.getElementById('unlinked-assignees-notice'); if(!el) return;
+  if(!unlinkedAssignees.length){ el.hidden=true; return; }
+  el.hidden=false;
+  el.innerHTML=`<div class="unlinked-notice">
+    <div class="unlinked-notice-title">
+      ⚠ Backlog担当者のうち <b style="font-size:16px;margin:0 2px">${unlinkedAssignees.length}</b> 人がアカウント未登録です
+      <span style="font-size:11px;font-weight:400;color:#795548">このままではツールにログインできません</span>
+    </div>
+    <div class="unlinked-list">
+      ${unlinkedAssignees.map(n=>`<div class="unlinked-item">
+        <span>👤 ${esc(n)}</span>
+        <button class="btn btn-primary btn-xs" onclick="quickAddAccount('${esc(n)}')">+ 追加</button>
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+function quickAddAccount(talentName){
+  if(activeMainTab!=='settings'){
+    switchMainTab('settings', document.querySelector('[data-tab="settings"]'));
+  }
+  setTimeout(()=>{
+    const f={talent:'new-acc-talent',display:'new-acc-display',username:'new-acc-username',pw:'new-acc-password'};
+    const t=document.getElementById(f.talent);
+    const d=document.getElementById(f.display);
+    const u=document.getElementById(f.username);
+    const p=document.getElementById(f.pw);
+    if(t) t.value=talentName;
+    if(d) d.value=dispName(talentName)||talentName;
+    if(u) u.value='';
+    if(p) p.value='';
+    u?.scrollIntoView({behavior:'smooth',block:'center'});
+    setTimeout(()=>u?.focus(),300);
+  }, activeMainTab!=='settings'?400:50);
+}
 async function loadSupportData(role){
   await loadDisplayNames();
   // タレント（全ロールで取得）
@@ -1188,6 +1240,7 @@ function applyLoadedData(rows, cols, months, workload, zeroTasks){
   renderDashboard();
   if(activeMainTab==='gantt') renderGantt();
   if(activeMainTab==='workload') renderWorkload();
+  checkUnlinkedAssignees();
 }
 
 function saveDataToSession(zeroTasks){
@@ -1479,6 +1532,11 @@ async function renderSettingsAccountList(){
     const res=await fetch(`${WORKER_URL}/accounts`,{headers:{Authorization:`Bearer ${currentUser.token}`}});
     if(!res.ok){ container.innerHTML='<div style="color:#c62828;padding:12px;font-size:12px">取得失敗</div>'; return; }
     const list=await res.json();
+    if(allRows.length){
+      const allAssignees=[...new Set(allRows.map(r=>r.assignee).filter(Boolean))];
+      unlinkedAssignees=allAssignees.filter(n=>!list.some(a=>a.talentName===n));
+      renderUnlinkedNotice();
+    }
     const displayList = list.length ? list : DEMO_ACCOUNTS;
     const demoNote = !list.length ? '<div style="font-size:11px;color:#e65100;padding:6px 12px;background:#fff3e0;border-radius:4px;margin-bottom:6px;grid-column:1/-1">⚠ KV未設定のためデモデータを表示しています（実際のログインには使用できません）</div>' : '';
     const isReal = list.length > 0;
