@@ -365,6 +365,10 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 .unlinked-notice-title{font-size:13px;font-weight:700;color:#e65100;margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .unlinked-list{display:flex;flex-wrap:wrap;gap:8px}
 .unlinked-item{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #ffe082;border-radius:6px;padding:5px 10px;font-size:12px;font-weight:600;color:#37474f}
+.pw-wrap{position:relative;display:flex;align-items:center}
+.pw-wrap input{flex:1;padding-right:32px!important}
+.pw-eye{position:absolute;right:6px;background:none;border:none;cursor:pointer;color:#90a4ae;padding:4px;line-height:1;font-size:15px;display:flex;align-items:center}
+.pw-eye:hover{color:#1a3a5c}
 .sal-edit-row .ef-label{font-size:11px;font-weight:700;color:#607d8b;display:block;margin-bottom:3px}
 .sal-edit-row input,.sal-edit-row select{width:100%;padding:6px 8px;border:1.5px solid #d0dae6;border-radius:5px;font-size:12px;outline:none}
 .sal-edit-row input:focus,.sal-edit-row select:focus{border-color:#1a3a5c}
@@ -722,7 +726,12 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
         <h4>アカウント追加（1件ずつ）</h4>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
           <div class="rf-field"><label>ユーザー名</label><input type="text" id="new-acc-username" placeholder="半角英数字"></div>
-          <div class="rf-field"><label>パスワード（仮）</label><input type="text" id="new-acc-password" placeholder="6文字以上" autocomplete="off"></div>
+          <div class="rf-field"><label>パスワード（仮）</label>
+            <div class="pw-wrap">
+              <input type="password" id="new-acc-password" placeholder="6文字以上" autocomplete="off">
+              <button type="button" class="pw-eye" onclick="togglePwVisibility('new-acc-password',this)" tabindex="-1" title="表示/非表示">👁</button>
+            </div>
+          </div>
           <div class="rf-field"><label>ロール</label>
             <select id="new-acc-role">
               <option value="staff">staff（一般）</option>
@@ -738,8 +747,11 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
             <label for="new-acc-force-pw">初回ログイン時にパスワード変更を強制する（推奨）</label>
           </div>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="addAccount()">追加</button>
-        <span id="add-acc-msg" style="font-size:11px;font-weight:600;margin-left:8px"></span>
+        <div style="display:flex;align-items:center;gap:12px">
+          <button class="btn btn-primary btn-sm" onclick="addAccount()">追加</button>
+          <button class="btn btn-secondary btn-sm" onclick="clearNewAccountForm()">クリア</button>
+          <span id="add-acc-msg" style="font-size:11px;font-weight:600"></span>
+        </div>
       </div>
       <div class="settings-section">
         <h4 style="display:flex;align-items:center;justify-content:space-between">現在のアカウント
@@ -1718,9 +1730,26 @@ async function addAccount(){
     const stubCreated=await ensureTalentStub(t);
     msg.textContent=`✅ ${u} を追加しました${stubCreated?`（タレント「${t}」を自動生成）`:''}`;
     msg.style.color='#2e7d32';
-    ['new-acc-username','new-acc-password','new-acc-display','new-acc-talent'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+    clearNewAccountForm();
     renderSettingsAccountList();
   }catch(e){ msg.textContent='❌ '+e.message; msg.style.color='#c62828'; }
+}
+function clearNewAccountForm(){
+  ['new-acc-username','new-acc-password','new-acc-display','new-acc-talent'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  const pw=document.getElementById('new-acc-password');
+  if(pw) pw.type='password';
+  const eye=pw?.parentElement?.querySelector('.pw-eye');
+  if(eye) eye.textContent='👁';
+  const msg=document.getElementById('add-acc-msg');
+  if(msg) msg.textContent='';
+}
+function togglePwVisibility(inputId, btn){
+  const el=document.getElementById(inputId);
+  if(!el) return;
+  const show=el.type==='password';
+  el.type=show?'text':'password';
+  btn.textContent=show?'🙈':'👁';
+  btn.title=show?'非表示':'表示/非表示';
 }
 async function deleteAccount(username){
   showConfirm(`「${esc(username)}」を削除しますか？`, async ()=>{
