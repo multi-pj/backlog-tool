@@ -846,6 +846,7 @@ let allRows       = [], allCols = [], allMonths = [], allWorkload = {};
 let talents       = []; // [{name,role,skills:[]}]
 let rates         = []; // [{client,role,hourlyRate}]
 let reassignments = [];
+let displayNameMap= {}; // talentName → displayName（アカウント登録値）
 let companyHolidaysCache = [];
 let useDemoTalents = false;
 let useDemoRates   = false;
@@ -911,10 +912,11 @@ function setLoad(on,msg){
 function fmtYen(v){ return v>=1?'¥'+Math.round(v).toLocaleString():'¥0'; }
 function fmtH(v){ return r2(v).toFixed(1)+'h'; }
 
-function fillSel(id, items){
+function dispName(n){ return displayNameMap[n]||n; }
+function fillSel(id, items, labelFn){
   const el=document.getElementById(id); if(!el) return;
   const first=el.options[0]; el.innerHTML=''; el.appendChild(first);
-  items.forEach(v=>{ const o=document.createElement('option'); o.value=o.textContent=v; el.appendChild(o); });
+  items.forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=labelFn?labelFn(v):v; el.appendChild(o); });
 }
 function downloadText(filename, content, type='text/plain;charset=utf-8'){
   const a=document.createElement('a');
@@ -1020,7 +1022,7 @@ async function saveCompanyHolidays(list){
     currentUser=JSON.parse(saved);
     document.getElementById('login-overlay').style.display='none';
     applyRole(currentUser.role);
-    tryRestoreFromSession();
+    loadDisplayNames().then(()=>tryRestoreFromSession());
   }
   document.getElementById('login-user').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('login-pass').focus(); });
   document.getElementById('login-pass').addEventListener('keydown',e=>{ if(e.key==='Enter') login(); });
@@ -1093,7 +1095,18 @@ function applyRole(role){
 }
 
 // ==================== DATA LOADING ====================
+async function loadDisplayNames(){
+  try{
+    const res=await fetch(`${WORKER_URL}/display-names`,{headers:{Authorization:`Bearer ${currentUser?.token||''}`}});
+    if(res.ok){
+      const list=await res.json();
+      displayNameMap={};
+      list.forEach(a=>{ if(a.talentName) displayNameMap[a.talentName]=a.displayName||a.talentName; });
+    }
+  }catch{}
+}
 async function loadSupportData(role){
+  await loadDisplayNames();
   // タレント（全ロールで取得）
   try{
     const res=await fetch(`${WORKER_URL}/talents`);
@@ -1151,10 +1164,10 @@ async function loadData(){
 function applyLoadedData(rows, cols, months, workload, zeroTasks){
   allRows=rows; allCols=cols; allMonths=months; allWorkload=workload;
   const people=[...new Set(allRows.map(r=>r.assignee).filter(Boolean))].sort();
-  fillSel('fA',people); fillSel('wl-fA',people);
+  fillSel('fA',people,dispName); fillSel('wl-fA',people,dispName);
   fillSel('fC',[...new Set(allRows.map(r=>r.cat))].sort());
   fillSel('fS',[...new Set(allRows.map(r=>r.status))].sort());
-  fillSel('est-fA',people);
+  fillSel('est-fA',people,dispName);
   fillSel('est-fJ',[...new Set(allRows.map(r=>r.jobNo).filter(Boolean))].sort());
   fillPersonSelect();
   fillJobNoSel();
@@ -1163,7 +1176,7 @@ function applyLoadedData(rows, cols, months, workload, zeroTasks){
   buildReportMonthSel();
   const upd=document.getElementById('db-last-updated');
   if(upd) upd.textContent=`最終取得: ${TODAY}`;
-  fillSel('ra-from',people); fillSel('ra-to',people);
+  fillSel('ra-from',people,dispName); fillSel('ra-to',people,dispName);
   showZeroWarnBanner(zeroTasks||[]);
   if(currentUser?.role==='staff' && currentUser.talentName){
     const tn=currentUser.talentName;
@@ -1434,7 +1447,7 @@ function fillPersonSelect(){
   const sel=document.getElementById('person-select'); if(!sel) return;
   const people=[...new Set(allRows.map(r=>r.assignee).filter(Boolean))].sort();
   sel.innerHTML='<option value="">-- 選択してください --</option>';
-  people.forEach(p=>{ const o=document.createElement('option'); o.value=o.textContent=p; sel.appendChild(o); });
+  people.forEach(p=>{ const o=document.createElement('option'); o.value=p; o.textContent=dispName(p); sel.appendChild(o); });
   if(currentUser?.role==='staff' && currentUser.talentName){
     sel.value=currentUser.talentName;
     sel.disabled=true; sel.style.opacity='.6'; sel.title='自分のデータのみ表示';
@@ -2062,7 +2075,7 @@ function showZeroWarnBanner(zeroTasks){
   const notes=[]; if(noDate.length) notes.push(`・日程未設定: ${noDate.length}件`); if(holOnly.length) notes.push(`・全日が土日祝: ${holOnly.length}件`);
   document.getElementById('zero-warn-msg').textContent=`（${zeroTasks.length}件）予定時間があるにもかかわらず按分できないタスクがあります。`;
   const sorted=[...zeroTasks].sort((a,b)=>a.key.localeCompare(b.key,undefined,{numeric:true}));
-  document.getElementById('zero-warn-keys').innerHTML=`<div style="margin-top:6px">${notes.join('<br>')}</div><div style="margin-top:6px;font-weight:600">▼対象</div>`+sorted.map(r=>`<div style="padding:1px 0">${esc(r.key)} / ${esc(r.title)} / 担当: ${esc(r.assignee)} <span style="color:#bf7000">[${r.noDate?'日程未設定':'期間内が全て土日祝'}]</span></div>`).join('');
+  document.getElementById('zero-warn-keys').innerHTML=`<div style="margin-top:6px">${notes.join('<br>')}</div><div style="margin-top:6px;font-weight:600">▼対象</div>`+sorted.map(r=>`<div style="padding:1px 0">${esc(r.key)} / ${esc(r.title)} / 担当: ${esc(dispName(r.assignee))} <span style="color:#bf7000">[${r.noDate?'日程未設定':'期間内が全て土日祝'}]</span></div>`).join('');
   banner.hidden=false;
   const collapsed=sessionStorage.getItem('zeroWarnCollapsed')==='1';
   document.getElementById('zero-warn-detail').style.display=collapsed?'none':'';
@@ -2207,7 +2220,7 @@ function renderGantt(){
       const groupTotalCell=activeMonth?`<span style="font-weight:700;color:#546e7a">${personMonthTotal.toFixed(2)}</span><span style="color:#7898b8;font-size:10px"> /${personTotal.toFixed(2)}</span>`:`<span style="color:#9e9e9e;font-size:11px">合計</span>`;
       const groupLabel=activeMonth?`${tasks.length}件 ／ 月計 <b>${personMonthTotal.toFixed(2)}h</b><span style="color:#7898b8;font-size:10px"> / ${personTotal.toFixed(2)}h</span>`:`${tasks.length}件 ／ 合計 ${personTotal.toFixed(2)}h`;
       html+=`<tr class="ag-row">
-        <td colspan="4" class="s0 sticky-bg" style="left:0">👤 ${esc(name)} <span style="font-size:11px;font-weight:400;color:#607d8b;margin-left:8px">${groupLabel}</span></td>
+        <td colspan="4" class="s0 sticky-bg" style="left:0">👤 ${esc(dispName(name))} <span style="font-size:11px;font-weight:400;color:#607d8b;margin-left:8px">${groupLabel}</span></td>
         <td class="s0 sticky-bg" style="left:${left[4]}px;text-align:right;padding-right:6px">${groupTotalCell}</td>
         ${vcols.map(c=>{ const ds=r2(tasks.reduce((s,r)=>s+(r.daily[c.col]||0),0)); const ts=c.ds===TODAY?'border-left:2px solid #ffa726;border-right:2px solid #ffa726;':''; return ds>0?`<td style="background:#e8eef8;${ts}color:#546e7a;font-weight:700;font-size:11px;text-align:center">${ds.toFixed(2)}</td>`:`<td style="background:#e8eef8;${ts}"></td>`; }).join('')}
       </tr>`;
@@ -2251,7 +2264,7 @@ function renderWorkload(){
     people.forEach(name=>{
       const pd=allWorkload[name]||{};
       html+=`<tr>
-        <td class="info-td s0 sticky-bg" style="left:0;font-weight:700;color:#1a3a5c">${esc(name)}</td>
+        <td class="info-td s0 sticky-bg" style="left:0;font-weight:700;color:#1a3a5c">${esc(dispName(name))}</td>
         ${vcols.map(c=>{
           const h=r2(pd[c.col]||0);
           const rem=r2(CAPACITY-h);
@@ -2323,7 +2336,7 @@ function renderPersonal(){
     <div class="person-header">
       <div class="ph-avatar">${(sel[0]||'?').toUpperCase()}</div>
       <div>
-        <div class="ph-name">${esc(sel)}</div>
+        <div class="ph-name">${esc(dispName(sel))}</div>
         <div class="ph-role">${esc(talent?.role||'-')}</div>
         <div class="ph-skills">${skillTags||'<span style="opacity:.6;font-size:11px">スキルデータ未登録</span>'}</div>
       </div>
@@ -2431,7 +2444,7 @@ function renderEstimate(){
     const diff=r2(actual-budget);
     totalBudget+=budget; totalActual+=actual; totalEst+=r.estHours; totalAct+=r.actHours;
     return `<tr>
-      <td>${esc(r.assignee)}</td>
+      <td>${esc(dispName(r.assignee))}</td>
       <td><code style="font-size:10px;color:#607d8b">${esc(r.jobNo||'')}</code></td>
       <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r.title)}">${esc(trunc(r.title,26))}</td>
       <td style="font-size:11px;color:#607d8b">${esc(talents.find(t=>t.name===r.assignee)?.role||'-')}</td>
@@ -2531,7 +2544,7 @@ function renderReport(){
         ${rows.map(r=>{
           const col=r.util>100?'color:#c62828':r.util>80?'color:#e65100':'';
           return `<tr>
-            <td style="font-weight:700">${esc(r.name)}</td>
+            <td style="font-weight:700">${esc(dispName(r.name))}</td>
             <td style="text-align:right;font-weight:700">${r.h.toFixed(1)}h</td>
             <td style="text-align:right">${Math.round(r.h/CAPACITY)}日相当</td>
             <td style="text-align:right;font-weight:700;${col}">${r.util}%</td>
@@ -2579,7 +2592,7 @@ function openRecommendModal(person, ds, h, colIdx){
   const d=new Date(ds+'T12:00:00');
   const dateLabel=`${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())}（${WD_JA[d.getDay()]}）`;
   document.getElementById('rec-info').innerHTML=
-    `<b>${esc(person)}</b> ／ ${dateLabel} ／ 稼働 <b style="color:#c62828">${h.toFixed(1)}h</b> ／ 超過 <b style="color:#c62828">${overH.toFixed(1)}h</b>`;
+    `<b>${esc(dispName(person))}</b> ／ ${dateLabel} ／ 稼働 <b style="color:#c62828">${h.toFixed(1)}h</b> ／ 超過 <b style="color:#c62828">${overH.toFixed(1)}h</b>`;
   document.getElementById('rec-tasks').innerHTML=tasks.length?`
     <h4>この日の担当タスク（カテゴリー: ${cats.length?cats.map(c=>`<span style="background:#e8eaf6;color:#3949ab;padding:1px 6px;border-radius:8px;font-size:10px">${esc(c)}</span>`).join(' '):'なし'}）</h4>
     ${tasks.map(t=>`<div class="rec-task-item">${esc(t.key)} ${esc(trunc(t.title,40))} — <b>${(t.daily[colIdx]||0).toFixed(2)}h</b></div>`).join('')}`
@@ -2590,7 +2603,7 @@ function openRecommendModal(person, ds, h, colIdx){
       return `<div class="rec-candidate">
         <div class="rc-score" style="color:${matchColor}">${c.matchScore>0?'★'.repeat(Math.min(c.matchScore,3)):'—'}</div>
         <div style="flex:1">
-          <div class="rc-name">${esc(c.name)}</div>
+          <div class="rc-name">${esc(dispName(c.name))}</div>
           <div class="rc-detail">${esc(c.role)} ／ 当日稼働: ${c.dayH.toFixed(1)}h
             ${c.matchScore>0?`<span class="rc-match">カテゴリー ${c.matchScore}件一致</span>`:''}
           </div>
