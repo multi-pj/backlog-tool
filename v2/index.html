@@ -923,9 +923,9 @@ function downloadText(filename, content, type='text/plain;charset=utf-8'){
 
 // CSV パーサー（クォート対応・シンプル版）
 function parseCSV(text){
-  const lines=text.trim().split(/\r?\n/);
+  const lines=text.trim().split(/\r?\n/).filter(l=>l.trim()&&!l.startsWith('#'));
   if(!lines.length) return [];
-  const headers=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,''));
+  const headers=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,'').replace(/^﻿/,''));
   return lines.slice(1).filter(l=>l.trim()).map(line=>{
     const vals=splitCSVLine(line);
     const obj={}; headers.forEach((h,i)=>obj[h]=vals[i]||''); return obj;
@@ -1754,15 +1754,47 @@ async function deleteTalent(name){
 }
 
 function exportAccountsTemplate(){
-  downloadText('accounts_template.csv', 'username,password,role,display_name,talent_name\nadmin_user,password123,admin,管理者,管理者\nsales_user,password456,sales,営業担当,営業担当\nstaff_user,password789,staff,一般スタッフ,一般スタッフ');
+  const bom='﻿';
+  const content=[
+    '# Backlogリソース管理ツール - アカウントインポートテンプレート',
+    '# role は admin（管理者）/ sales（営業）/ staff（スタッフ）のいずれかを指定',
+    '# display_name：ツール上の表示名　talent_name：Backlogの担当者名（完全一致）',
+    '# ※パスワード列はエクスポートに含まれません。再インポート時は必ず入力してください。',
+    'username,password,role,display_name,talent_name',
+    'moriya.taro,Password123,admin,守屋 太郎,守屋 太郎',
+    'tanaka.hanako,Password456,sales,田中 花子,田中 花子',
+    'yamada.jiro,Password789,staff,山田 次郎,山田 次郎',
+  ].join('\r\n');
+  downloadText('accounts_template.csv', bom+content, 'text/csv;charset=utf-8');
   toast('テンプレートをダウンロードしました',false);
 }
 function exportTalentsTemplate(){
-  downloadText('talents_template.csv','name,role,skills\n田中太郎,デザイナー,WEB制作/UI設計/DTP\n山田花子,ディレクター,WEB制作/プロジェクト管理/コピーライティング');
+  const bom='﻿';
+  const content=[
+    '# Backlogリソース管理ツール - タレントインポートテンプレート',
+    '# 【role 参考一覧】プロジェクト管理 / 進行管理 / 企画・構成 / コピーライティング / デザイン制作 / デジタル デザイン制作 / コーディング / デバッグ・校正 / 動画制作 / 入稿・納品作業 / CA業務 / その他',
+    '# name は Backlogの担当者名と完全一致させること　skills はスラッシュ区切りで複数入力可',
+    'name,role,skills',
+    '守屋 太郎,プロジェクト管理,プロジェクト管理/進行管理',
+    '田中 花子,デザイン制作,WEB制作/UI設計/DTP',
+    '山田 次郎,コーディング,フロントエンド開発/WEB制作',
+  ].join('\r\n');
+  downloadText('talents_template.csv', bom+content, 'text/csv;charset=utf-8');
   toast('テンプレートをダウンロードしました',false);
 }
 function exportRatesTemplate(){
-  downloadText('rates_template.csv','client,role,hourly_rate\n社内基準,ディレクター,8000\n社内基準,デザイナー,6000\nクライアントA,ディレクター,12000');
+  const bom='﻿';
+  const content=[
+    '# Backlogリソース管理ツール - レートカードインポートテンプレート',
+    '# client：クライアント名（社内基準 or 任意のクライアント名）　role：タレント役割　hourly_rate：時間単価（円）',
+    'client,role,hourly_rate',
+    '社内基準,プロジェクト管理,10000',
+    '社内基準,デザイン制作,8000',
+    '社内基準,コーディング,7000',
+    'クライアントA,プロジェクト管理,15000',
+    'クライアントA,デザイン制作,12000',
+  ].join('\r\n');
+  downloadText('rates_template.csv', bom+content, 'text/csv;charset=utf-8');
   toast('テンプレートをダウンロードしました',false);
 }
 
