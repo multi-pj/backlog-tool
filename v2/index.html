@@ -1307,7 +1307,11 @@ function applyLoadedData(rows, cols, months, workload, zeroTasks){
   buildMonthNav('wl-month-nav',    ()=>{renderWorkload();});
   buildReportMonthSel();
   const upd=document.getElementById('db-last-updated');
-  if(upd) upd.textContent=`最終取得: ${TODAY}`;
+  if(upd){
+    const now=new Date();
+    const hm=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    upd.textContent=`最終取得日時: ${TODAY} ${hm}`;
+  }
   fillSel('ra-from',people,dispName); fillSel('ra-to',people,dispName);
   showZeroWarnBanner(zeroTasks||[]);
   if(currentUser?.role==='staff' && currentUser.talentName){
