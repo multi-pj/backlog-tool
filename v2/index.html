@@ -63,8 +63,8 @@ nav{background:#fff;border-bottom:2px solid #e3e9f0;padding:0 20px;display:flex;
 /* ===== Stats Row ===== */
 .stats-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:16px}
 .stat{background:#fff;border-radius:10px;padding:14px 20px;box-shadow:0 2px 8px rgba(0,0,0,.07);flex:1;min-width:130px}
-.stat .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#90a4ae;margin-bottom:4px}
-.stat .lbl-sub{font-size:9px;color:#7898b8;text-transform:none}
+.stat .lbl{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:#90a4ae;margin-bottom:4px}
+.stat .lbl-sub{font-size:10px;color:#7898b8;text-transform:none}
 .stat .val{display:flex;align-items:baseline;gap:3px;flex-wrap:wrap}
 .stat .v-main{font-size:24px;font-weight:700;color:#1a3a5c}
 .stat .v-sep{font-size:14px;color:#7898b8}
@@ -222,6 +222,17 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 .period-range{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;padding:8px 14px;background:#fff;border-radius:6px;border:1.5px solid #b0bec5;width:fit-content}
 .period-range input[type=date]{padding:5px 8px;border:1px solid #b0bec5;border-radius:5px;font-size:12px;color:#1a3a5c;background:#fff}
 .period-range input[type=date]:focus{outline:none;border-color:#1a3a5c}
+.period-range .flatpickr-input{padding:5px 8px;border:1px solid #b0bec5;border-radius:5px;font-size:12px;color:#1a3a5c;background:#fff;min-width:120px;cursor:pointer}
+/* flatpickr calendar Sat(6th)/Sun(7th) coloring with firstDayOfWeek:1(Mon) */
+.flatpickr-weekdays .flatpickr-weekday:nth-child(6){color:#1565c0!important}
+.flatpickr-weekdays .flatpickr-weekday:nth-child(7){color:#c62828!important}
+.flatpickr-calendar .dayContainer .flatpickr-day:nth-child(7n+6){color:#1565c0}
+.flatpickr-calendar .dayContainer .flatpickr-day:nth-child(7n){color:#c62828}
+.flatpickr-calendar .dayContainer .flatpickr-day.selected:nth-child(7n+6),.flatpickr-calendar .dayContainer .flatpickr-day.selected:nth-child(7n){color:#fff}
+/* ===== Table scroll nav (bottom) ===== */
+.tbl-scroll-nav{display:flex;align-items:center;gap:8px;padding:6px 14px;background:#f5f7fa;border-top:1px solid #e0e6f0}
+.tbl-scroll-nav .nav-btn-scroll{padding:4px 14px;font-size:12px;font-weight:700;border:1px solid #b0bec5;border-radius:5px;background:#fff;color:#455a64;cursor:pointer}
+.tbl-scroll-nav .nav-btn-scroll:hover{background:#e8ecf0}
 
 /* ===== Estimate ===== */
 .rate-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:12px}
@@ -239,8 +250,8 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 .rate-cross-table tr:hover td{background:#f0f5ff}
 .rate-cross-table tr:hover td:first-child{background:#e8eef8}
 .rate-cross-table .rate-empty{color:#b0bec5;font-weight:400;text-align:center}
-.rate-cross-table .col-internal th{background:#1b5e20!important}
-.rate-cross-table .col-internal td{background:#f1f8e9;color:#2e7d32}
+.rate-cross-table th.col-internal{background:#1b5e20!important;border-right:3px solid #e0e0e0}
+.rate-cross-table td.col-internal{background:#f1f8e9;color:#2e7d32;border-right:3px solid #e0e0e0}
 /* 見積サマリー改善 */
 .estimate-summary{display:flex;align-items:stretch;gap:0;background:#f8faff;border-radius:10px;border:1px solid #d0dae6;margin-bottom:16px;overflow:hidden}
 .es-group{display:flex;gap:0;flex:1}
@@ -492,6 +503,11 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
         <table><thead id="gantt-head"></thead><tbody id="gantt-body"></tbody></table>
       </div>
     </div>
+    <div class="tbl-scroll-nav">
+      <button class="nav-btn-scroll" onclick="document.getElementById('gantt-wrap').scrollLeft-=44*5">◀ 前週</button>
+      <button class="nav-btn-scroll" onclick="document.getElementById('gantt-wrap').scrollLeft+=44*5">後週 ▶</button>
+      <span style="font-size:11px;color:#90a4ae">💡 Shift + マウスホイールでも横スクロール可</span>
+    </div>
   </div>
 
   <!-- ========== WORKLOAD ========== -->
@@ -518,6 +534,11 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
       <div class="tw" id="wl-wrap">
         <table><thead id="wl-head"></thead><tbody id="wl-body"></tbody></table>
       </div>
+    </div>
+    <div class="tbl-scroll-nav">
+      <button class="nav-btn-scroll" onclick="document.getElementById('wl-wrap').scrollLeft-=44*5">◀ 前週</button>
+      <button class="nav-btn-scroll" onclick="document.getElementById('wl-wrap').scrollLeft+=44*5">後週 ▶</button>
+      <span style="font-size:11px;color:#90a4ae">💡 Shift + マウスホイールでも横スクロール可</span>
     </div>
   </div>
 
@@ -555,13 +576,13 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
       <div style="overflow-x:auto">
         <table class="rate-table" id="estimate-table">
           <thead><tr>
-            <th>担当者</th><th>Job No.</th><th>件名</th><th>役職</th>
-            <th style="text-align:right">レート(¥/h)</th>
-            <th style="text-align:right">予定時間</th>
-            <th style="text-align:right">予算</th>
-            <th style="text-align:right">実績時間</th>
-            <th style="text-align:right">実費</th>
-            <th style="text-align:right">差異</th>
+            <th style="width:90px">担当者</th><th style="width:80px">Job No.</th><th>件名</th><th style="width:80px">役職</th>
+            <th style="text-align:right;width:80px">レート(¥/h)</th>
+            <th style="text-align:right;width:60px">予定h</th>
+            <th style="text-align:right;width:80px">予算</th>
+            <th style="text-align:right;width:60px">実績h</th>
+            <th style="text-align:right;width:80px">実費</th>
+            <th style="text-align:right;width:80px">差異</th>
           </tr></thead>
           <tbody id="estimate-body"></tbody>
         </table>
@@ -1318,6 +1339,8 @@ function onPeriodChange(){
     ? fpPeriodTo.formatDate(fpPeriodTo.selectedDates[0],'Y-m-d') : '';
   const hint=document.getElementById('period-hint');
   if(hint) hint.textContent=periodFrom&&periodTo?`${periodFrom} 〜 ${periodTo}`:'未設定時は本日±3ヶ月を表示';
+  // 期間変更時は月ボタン選択を解除（月指定が期間より優先されるため）
+  if(periodFrom&&periodTo){ activeMonth=''; updateMonthNavActive('gantt-month-nav'); updateMonthNavActive('wl-month-nav'); }
   if(allRows.length) renderCurrent();
 }
 function resetPeriod(){
@@ -1415,10 +1438,12 @@ function fillPersonSelect(){
     sel.value=currentUser.talentName;
     sel.disabled=true; sel.style.opacity='.6'; sel.title='自分のデータのみ表示';
   }
-  // 月選択
+  // 月選択（デフォルト=当月）
   const ms=document.getElementById('person-month-sel'); if(!ms) return;
   ms.innerHTML='<option value="">全期間</option>';
   allMonths.forEach(m=>{ const o=document.createElement('option'); o.value=m; o.textContent=m.replace('/','年')+'月'; ms.appendChild(o); });
+  const curMo=`${new Date().getFullYear()}/${pad(new Date().getMonth()+1)}`;
+  if(allMonths.includes(curMo)) ms.value=curMo;
 }
 
 function buildReportMonthSel(){
@@ -1662,18 +1687,70 @@ async function saveRates(){
   }catch(e){ document.getElementById('rates-msg').textContent='❌ '+e.message; document.getElementById('rates-msg').style.color='#c62828'; }
 }
 
+let editingTalentName = null;
 function renderTalentsList(){
   const el=document.getElementById('talents-list'); if(!el) return;
-  const displayList = talents.length ? talents : DEMO_TALENTS;
-  const demoNote = !talents.length
-    ? '<div style="font-size:11px;color:#e65100;padding:6px 12px;background:#fff3e0;border-radius:4px;margin-bottom:8px">⚠ デモデータ表示中。CSVをインポートすると本番データに切り替わります。</div>'
-    : '';
-  el.innerHTML=demoNote+'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-top:4px">'+
-    displayList.map(t=>`<div style="padding:10px 12px;background:#f8faff;border:1px solid #d0dae6;border-radius:8px">
-      <div style="font-weight:700;font-size:13px">${esc(t.name)}</div>
-      <div style="font-size:11px;color:#607d8b;margin-bottom:4px">${esc(t.role)}</div>
-      <div>${(t.skills||[]).map(s=>`<span class="skill-tag" style="background:#e8eaf6;color:#3949ab;padding:2px 6px;border-radius:8px;font-size:10px;font-weight:600;margin:2px 2px 0 0;display:inline-block">${esc(s)}</span>`).join('')}</div>
-    </div>`).join('')+'</div>';
+  const isReal=talents.length>0;
+  const displayList=isReal?talents:DEMO_TALENTS;
+  const demoNote=!isReal?'<div style="font-size:11px;color:#e65100;padding:6px 12px;background:#fff3e0;border-radius:4px;margin-bottom:8px">⚠ デモデータ表示中。CSVをインポートすると本番データに切り替わります。</div>':'';
+  el.innerHTML=demoNote+'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px;margin-top:4px">'+
+    displayList.map((t,idx)=>{
+      const isEditing=isReal&&editingTalentName===t.name;
+      const editForm=isEditing?`
+        <div style="margin-top:8px;padding-top:8px;border-top:1px solid #d0dae6">
+          <div style="margin-bottom:6px"><label style="font-size:11px;color:#607d8b;display:block;margin-bottom:2px">名前</label>
+            <input id="et-name" type="text" value="${esc(t.name)}" style="width:100%;padding:5px 8px;border:1.5px solid #d0dae6;border-radius:5px;font-size:12px;box-sizing:border-box"></div>
+          <div style="margin-bottom:6px"><label style="font-size:11px;color:#607d8b;display:block;margin-bottom:2px">役職</label>
+            <input id="et-role" type="text" value="${esc(t.role||'')}" style="width:100%;padding:5px 8px;border:1.5px solid #d0dae6;border-radius:5px;font-size:12px;box-sizing:border-box"></div>
+          <div style="margin-bottom:8px"><label style="font-size:11px;color:#607d8b;display:block;margin-bottom:2px">スキル（/区切り）</label>
+            <input id="et-skills" type="text" value="${esc((t.skills||[]).join('/'))}" style="width:100%;padding:5px 8px;border:1.5px solid #d0dae6;border-radius:5px;font-size:12px;box-sizing:border-box"></div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <button class="btn btn-primary btn-xs" onclick="updateTalent('${esc(t.name)}')">保存</button>
+            <button class="btn btn-secondary btn-xs" onclick="cancelEditTalent()">キャンセル</button>
+            <span id="et-msg" style="font-size:11px;font-weight:600"></span>
+          </div>
+        </div>`:'' ;
+      return `<div style="padding:10px 12px;background:#f8faff;border:1px solid #d0dae6;border-radius:8px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div style="font-weight:700;font-size:13px">${esc(t.name)}</div>
+            <div style="font-size:11px;color:#607d8b;margin-bottom:4px">${esc(t.role||'-')}</div>
+            <div>${(t.skills||[]).map(s=>`<span class="skill-tag" style="background:#e8eaf6;color:#3949ab;padding:2px 6px;border-radius:8px;font-size:10px;font-weight:600;margin:2px 2px 0 0;display:inline-block">${esc(s)}</span>`).join('')}</div>
+          </div>
+          ${isReal?`<div style="display:flex;flex-direction:column;gap:4px;margin-left:8px;flex-shrink:0">
+            <button onclick="startEditTalent('${esc(t.name)}')" style="padding:2px 8px;font-size:11px;border:1px solid #90a4ae;border-radius:4px;background:#fff;color:#546e7a;cursor:pointer">${isEditing?'▲':'編集'}</button>
+            <button onclick="deleteTalent('${esc(t.name)}')" style="padding:2px 8px;font-size:11px;border:1px solid #ef9a9a;border-radius:4px;background:#fff;color:#c62828;cursor:pointer">削除</button>
+          </div>`:''}
+        </div>
+        ${editForm}
+      </div>`;
+    }).join('')+'</div>';
+}
+function startEditTalent(name){ editingTalentName=editingTalentName===name?null:name; renderTalentsList(); }
+function cancelEditTalent(){ editingTalentName=null; renderTalentsList(); }
+async function updateTalent(oldName){
+  const name=(document.getElementById('et-name')?.value||'').trim();
+  const role=(document.getElementById('et-role')?.value||'').trim();
+  const skills=(document.getElementById('et-skills')?.value||'').split('/').map(s=>s.trim()).filter(Boolean);
+  const msg=document.getElementById('et-msg');
+  if(!name){ if(msg){msg.style.color='#c62828';msg.textContent='名前は必須';} return; }
+  if(msg){msg.style.color='#607d8b';msg.textContent='保存中...';}
+  const newList=talents.map(t=>t.name===oldName?{name,role,skills}:t);
+  try{
+    const res=await fetch(`${WORKER_URL}/talents`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${currentUser?.token||''}`},body:JSON.stringify(newList)});
+    if(!res.ok) throw new Error('保存失敗');
+    talents=newList; editingTalentName=null;
+    toast(`タレント「${name}」を更新しました`,false); renderTalentsList();
+  }catch(e){if(msg){msg.style.color='#c62828';msg.textContent='❌ '+e.message;}}
+}
+async function deleteTalent(name){
+  if(!confirm(`「${name}」を削除しますか？`)) return;
+  const newList=talents.filter(t=>t.name!==name);
+  try{
+    const res=await fetch(`${WORKER_URL}/talents`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${currentUser?.token||''}`},body:JSON.stringify(newList)});
+    if(!res.ok) throw new Error('削除失敗');
+    talents=newList; toast(`タレント「${name}」を削除しました`,false); renderTalentsList();
+  }catch(e){ toast('エラー: '+e.message,true); }
 }
 
 function exportAccountsTemplate(){
@@ -1712,17 +1789,71 @@ function exportCurrentRates(){
   downloadText('rates_export.csv','﻿'+toCSV(csvData),'text/csv;charset=utf-8');
   toast(`レート${list.length}件をエクスポートしました（${!rates.length?'デモデータ':'本番データ'}）`,false);
 }
+let editingRateKey = null; // "client::role"
 function renderCurrentRatesList(){
   const el=document.getElementById('current-rates-list'); if(!el) return;
-  const list=rates.length?rates:DEMO_RATES;
+  const isReal=rates.length>0;
+  const list=isReal?rates:DEMO_RATES;
   if(!list.length){ el.textContent='データなし'; return; }
-  const demoNote=!rates.length?'<div style="font-size:11px;color:#e65100;margin-bottom:6px">⚠ デモデータ表示中</div>':'';
+  const demoNote=!isReal?'<div style="font-size:11px;color:#e65100;margin-bottom:6px">⚠ デモデータ表示中</div>':'';
   const clients=[...new Set(list.map(r=>r.client))];
-  el.innerHTML=demoNote+clients.map(c=>`
-    <div style="margin-bottom:8px"><b style="font-size:12px;color:#1a3a5c">${esc(c)}</b>
-    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px">`+
-    list.filter(r=>r.client===c).map(r=>`<span style="padding:3px 10px;background:#f0f5ff;border:1px solid #d0dae6;border-radius:12px;font-size:11px"><b>${esc(r.role)}</b>: ${Number(r.hourlyRate).toLocaleString()}円/h</span>`).join('')+
-    `</div></div>`).join('');
+  el.innerHTML=demoNote+'<table style="width:100%;border-collapse:collapse;font-size:12px">'+
+    '<thead><tr style="background:#f0f5ff"><th style="padding:6px 10px;text-align:left;border-bottom:2px solid #d0dae6">クライアント</th><th style="padding:6px 10px;text-align:left;border-bottom:2px solid #d0dae6">役職</th><th style="padding:6px 10px;text-align:right;border-bottom:2px solid #d0dae6;width:90px">単価(¥/h)</th>'+
+    (isReal?'<th style="padding:6px 10px;border-bottom:2px solid #d0dae6;width:100px">操作</th>':'')+
+    '</tr></thead><tbody>'+
+    list.map((r,i)=>{
+      const key=`${r.client}::${r.role}`;
+      const isEditing=isReal&&editingRateKey===key;
+      const editRow=isEditing?`<tr><td colspan="${isReal?4:3}" style="padding:8px 10px;background:#f8faff;border-bottom:1px solid #d0dae6">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+          <div><label style="font-size:11px;color:#607d8b;display:block;margin-bottom:2px">クライアント</label><input id="er-client" type="text" value="${esc(r.client)}" style="padding:5px 8px;border:1.5px solid #d0dae6;border-radius:5px;font-size:12px;width:130px"></div>
+          <div><label style="font-size:11px;color:#607d8b;display:block;margin-bottom:2px">役職</label><input id="er-role" type="text" value="${esc(r.role)}" style="padding:5px 8px;border:1.5px solid #d0dae6;border-radius:5px;font-size:12px;width:100px"></div>
+          <div><label style="font-size:11px;color:#607d8b;display:block;margin-bottom:2px">単価(¥/h)</label><input id="er-rate" type="number" value="${r.hourlyRate}" min="0" style="padding:5px 8px;border:1.5px solid #d0dae6;border-radius:5px;font-size:12px;width:90px;text-align:right"></div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <button class="btn btn-primary btn-xs" onclick="updateRate('${esc(key)}')">保存</button>
+            <button class="btn btn-secondary btn-xs" onclick="cancelEditRate()">キャンセル</button>
+            <span id="er-msg" style="font-size:11px;font-weight:600"></span>
+          </div>
+        </div>
+      </td></tr>`:'';
+      return `<tr style="border-bottom:1px solid #edf0f5">
+        <td style="padding:7px 10px;color:#1a3a5c;font-weight:600">${esc(r.client)}</td>
+        <td style="padding:7px 10px">${esc(r.role)}</td>
+        <td style="padding:7px 10px;text-align:right;font-weight:700">¥${Number(r.hourlyRate).toLocaleString()}</td>
+        ${isReal?`<td style="padding:4px 10px">
+          <button onclick="startEditRate('${esc(key)}')" style="padding:2px 8px;font-size:11px;border:1px solid #90a4ae;border-radius:4px;background:#fff;color:#546e7a;cursor:pointer">${isEditing?'▲':'編集'}</button>
+          <button onclick="deleteRate('${esc(key)}')" style="padding:2px 8px;font-size:11px;border:1px solid #ef9a9a;border-radius:4px;background:#fff;color:#c62828;cursor:pointer;margin-left:4px">削除</button>
+        </td>`:''}
+      </tr>${editRow}`;
+    }).join('') + '</tbody></table>';
+}
+function startEditRate(key){ editingRateKey=editingRateKey===key?null:key; renderCurrentRatesList(); }
+function cancelEditRate(){ editingRateKey=null; renderCurrentRatesList(); }
+async function updateRate(oldKey){
+  const client=(document.getElementById('er-client')?.value||'').trim();
+  const role=(document.getElementById('er-role')?.value||'').trim();
+  const hourlyRate=parseInt(document.getElementById('er-rate')?.value||'0',10);
+  const msg=document.getElementById('er-msg');
+  if(!client||!role){ if(msg){msg.style.color='#c62828';msg.textContent='クライアント・役職は必須';} return; }
+  if(msg){msg.style.color='#607d8b';msg.textContent='保存中...';}
+  const [oldClient,oldRole]=oldKey.split('::');
+  const newList=rates.map(r=>r.client===oldClient&&r.role===oldRole?{client,role,hourlyRate}:r);
+  try{
+    const res=await fetch(`${WORKER_URL}/rates`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${currentUser?.token||''}`},body:JSON.stringify(newList)});
+    if(!res.ok) throw new Error('保存失敗');
+    rates=newList; editingRateKey=null;
+    toast('レートを更新しました',false); renderCurrentRatesList(); if(activeMainTab==='estimate') renderEstimate();
+  }catch(e){if(msg){msg.style.color='#c62828';msg.textContent='❌ '+e.message;}}
+}
+async function deleteRate(key){
+  const [client,role]=key.split('::');
+  if(!confirm(`「${client} / ${role}」を削除しますか？`)) return;
+  const newList=rates.filter(r=>!(r.client===client&&r.role===role));
+  try{
+    const res=await fetch(`${WORKER_URL}/rates`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${currentUser?.token||''}`},body:JSON.stringify(newList)});
+    if(!res.ok) throw new Error('削除失敗');
+    rates=newList; toast('レートを削除しました',false); renderCurrentRatesList(); if(activeMainTab==='estimate') renderEstimate();
+  }catch(e){ toast('エラー: '+e.message,true); }
 }
 
 // CSV アップロードエリア ドラッグ＆ドロップ
@@ -2060,7 +2191,7 @@ function renderGantt(){
     });
   }
   document.getElementById('gantt-body').innerHTML=html;
-  if(todayMode) scrollToToday('gantt-wrap');
+  if(activeMonth==='') scrollToToday('gantt-wrap');
 }
 function toggleJobSort(){ ganttSortDir=ganttSortDir===0?1:ganttSortDir===1?-1:0; renderGantt(); }
 
@@ -2109,7 +2240,7 @@ function renderWorkload(){
     }
   }
   document.getElementById('wl-body').innerHTML=html;
-  if(todayMode) scrollToToday('wl-wrap');
+  if(activeMonth==='') scrollToToday('wl-wrap');
 }
 
 // ワークロードセルクリック → レコメンドモーダル
@@ -2127,7 +2258,8 @@ function renderPersonal(){
   if(!sel||!allRows.length){ content.innerHTML='<div style="text-align:center;padding:60px;color:#90a4ae;font-size:14px">担当者を選択してください</div>'; return; }
   const pRows=allRows.filter(r=>r.assignee===sel);
   const talent=talents.find(t=>t.name===sel);
-  const vcols=mo?allCols.filter(c=>c.mo===mo):allCols;
+  // 月選択時は月フィルタ、未選択時はダッシュボード期間（getViewCols）を使用
+  const vcols=mo?allCols.filter(c=>c.mo===mo):getViewCols();
   // KPIカード
   const activeTasks=pRows.filter(r=>vcols.some(c=>(r.daily[c.col]||0)>0));
   const totalDistH=r2(pRows.reduce((s,r)=>s+vcols.reduce((sv,c)=>sv+(r.daily[c.col]||0),0),0));
@@ -2192,9 +2324,9 @@ function renderPersonal(){
       <div class="chart-title">担当タスク一覧</div>
       <div style="overflow-x:auto">
         <table class="task-list-table">
-          <thead><tr><th>課題キー</th><th>件名</th><th>状態</th><th>開始</th><th>期限</th><th style="text-align:right">予定h</th><th style="text-align:right">实績h</th><th>カテゴリー</th></tr></thead>
+          <thead><tr><th style="width:80px">JOB No.</th><th>件名</th><th style="width:70px">状態</th><th style="width:78px">開始</th><th style="width:78px">期限</th><th style="text-align:right;width:52px">予定h</th><th style="text-align:right;width:52px">実績h</th><th style="width:100px">カテゴリー</th></tr></thead>
           <tbody>${taskRows.map(r=>`<tr>
-            <td><code style="font-size:11px;color:#607d8b">${esc(r.key)}</code></td>
+            <td><code style="font-size:11px;color:#607d8b">${esc(r.jobNo||r.key||'-')}</code></td>
             <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r.title)}">${esc(trunc(r.title,28))}</td>
             <td>${badge(r.status)}</td>
             <td style="font-size:11px">${r.startDs||'-'}</td>
@@ -2227,24 +2359,23 @@ function renderEstimate(){
   const ratesEl=document.getElementById('rates-display');
   const displayRates=rates.length?rates:DEMO_RATES;
   if(!rates.length) ratesEl.insertAdjacentHTML('beforebegin','<div style="font-size:11px;color:#e65100;padding:4px 8px;background:#fff3e0;border-radius:4px;margin-bottom:8px;display:inline-block">⚠ デモデータ表示中</div>');
-  const clients=[...new Set(displayRates.map(r=>r.client))].sort((a,b)=>a==='社内基準'?-1:b==='社内基準'?1:a.localeCompare(b,'ja'));
+  const internalRates=displayRates.filter(r=>r.client==='社内基準');
+  const clientRates=displayRates.filter(r=>r.client!=='社内基準');
+  const clientNames=[...new Set(clientRates.map(r=>r.client))].sort((a,b)=>a.localeCompare(b,'ja'));
   const roles=[...new Set(displayRates.map(r=>r.role))];
-  ratesEl.innerHTML=`<div style="overflow-x:auto"><table class="rate-cross-table">
-    <thead><tr>
-      <th style="min-width:120px">役職</th>
-      ${clients.map(c=>`<th style="min-width:110px"${c==='社内基準'?' class="col-internal"':''}>
-        ${c==='社内基準'?'🏢 ':''}<b>${esc(c)}</b>${c==='社内基準'?'<br><span style="font-size:9px;font-weight:400;opacity:.8">（原価基準）</span>':''}
-      </th>`).join('')}
-    </tr></thead>
-    <tbody>${roles.map(role=>`<tr>
-      <td>${esc(role)}</td>
-      ${clients.map(client=>{
-        const r=displayRates.find(r=>r.client===client&&r.role===role);
-        const cls=client==='社内基準'?' class="col-internal"':'';
-        return r?`<td${cls}>¥${r.hourlyRate.toLocaleString()}</td>`:`<td class="rate-empty${client==='社内基準'?' col-internal':''}">—</td>`;
-      }).join('')}
-    </tr>`).join('')}
-    </tbody></table></div>`;
+  const mkInternalTbl=()=>internalRates.length?`
+    <div style="margin-bottom:4px;font-size:11px;font-weight:700;color:#1b5e20;letter-spacing:.5px;text-transform:uppercase">🏢 社内基準（原価）</div>
+    <div style="overflow-x:auto;margin-bottom:16px"><table class="rate-cross-table">
+      <thead><tr><th style="min-width:120px">役職</th><th class="col-internal" style="min-width:110px"><b>社内基準</b><br><span style="font-size:9px;font-weight:400;opacity:.8">（原価基準）</span></th></tr></thead>
+      <tbody>${roles.map(role=>{ const r=internalRates.find(r=>r.role===role); return `<tr><td>${esc(role)}</td><td class="col-internal">${r?`¥${r.hourlyRate.toLocaleString()}`:'<span class="rate-empty">—</span>'}</td></tr>`; }).join('')}</tbody>
+    </table></div>`:'';
+  const mkClientTbl=()=>clientNames.length?`
+    <div style="margin-bottom:4px;font-size:11px;font-weight:700;color:#1a3a5c;letter-spacing:.5px;text-transform:uppercase">💼 クライアント別レート</div>
+    <div style="overflow-x:auto"><table class="rate-cross-table">
+      <thead><tr><th style="min-width:120px">役職</th>${clientNames.map(c=>`<th style="min-width:110px"><b>${esc(c)}</b></th>`).join('')}</tr></thead>
+      <tbody>${roles.map(role=>`<tr><td>${esc(role)}</td>${clientNames.map(c=>{ const r=clientRates.find(r=>r.client===c&&r.role===role); return r?`<td>¥${r.hourlyRate.toLocaleString()}</td>`:`<td class="rate-empty">—</td>`; }).join('')}</tr>`).join('')}</tbody>
+    </table></div>`:'';
+  ratesEl.innerHTML=mkInternalTbl()+mkClientTbl();
   const fa=document.getElementById('est-fA')?.value||'';
   const fj=document.getElementById('est-fJ')?.value||'';
   const rows=allRows.filter(r=>{
@@ -2433,11 +2564,10 @@ function openRecommendModal(person, ds, h, colIdx){
 
 // ==================== SCROLL TO TODAY ====================
 function scrollToToday(wrapId){
-  const todayMode=activeMonth===''; if(!todayMode) return;
   const tw=document.getElementById(wrapId); if(!tw) return;
   setTimeout(()=>{
     const dayThs=tw.querySelectorAll('th.day-th');
-    const vcols=activeMonth?allCols.filter(c=>c.mo===activeMonth):allCols;
+    const vcols=getViewCols();
     const todayIdx=vcols.findIndex(c=>c.ds===TODAY);
     if(todayIdx>=0&&dayThs[todayIdx]){
       tw.scrollLeft=0;
