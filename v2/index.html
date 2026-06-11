@@ -1967,8 +1967,8 @@ function renderTalentsList(){
       const isEditing=isReal&&editingTalentName===t.name;
       const editForm=isEditing?`
         <div style="margin-top:8px;padding-top:8px;border-top:1px solid #d0dae6">
-          <div style="margin-bottom:6px"><label style="font-size:11px;color:#607d8b;display:block;margin-bottom:2px">名前</label>
-            <input id="et-name" type="text" value="${esc(t.name)}" style="width:100%;padding:5px 8px;border:1.5px solid #d0dae6;border-radius:5px;font-size:12px;box-sizing:border-box"></div>
+          <div style="margin-bottom:6px"><label style="font-size:11px;color:#607d8b;display:block;margin-bottom:2px">Backlog担当者名</label>
+            <input id="et-name" type="text" value="${esc(t.name)}" readonly style="width:100%;padding:5px 8px;border:1.5px solid #d0dae6;border-radius:5px;font-size:12px;box-sizing:border-box;background:#f0f4fa;color:#90a4ae;cursor:default"></div>
           <div style="margin-bottom:6px"><label style="font-size:11px;color:#607d8b;display:block;margin-bottom:2px">役職</label>
             <input id="et-role" type="text" value="${esc(t.role||'')}" style="width:100%;padding:5px 8px;border:1.5px solid #d0dae6;border-radius:5px;font-size:12px;box-sizing:border-box"></div>
           <div style="margin-bottom:8px"><label style="font-size:11px;color:#607d8b;display:block;margin-bottom:2px">スキル（/区切り）</label>
