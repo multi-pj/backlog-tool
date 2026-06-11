@@ -298,6 +298,13 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 #recommend-modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:9998}
 #recommend-modal.open{display:flex}
 #recommend-box{background:#fff;border-radius:14px;padding:28px 32px;box-shadow:0 8px 32px rgba(0,0,0,.25);width:520px;max-width:95vw;max-height:88vh;overflow-y:auto}
+#confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10000;display:none;align-items:center;justify-content:center}
+#confirm-overlay.open{display:flex}
+#confirm-box{background:#fff;border-radius:12px;padding:24px 28px;width:340px;max-width:92vw;box-shadow:0 8px 32px rgba(0,0,0,.3)}
+#confirm-msg{font-size:14px;color:#1a3a5c;margin-bottom:20px;line-height:1.6;font-weight:600}
+.confirm-btns{display:flex;gap:8px;justify-content:flex-end}
+.btn-danger{background:#c62828;color:#fff;border:none}
+.btn-danger:hover{opacity:.85}
 #recommend-box h3{font-size:15px;font-weight:700;color:#c62828;margin-bottom:6px;display:flex;align-items:center;gap:8px}
 .rec-info{font-size:12px;color:#607d8b;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #e3e9f0}
 .rec-tasks{margin-bottom:14px}
@@ -919,6 +926,16 @@ function fmtYen(v){ return v>=1?'¥'+Math.round(v).toLocaleString():'¥0'; }
 function fmtH(v){ return r2(v).toFixed(1)+'h'; }
 
 function dispName(n){ return displayNameMap[n]||n; }
+function showConfirm(msg, onOk, okLabel='削除', danger=true){
+  const overlay=document.getElementById('confirm-overlay');
+  document.getElementById('confirm-msg').innerHTML=msg;
+  const ok=document.getElementById('confirm-ok');
+  ok.textContent=okLabel;
+  ok.className='btn btn-sm '+(danger?'btn-danger':'btn-primary');
+  overlay.classList.add('open');
+  ok.onclick=()=>{ overlay.classList.remove('open'); onOk(); };
+  document.getElementById('confirm-cancel').onclick=()=>{ overlay.classList.remove('open'); };
+}
 function fillSel(id, items, labelFn){
   const el=document.getElementById(id); if(!el) return;
   const first=el.options[0]; el.innerHTML=''; el.appendChild(first);
@@ -1067,16 +1084,19 @@ async function login(){
 }
 
 function logout(){
-  sessionStorage.removeItem('bl_v2_user');
-  sessionStorage.removeItem('bl_v2_data');
-  currentUser=null;
-  allRows=[]; allCols=[]; allMonths=[]; allWorkload={};
-  talents=[]; rates=[]; reassignments=[];
-  useDemoTalents=false; useDemoRates=false;
-  document.getElementById('login-overlay').style.display='flex';
-  document.getElementById('login-pass').value='';
-  document.getElementById('login-err').textContent='';
-  document.getElementById('login-user').focus();
+  showConfirm('ログアウトしますか？', ()=>{
+    sessionStorage.removeItem('bl_v2_user');
+    sessionStorage.removeItem('bl_v2_data');
+    currentUser=null;
+    allRows=[]; allCols=[]; allMonths=[]; allWorkload={};
+    talents=[]; rates=[]; reassignments=[];
+    displayNameMap={}; unlinkedAssignees=[];
+    useDemoTalents=false; useDemoRates=false;
+    document.getElementById('login-overlay').style.display='flex';
+    document.getElementById('login-pass').value='';
+    document.getElementById('login-err').textContent='';
+    document.getElementById('login-user').focus();
+  }, 'ログアウト', false);
 }
 
 function applyRole(role){
@@ -1646,17 +1666,18 @@ async function addAccount(){
   }catch(e){ msg.textContent='❌ '+e.message; msg.style.color='#c62828'; }
 }
 async function deleteAccount(username){
-  if(!confirm(`「${username}」を削除しますか？`)) return;
-  try{
-    const res=await fetch(`${WORKER_URL}/accounts/delete`,{
-      method:'POST',
-      headers:{'Content-Type':'application/json',Authorization:`Bearer ${currentUser?.token||''}`},
-      body:JSON.stringify({username}),
-    });
-    if(!res.ok) throw new Error('削除失敗');
-    toast(`${username} を削除しました`,false);
-    renderSettingsAccountList();
-  }catch(e){ toast('削除エラー: '+e.message,true); }
+  showConfirm(`「${esc(username)}」を削除しますか？`, async ()=>{
+    try{
+      const res=await fetch(`${WORKER_URL}/accounts/delete`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json',Authorization:`Bearer ${currentUser?.token||''}`},
+        body:JSON.stringify({username}),
+      });
+      if(!res.ok) throw new Error('削除失敗');
+      toast(`${username} を削除しました`,false);
+      renderSettingsAccountList();
+    }catch(e){ toast('削除エラー: '+e.message,true); }
+  });
 }
 
 // CSV インポート処理（共通パターン）
@@ -1819,13 +1840,14 @@ async function updateTalent(oldName){
   }catch(e){if(msg){msg.style.color='#c62828';msg.textContent='❌ '+e.message;}}
 }
 async function deleteTalent(name){
-  if(!confirm(`「${name}」を削除しますか？`)) return;
-  const newList=talents.filter(t=>t.name!==name);
-  try{
-    const res=await fetch(`${WORKER_URL}/talents`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${currentUser?.token||''}`},body:JSON.stringify(newList)});
-    if(!res.ok) throw new Error('削除失敗');
-    talents=newList; toast(`タレント「${name}」を削除しました`,false); renderTalentsList();
-  }catch(e){ toast('エラー: '+e.message,true); }
+  showConfirm(`タレント「${esc(name)}」を削除しますか？`, async ()=>{
+    const newList=talents.filter(t=>t.name!==name);
+    try{
+      const res=await fetch(`${WORKER_URL}/talents`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${currentUser?.token||''}`},body:JSON.stringify(newList)});
+      if(!res.ok) throw new Error('削除失敗');
+      talents=newList; toast(`タレント「${name}」を削除しました`,false); renderTalentsList();
+    }catch(e){ toast('エラー: '+e.message,true); }
+  });
 }
 
 function exportAccountsTemplate(){
@@ -1954,13 +1976,14 @@ async function updateRate(oldKey){
 }
 async function deleteRate(key){
   const [client,role]=key.split('::');
-  if(!confirm(`「${client} / ${role}」を削除しますか？`)) return;
-  const newList=rates.filter(r=>!(r.client===client&&r.role===role));
-  try{
-    const res=await fetch(`${WORKER_URL}/rates`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${currentUser?.token||''}`},body:JSON.stringify(newList)});
-    if(!res.ok) throw new Error('削除失敗');
-    rates=newList; toast('レートを削除しました',false); renderCurrentRatesList(); if(activeMainTab==='estimate') renderEstimate();
-  }catch(e){ toast('エラー: '+e.message,true); }
+  showConfirm(`レート「${esc(client)} / ${esc(role)}」を削除しますか？`, async ()=>{
+    const newList=rates.filter(r=>!(r.client===client&&r.role===role));
+    try{
+      const res=await fetch(`${WORKER_URL}/rates`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${currentUser?.token||''}`},body:JSON.stringify(newList)});
+      if(!res.ok) throw new Error('削除失敗');
+      rates=newList; toast('レートを削除しました',false); renderCurrentRatesList(); if(activeMainTab==='estimate') renderEstimate();
+    }catch(e){ toast('エラー: '+e.message,true); }
+  });
 }
 
 // CSV アップロードエリア ドラッグ＆ドロップ
@@ -2723,5 +2746,15 @@ document.getElementById('recommend-modal').addEventListener('click',e=>{ if(e.ta
   });
 })();
 </script>
+
+<div id="confirm-overlay">
+  <div id="confirm-box">
+    <div id="confirm-msg"></div>
+    <div class="confirm-btns">
+      <button id="confirm-cancel" class="btn btn-secondary btn-sm">キャンセル</button>
+      <button id="confirm-ok" class="btn btn-sm">実行</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
