@@ -2455,7 +2455,7 @@ function renderDashboard(){
       const pct=Math.min(p.pct,2); const barW=Math.min(pct*50,100);
       const col=p.pct>1.3?'#c62828':p.pct>1?'#e65100':'#ffa726';
       return `<div class="alert-item ${p.pct>1.3?'red':''}">
-        <div class="ai-name">${esc(p.name)}</div>
+        <div class="ai-name">${esc(dispName(p.name))}</div>
         <div class="ai-bar-wrap">
           <div class="ai-bar-bg"><div class="ai-bar-fill" style="width:${barW}%;background:${col}"></div></div>
           <div class="ai-label">過負荷: <b>${p.overDays}日</b> / 最大 <b>${p.maxH.toFixed(1)}h</b></div>
@@ -2472,18 +2472,28 @@ function renderDashboard(){
     const h=r2(moCols.reduce((s,c)=>s+(pd[c.col]||0),0));
     const cap=moCols.length*CAPACITY;
     const pct=cap>0?Math.round(h/cap*100):0;
-    return {name,h,pct};
+    const registered=name!==''&&displayNameMap[name]!==undefined;
+    return {name,h,pct,registered};
   }).sort((a,b)=>b.h-a.h);
-  summaryEl.innerHTML=utilList.map(u=>{
+  const regList=utilList.filter(u=>u.registered);
+  const unregList=utilList.filter(u=>!u.registered);
+  const rowHtml=u=>{
     const col=u.pct>100?'#c62828':u.pct>80?'#e65100':'#2e7d32';
+    const nameCol=u.registered?'inherit':'#e65100';
     return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid #f0f2f5">
-      <span style="min-width:90px;font-size:12px;font-weight:700">${esc(u.name)}</span>
+      <span style="min-width:90px;font-size:12px;font-weight:700;color:${nameCol}">${esc(dispName(u.name))}</span>
       <div style="flex:1;background:#e8ecf0;border-radius:4px;height:12px;overflow:hidden">
         <div style="width:${Math.min(u.pct,100)}%;height:100%;background:${col};border-radius:4px"></div>
       </div>
       <span style="font-size:12px;font-weight:700;min-width:58px;text-align:right;color:${col}">${u.h.toFixed(1)}h (${u.pct}%)</span>
     </div>`;
-  }).join('');
+  };
+  summaryEl.innerHTML=regList.map(rowHtml).join('')
+    +(unregList.length?`
+      <div style="margin:10px 0 6px;padding-top:8px;border-top:2px dashed #ffe082;font-size:11px;font-weight:700;color:#e65100">
+        ⚠ アカウント未登録 / 担当者未設定
+      </div>`+unregList.map(rowHtml).join('')
+    :'');
   // 最近の再アサイン
   renderDbRecentReassign();
 }
