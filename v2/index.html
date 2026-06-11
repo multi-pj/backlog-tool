@@ -207,7 +207,7 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 .cb-val{font-size:12px;color:#607d8b;min-width:46px;text-align:right}
 .task-list-table{width:100%;border-collapse:collapse;font-size:12px}
 .task-list-table th{background:#f5f7fa;color:#607d8b;font-size:11px;padding:6px 10px;text-align:left;border-bottom:2px solid #e3e9f0}
-.task-list-table td{padding:7px 10px;border-bottom:1px solid #f0f2f5;vertical-align:middle}
+.task-list-table td{padding:7px 10px;border-bottom:1px solid #f0f2f5;vertical-align:middle;text-align:left}
 .task-list-table tr:hover td{background:#f5f7fa}
 
 /* ===== Filter Bar ===== */
@@ -237,7 +237,7 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 /* ===== Estimate ===== */
 .rate-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:12px}
 .rate-table th{background:#1a3a5c;color:#fff;padding:8px 12px;text-align:left;font-size:11px}
-.rate-table td{padding:8px 12px;border-bottom:1px solid #edf0f5}
+.rate-table td{padding:8px 12px;border-bottom:1px solid #edf0f5;text-align:left}
 .rate-table tr:hover td{background:#f5f7fa}
 .cost-over{color:#c62828;font-weight:700}
 .cost-ok{color:#2e7d32}
@@ -285,10 +285,10 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 .csv-preview table{width:100%}
 .csv-preview th{background:#e8ecf4;padding:4px 8px;text-align:left;font-size:11px;position:sticky;top:0}
 .csv-preview td{padding:4px 8px;border-bottom:1px solid #edf0f5}
-.settings-accounts-list{max-height:200px;overflow-y:auto}
+.settings-accounts-list{max-height:200px;overflow-y:auto;display:grid;grid-template-columns:1fr 1fr}
 .sal-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid #f0f2f5}
 .sal-item:hover{background:#f5f7fa}
-.sal-name{font-weight:700;flex:1}
+.sal-name{font-weight:700}
 .sal-role{font-size:11px;padding:2px 7px;border-radius:10px;font-weight:700}
 .sal-role.admin{background:#fff3cd;color:#856404}
 .sal-role.sales{background:#e8f5e9;color:#2e7d32}
@@ -318,7 +318,7 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 .report-controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
 .report-table{width:100%;border-collapse:collapse;font-size:12px}
 .report-table th{background:#1a3a5c;color:#fff;padding:8px 12px;text-align:left}
-.report-table td{padding:8px 12px;border-bottom:1px solid #edf0f5}
+.report-table td{padding:8px 12px;border-bottom:1px solid #edf0f5;text-align:left}
 .report-table tr:nth-child(even) td{background:#f9fbff}
 
 /* ===== Admin panel modal ===== */
@@ -339,7 +339,7 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 .csel{position:relative;display:inline-block;vertical-align:middle}
 .csel-cur{display:inline-flex;align-items:center;gap:4px;padding:4px 24px 4px 8px;border:1px solid #d0dae6;border-radius:6px;background:#fff;cursor:pointer;font-size:13px;white-space:nowrap;min-width:72px;color:#333;position:relative;line-height:1.6}
 #fJCsel .csel-cur{min-width:130px}
-.sal-edit-row{background:#f0f5ff;border-bottom:2px solid #c5d3e8;padding:12px 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sal-edit-row{background:#f0f5ff;border-bottom:2px solid #c5d3e8;padding:12px 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px;grid-column:1/-1}
 .sal-edit-row .ef-label{font-size:11px;font-weight:700;color:#607d8b;display:block;margin-bottom:3px}
 .sal-edit-row input,.sal-edit-row select{width:100%;padding:6px 8px;border:1.5px solid #d0dae6;border-radius:5px;font-size:12px;outline:none}
 .sal-edit-row input:focus,.sal-edit-row select:focus{border-color:#1a3a5c}
@@ -1466,7 +1466,7 @@ async function renderSettingsAccountList(){
     if(!res.ok){ container.innerHTML='<div style="color:#c62828;padding:12px;font-size:12px">取得失敗</div>'; return; }
     const list=await res.json();
     const displayList = list.length ? list : DEMO_ACCOUNTS;
-    const demoNote = !list.length ? '<div style="font-size:11px;color:#e65100;padding:6px 12px;background:#fff3e0;border-radius:4px;margin-bottom:6px">⚠ KV未設定のためデモデータを表示しています（実際のログインには使用できません）</div>' : '';
+    const demoNote = !list.length ? '<div style="font-size:11px;color:#e65100;padding:6px 12px;background:#fff3e0;border-radius:4px;margin-bottom:6px;grid-column:1/-1">⚠ KV未設定のためデモデータを表示しています（実際のログインには使用できません）</div>' : '';
     const isReal = list.length > 0;
     container.innerHTML=demoNote + displayList.map(a=>{
       const isEditing=isReal&&editingAccountUsername===a.username;
@@ -1488,12 +1488,15 @@ async function renderSettingsAccountList(){
           </div>
         </div>`:'';
       return `<div class="sal-item">
-        <span class="sal-name">${esc(a.displayName||a.username)}</span>
-        <span style="font-size:11px;color:#90a4ae">@${esc(a.username)}</span>
-        <span class="sal-role ${a.role}">${a.role}</span>
-        <span style="font-size:11px;color:#b0bec5;flex:1">${esc(a.talentName||'-')}</span>
-        ${isReal?`<button onclick="startEditAccount('${esc(a.username)}')" style="padding:2px 8px;font-size:11px;border:1px solid #90a4ae;border-radius:4px;background:#fff;color:#546e7a;cursor:pointer">${isEditing?'▲':'編集'}</button>`:''}
-        ${isReal&&a.username!==currentUser?.username?`<button onclick="deleteAccount('${esc(a.username)}')" style="padding:2px 8px;font-size:11px;border:1px solid #ef9a9a;border-radius:4px;background:#fff;color:#c62828;cursor:pointer;margin-left:4px">削除</button>`:''}
+        <span class="sal-role ${a.role}" style="flex-shrink:0">${a.role}</span>
+        <div style="flex:1;min-width:0;text-align:left">
+          <div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(a.displayName||a.username)}</div>
+          <div style="font-size:11px;color:#90a4ae;margin-top:1px">@${esc(a.username)}&nbsp;·&nbsp;${esc(a.talentName||'-')}</div>
+        </div>
+        <div style="display:flex;gap:4px;flex-shrink:0">
+          ${isReal?`<button onclick="startEditAccount('${esc(a.username)}')" style="padding:2px 8px;font-size:11px;border:1px solid #90a4ae;border-radius:4px;background:#fff;color:#546e7a;cursor:pointer">${isEditing?'▲':'編集'}</button>`:''}
+          ${isReal&&a.username!==currentUser?.username?`<button onclick="deleteAccount('${esc(a.username)}')" style="padding:2px 8px;font-size:11px;border:1px solid #ef9a9a;border-radius:4px;background:#fff;color:#c62828;cursor:pointer">削除</button>`:''}
+        </div>
       </div>${editForm}`;
     }).join('');
   }catch(e){ container.innerHTML=`<div style="color:#c62828;padding:12px;font-size:12px">${esc(e.message)}</div>`; }
@@ -2396,18 +2399,22 @@ function renderEstimate(){
   const clientNames=[...new Set(clientRates.map(r=>r.client))].sort((a,b)=>a.localeCompare(b,'ja'));
   const roles=[...new Set(displayRates.map(r=>r.role))];
   const mkInternalTbl=()=>internalRates.length?`
-    <div style="margin-bottom:4px;font-size:11px;font-weight:700;color:#1b5e20;letter-spacing:.5px;text-transform:uppercase">🏢 社内基準（原価）</div>
-    <div style="overflow-x:auto;margin-bottom:16px"><table class="rate-cross-table">
-      <thead><tr><th style="min-width:120px">役職</th><th class="col-internal" style="min-width:110px"><b>社内基準</b><br><span style="font-size:9px;font-weight:400;opacity:.8">（原価基準）</span></th></tr></thead>
-      <tbody>${roles.map(role=>{ const r=internalRates.find(r=>r.role===role); return `<tr><td>${esc(role)}</td><td class="col-internal">${r?`¥${r.hourlyRate.toLocaleString()}`:'<span class="rate-empty">—</span>'}</td></tr>`; }).join('')}</tbody>
-    </table></div>`:'';
+    <div>
+      <div style="margin-bottom:4px;font-size:11px;font-weight:700;color:#1b5e20;letter-spacing:.5px;text-transform:uppercase">🏢 社内基準（原価）</div>
+      <div style="overflow-x:auto"><table class="rate-cross-table">
+        <thead><tr><th style="min-width:120px">役職</th><th class="col-internal" style="min-width:110px"><b>社内基準</b><br><span style="font-size:9px;font-weight:400;opacity:.8">（原価基準）</span></th></tr></thead>
+        <tbody>${roles.map(role=>{ const r=internalRates.find(r=>r.role===role); return `<tr><td>${esc(role)}</td><td class="col-internal">${r?`¥${r.hourlyRate.toLocaleString()}`:'<span class="rate-empty">—</span>'}</td></tr>`; }).join('')}</tbody>
+      </table></div>
+    </div>`:'';
   const mkClientTbl=()=>clientNames.length?`
-    <div style="margin-bottom:4px;font-size:11px;font-weight:700;color:#1a3a5c;letter-spacing:.5px;text-transform:uppercase">💼 クライアント別レート</div>
-    <div style="overflow-x:auto"><table class="rate-cross-table">
-      <thead><tr><th style="min-width:120px">役職</th>${clientNames.map(c=>`<th style="min-width:110px"><b>${esc(c)}</b></th>`).join('')}</tr></thead>
-      <tbody>${roles.map(role=>`<tr><td>${esc(role)}</td>${clientNames.map(c=>{ const r=clientRates.find(r=>r.client===c&&r.role===role); return r?`<td>¥${r.hourlyRate.toLocaleString()}</td>`:`<td class="rate-empty">—</td>`; }).join('')}</tr>`).join('')}</tbody>
-    </table></div>`:'';
-  ratesEl.innerHTML=mkInternalTbl()+mkClientTbl();
+    <div>
+      <div style="margin-bottom:4px;font-size:11px;font-weight:700;color:#1a3a5c;letter-spacing:.5px;text-transform:uppercase">💼 クライアント別レート</div>
+      <div style="overflow-x:auto"><table class="rate-cross-table">
+        <thead><tr><th style="min-width:120px">役職</th>${clientNames.map(c=>`<th style="min-width:110px"><b>${esc(c)}</b></th>`).join('')}</tr></thead>
+        <tbody>${roles.map(role=>`<tr><td>${esc(role)}</td>${clientNames.map(c=>{ const r=clientRates.find(r=>r.client===c&&r.role===role); return r?`<td>¥${r.hourlyRate.toLocaleString()}</td>`:`<td class="rate-empty">—</td>`; }).join('')}</tr>`).join('')}</tbody>
+      </table></div>
+    </div>`:'';
+  ratesEl.innerHTML=`<div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">${mkInternalTbl()}${mkClientTbl()}</div>`;
   const fa=document.getElementById('est-fA')?.value||'';
   const fj=document.getElementById('est-fJ')?.value||'';
   const rows=allRows.filter(r=>{
