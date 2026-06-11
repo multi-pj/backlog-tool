@@ -664,6 +664,7 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
         <h4 style="display:flex;align-items:center;justify-content:space-between">現在のアカウント
           <button class="btn btn-secondary btn-xs" onclick="exportCurrentAccounts()">⬇ エクスポート</button>
         </h4>
+        <p style="font-size:11px;color:#90a4ae;margin-bottom:6px">※ エクスポートにパスワード列は含まれません。再インポート時はCSVの <code>password</code> 列を必ず入力してください（空欄の場合ログイン不可になります）。</p>
         <div id="accounts-list" class="settings-accounts-list" style="max-height:320px;overflow-y:auto">
           <div style="font-size:12px;color:#90a4ae;padding:12px">読み込み中...</div>
         </div>
@@ -783,7 +784,21 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
           <button class="btn btn-primary btn-sm" onclick="changeGeneralPassword()">変更</button>
         </div>
         <div id="pw-change-msg" style="font-size:11px;margin-top:6px;min-height:14px;font-weight:600"></div>
-        <p style="font-size:10px;color:#b0bec5;margin-top:6px;line-height:1.6">※ 管理者PWはCloudflareダッシュボード（ADMIN_PWD）から変更</p>
+      </div>
+    </div>
+    <div style="padding-top:14px;border-top:1px solid #e3e9f0">
+      <div class="admin-section-toggle" id="admin-pw-change-tgl" onclick="toggleAdminPwChange()">
+        <span class="toggle-arrow">▶</span> 管理者 パスワード変更
+      </div>
+      <div class="admin-section-body" id="admin-pw-change-body">
+        <div style="font-size:11px;color:#90a4ae;margin-bottom:8px">管理者ログインパスワードを変更します。全端末に即時反映されます。</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <input type="password" id="admin-pw-current" autocomplete="current-password" placeholder="現在のパスワード" style="padding:7px 10px;border:1.5px solid #d0dae6;border-radius:6px;font-size:12px">
+          <input type="password" id="admin-pw-new" autocomplete="new-password" placeholder="新しいパスワード（4文字以上）" style="padding:7px 10px;border:1.5px solid #d0dae6;border-radius:6px;font-size:12px">
+          <input type="password" id="admin-pw-confirm" autocomplete="new-password" placeholder="新しいパスワード（確認）" style="padding:7px 10px;border:1.5px solid #d0dae6;border-radius:6px;font-size:12px">
+          <button class="btn btn-primary btn-sm" onclick="changeAdminPassword()" style="align-self:flex-start">変更</button>
+        </div>
+        <div id="admin-pw-change-msg" style="font-size:11px;margin-top:6px;min-height:14px;font-weight:600"></div>
       </div>
     </div>
     <div style="margin-top:16px">
@@ -1128,6 +1143,13 @@ function applyLoadedData(rows, cols, months, workload, zeroTasks){
   if(upd) upd.textContent=`最終取得: ${TODAY}`;
   fillSel('ra-from',people); fillSel('ra-to',people);
   showZeroWarnBanner(zeroTasks||[]);
+  if(currentUser?.role==='staff' && currentUser.talentName){
+    const tn=currentUser.talentName;
+    ['fA','wl-fA'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el){ el.value=tn; el.disabled=true; el.style.opacity='.6'; el.title='自分のデータのみ表示'; }
+    });
+  }
   renderDashboard();
   if(activeMainTab==='gantt') renderGantt();
   if(activeMainTab==='workload') renderWorkload();
@@ -1324,9 +1346,23 @@ function autoPopulateTalents(){
   renderCSVPreview('talents-preview',pendingTalents);
   document.getElementById('talents-preview').hidden=false;
   document.getElementById('talents-actions').hidden=false;
-  document.getElementById('talents-msg').textContent=`${newPeople.length}人を追加。役職・スキルをCSVで登録後「インポート実行」してください。`;
-  document.getElementById('talents-msg').style.color='#1a3a5c';
+  const talentsMsg=document.getElementById('talents-msg');
+  talentsMsg.style.whiteSpace='pre-line';
+  talentsMsg.textContent=`${newPeople.length}人を追加。役職・スキルをCSVで登録後「インポート実行」してください。`;
+  talentsMsg.style.color='#1a3a5c';
   toast(`${newPeople.length}人のBacklog担当者を追加しました`,false);
+  fetch(`${WORKER_URL}/accounts`,{headers:{Authorization:`Bearer ${currentUser?.token||''}`}})
+    .then(r=>r.ok?r.json():Promise.resolve([]))
+    .then(accountList=>{
+      if(!accountList.length) return;
+      const linked=newPeople.filter(n=>accountList.some(a=>a.talentName===n));
+      const unlinked=newPeople.filter(n=>!accountList.some(a=>a.talentName===n));
+      let note=`${newPeople.length}人を追加。役職・スキルをCSVで登録後「インポート実行」してください。`;
+      if(linked.length) note+=`\n✅ アカウント紐づき済み: ${linked.join('、')}`;
+      if(unlinked.length) note+=`\n⚠ アカウント未紐づき: ${unlinked.join('、')}`;
+      talentsMsg.textContent=note;
+    })
+    .catch(()=>{});
 }
 
 function onCapChange(){
@@ -1375,6 +1411,10 @@ function fillPersonSelect(){
   const people=[...new Set(allRows.map(r=>r.assignee).filter(Boolean))].sort();
   sel.innerHTML='<option value="">-- 選択してください --</option>';
   people.forEach(p=>{ const o=document.createElement('option'); o.value=o.textContent=p; sel.appendChild(o); });
+  if(currentUser?.role==='staff' && currentUser.talentName){
+    sel.value=currentUser.talentName;
+    sel.disabled=true; sel.style.opacity='.6'; sel.title='自分のデータのみ表示';
+  }
   // 月選択
   const ms=document.getElementById('person-month-sel'); if(!ms) return;
   ms.innerHTML='<option value="">全期間</option>';
@@ -1458,12 +1498,28 @@ async function updateAccount(username){
       body:JSON.stringify(body),
     });
     if(!res.ok){ const e=await res.json().catch(()=>({})); throw new Error(e.error||'更新失敗'); }
+    const stubCreated=await ensureTalentStub(talentName);
     editingAccountUsername=null;
-    toast(`${username} を更新しました`,false);
+    toast(`${username} を更新しました${stubCreated?`（タレント「${talentName}」を自動生成）`:''}`,false);
     renderSettingsAccountList();
   }catch(e){
     if(msg){ msg.style.color='#c62828'; msg.textContent='❌ '+e.message; }
   }
+}
+
+async function ensureTalentStub(talentName){
+  if(!talentName||talents.some(t=>t.name===talentName)) return false;
+  const newList=[...talents,{name:talentName,role:'',skills:[]}];
+  try{
+    const res=await fetch(`${WORKER_URL}/talents`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json',Authorization:`Bearer ${currentUser?.token||''}`},
+      body:JSON.stringify(newList),
+    });
+    if(!res.ok) return false;
+    talents=newList;
+    return true;
+  }catch{ return false; }
 }
 
 async function addAccount(){
@@ -1482,7 +1538,9 @@ async function addAccount(){
     });
     const data=await res.json();
     if(!res.ok) throw new Error(data.error||'追加失敗');
-    msg.textContent=`✅ ${u} を追加しました`; msg.style.color='#2e7d32';
+    const stubCreated=await ensureTalentStub(t);
+    msg.textContent=`✅ ${u} を追加しました${stubCreated?`（タレント「${t}」を自動生成）`:''}`;
+    msg.style.color='#2e7d32';
     ['new-acc-username','new-acc-password','new-acc-display','new-acc-talent'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
     renderSettingsAccountList();
   }catch(e){ msg.textContent='❌ '+e.message; msg.style.color='#c62828'; }
@@ -1747,6 +1805,34 @@ function togglePwChange(){
   const isOpen=body.classList.toggle('open'); tgl.classList.toggle('open',isOpen);
   if(!isOpen){ document.getElementById('new-pw-input').value=''; document.getElementById('pw-change-msg').textContent=''; }
 }
+function toggleAdminPwChange(){
+  const tgl=document.getElementById('admin-pw-change-tgl'), body=document.getElementById('admin-pw-change-body');
+  const isOpen=body.classList.toggle('open'); tgl.classList.toggle('open',isOpen);
+  if(!isOpen){
+    ['admin-pw-current','admin-pw-new','admin-pw-confirm'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('admin-pw-change-msg').textContent='';
+  }
+}
+async function changeAdminPassword(){
+  const cur=document.getElementById('admin-pw-current').value;
+  const nw=document.getElementById('admin-pw-new').value;
+  const cfm=document.getElementById('admin-pw-confirm').value;
+  const msg=document.getElementById('admin-pw-change-msg');
+  if(!cur){ msg.style.color='#c62828'; msg.textContent='現在のパスワードを入力してください'; return; }
+  if(!nw||nw.length<4){ msg.style.color='#c62828'; msg.textContent='新しいパスワードは4文字以上で入力してください'; return; }
+  if(nw!==cfm){ msg.style.color='#c62828'; msg.textContent='新しいパスワードと確認用パスワードが一致しません'; return; }
+  msg.style.color='#607d8b'; msg.textContent='変更中...';
+  try{
+    const res=await fetch(`${WORKER_URL}/auth/change-admin-password`,{
+      method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${currentUser?.token||''}`},
+      body:JSON.stringify({currentPassword:cur,newPassword:nw}),
+    });
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data.error||'変更失敗');
+    ['admin-pw-current','admin-pw-new','admin-pw-confirm'].forEach(id=>document.getElementById(id).value='');
+    msg.style.color='#2e7d32'; msg.textContent='管理者パスワードを変更しました（全端末に反映）'; setTimeout(()=>{msg.textContent='';},5000);
+  }catch(e){ msg.style.color='#c62828'; msg.textContent=e.message; }
+}
 async function changeGeneralPassword(){
   const newPw=document.getElementById('new-pw-input').value;
   const msg=document.getElementById('pw-change-msg');
@@ -1831,9 +1917,13 @@ function renderDashboard(){
     document.getElementById('db-alert-count').textContent='-';
     return;
   }
-  const people=Object.keys(allWorkload);
+  const isStaff=currentUser?.role==='staff';
+  const staffName=currentUser?.talentName||'';
+  const allPeople=Object.keys(allWorkload);
+  const people=isStaff && staffName ? allPeople.filter(p=>p===staffName) : allPeople;
+  const dbRows=isStaff && staffName ? allRows.filter(r=>r.assignee===staffName) : allRows;
   const curMo=`${new Date().getFullYear()}/${pad(new Date().getMonth()+1)}`;
-  const moRows=allRows.filter(r=>r.monthTotals&&r.monthTotals[curMo]);
+  const moRows=dbRows.filter(r=>r.monthTotals&&r.monthTotals[curMo]);
   const wdH=r2(moRows.reduce((s,r)=>s+(r.monthTotals[curMo]||0),0));
   // 今後2週間の過負荷チェック
   const twoWeeksLater=new Date(TODAY+'T12:00:00'); twoWeeksLater.setDate(twoWeeksLater.getDate()+14);
@@ -1848,7 +1938,7 @@ function renderDashboard(){
   });
   overloadPeople.sort((a,b)=>b.pct-a.pct);
   document.getElementById('db-people').textContent=people.length;
-  document.getElementById('db-tasks').textContent=allRows.filter(r=>upcomingCols.some(c=>(r.daily[c.col]||0)>0)).length;
+  document.getElementById('db-tasks').textContent=dbRows.filter(r=>upcomingCols.some(c=>(r.daily[c.col]||0)>0)).length;
   document.getElementById('db-wdh').textContent=wdH.toFixed(1);
   document.getElementById('db-alert-count').textContent=overloadPeople.length;
   // アラートリスト
