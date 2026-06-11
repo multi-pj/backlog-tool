@@ -565,6 +565,9 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
         <div class="filter-sep"></div>
         <label>担当者:</label>
         <select id="fA" onchange="renderCurrent()"><option value="">全員</option></select>
+        <label style="font-size:11px;color:#607d8b;display:flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap;margin-left:4px">
+          <input type="checkbox" id="gantt-mgmt-cb" onchange="toggleMgmtPeople(this)">管理者・営業を含む
+        </label>
         <div class="filter-sep"></div>
         <label>稼働上限</label>
         <input type="number" id="cap-input" value="8" min="1" max="24" step="0.5" onchange="onCapChange()" style="width:56px;text-align:center">
@@ -599,6 +602,9 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
       <div class="filter-row">
         <label>担当者:</label>
         <select id="wl-fA" onchange="renderWorkload()"><option value="">全員</option></select>
+        <label style="font-size:11px;color:#607d8b;display:flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap;margin-left:4px">
+          <input type="checkbox" id="wl-mgmt-cb" onchange="toggleMgmtPeople(this)">管理者・営業を含む
+        </label>
       </div>
       <div class="month-nav" id="wl-month-nav"></div>
     </div>
@@ -1251,11 +1257,14 @@ function filterPeople(people){
 }
 function toggleMgmtPeople(el){
   showMgmtPeople=el.checked;
-  // すべてのセレクトを再構築
+  ['show-mgmt-cb','gantt-mgmt-cb','wl-mgmt-cb'].forEach(id=>{
+    const cb=document.getElementById(id); if(cb) cb.checked=showMgmtPeople;
+  });
   const people=filterPeople([...new Set(allRows.map(r=>r.assignee).filter(Boolean))].sort());
   fillSel('fA',people,dispName); fillSel('wl-fA',people,dispName);
   fillSel('est-fA',people,dispName);
   fillSel('ra-from',people,dispName); fillSel('ra-to',people,dispName);
+  fillPersonSelect();
   renderCurrent();
   renderDashboard();
 }
@@ -1659,7 +1668,7 @@ function renderCurrent(){
 
 function fillPersonSelect(){
   const sel=document.getElementById('person-select'); if(!sel) return;
-  const people=[...new Set(allRows.map(r=>r.assignee).filter(Boolean))].sort();
+  const people=filterPeople([...new Set(allRows.map(r=>r.assignee).filter(Boolean))].sort());
   sel.innerHTML='<option value="">-- 選択してください --</option>';
   people.forEach(p=>{ const o=document.createElement('option'); o.value=p; o.textContent=dispName(p); sel.appendChild(o); });
   if(currentUser?.role==='staff' && currentUser.talentName){
