@@ -1579,9 +1579,7 @@ function switchMainTab(name,btn){
 }
 
 function onPeriodChange(){
-  // altInput:true 時は元inputのvalueがdateFormat('Y-m-d')で確実にセットされる
-  periodFrom = document.getElementById('period-from')?.value||'';
-  periodTo   = document.getElementById('period-to')?.value||'';
+  // periodFrom/periodTo はflatpickrのonChange(sel,dateStr)で直接セット済み
   const hint=document.getElementById('period-hint');
   if(periodFrom||periodTo){
     const s=periodFrom||'開始未設定', e=periodTo||'終了未設定';
@@ -1602,7 +1600,7 @@ function applyPeriodBtn(){
   toast(periodFrom||periodTo?`表示期間をセットしました: ${s} 〜 ${e}`:'表示期間をリセット（±3ヶ月表示）', false);
 }
 function resetPeriod(){
-  fpPeriodFrom?.clear(); fpPeriodTo?.clear();
+  fpPeriodFrom?.clear(false); fpPeriodTo?.clear(false);
   periodFrom=''; periodTo='';
   activeMonth=''; updateMonthNavActive('gantt-month-nav'); updateMonthNavActive('wl-month-nav');
   const hint=document.getElementById('period-hint');
@@ -3137,16 +3135,16 @@ function scrollToToday(wrapId){
 }
 
 // 期間設定カレンダー（月曜始まり・日本語曜日表示）
-const FP_PERIOD_OPTS = {
+// onChange の第2引数 dateStr は dateFormat='Y-m-d' で確実にフォーマットされた値
+const FP_PERIOD_BASE = {
   dateFormat: 'Y-m-d',
   altInput: true,
   altFormat: 'Y/m/d（D）',
   locale: { ...flatpickr.l10ns.ja, firstDayOfWeek: 1 },
   disableMobile: true,
-  onChange: () => onPeriodChange(),
 };
-fpPeriodFrom = flatpickr('#period-from', { ...FP_PERIOD_OPTS });
-fpPeriodTo   = flatpickr('#period-to',   { ...FP_PERIOD_OPTS });
+fpPeriodFrom = flatpickr('#period-from', { ...FP_PERIOD_BASE, onChange: (_sel,ds) => { periodFrom=ds||''; onPeriodChange(); } });
+fpPeriodTo   = flatpickr('#period-to',   { ...FP_PERIOD_BASE, onChange: (_sel,ds) => { periodTo  =ds||''; onPeriodChange(); } });
 
 // モーダル
 function closeRecommendModal(){ document.getElementById('recommend-modal').classList.remove('open'); }
