@@ -512,15 +512,17 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
         <button id="connect-btn" class="btn btn-primary btn-sm" onclick="loadData()">🔗 Backlogと連携</button>
         <span id="db-last-updated" style="font-size:11px;color:#90a4ae"></span>
       </div>
-      <div class="period-range">
-        <span style="font-size:12px;color:#455a64;font-weight:700">📅 表示期間:</span>
-        <input type="text" id="period-from" placeholder="開始日" readonly style="cursor:pointer;min-width:110px">
-        <span style="font-size:12px;color:#90a4ae">〜</span>
-        <input type="text" id="period-to" placeholder="終了日" readonly style="cursor:pointer;min-width:110px">
-        <button class="btn btn-primary btn-sm" onclick="onPeriodChange()">セット</button>
-        <button class="btn btn-secondary btn-xs" onclick="resetPeriod()" style="margin-left:4px">リセット</button>
-        <span id="period-hint" style="font-size:11px;color:#90a4ae">未設定時は本日±3ヶ月を表示</span>
-        <label style="font-size:11px;color:#607d8b;display:flex;align-items:center;gap:4px;cursor:pointer;margin-left:12px;white-space:nowrap">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:10px">
+        <div class="period-range">
+          <span style="font-size:12px;color:#455a64;font-weight:700">📅 表示期間:</span>
+          <input type="text" id="period-from" placeholder="開始日" readonly style="cursor:pointer;min-width:110px">
+          <span style="font-size:12px;color:#90a4ae">〜</span>
+          <input type="text" id="period-to" placeholder="終了日" readonly style="cursor:pointer;min-width:110px">
+          <button class="btn btn-primary btn-sm" onclick="onPeriodChange()">セット</button>
+          <button class="btn btn-secondary btn-xs" onclick="resetPeriod()" style="margin-left:4px">リセット</button>
+          <span id="period-hint" style="font-size:11px;color:#90a4ae">未設定時は本日±3ヶ月を表示</span>
+        </div>
+        <label style="font-size:11px;color:#607d8b;display:flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap;padding:6px 10px;background:#fff;border:1.5px solid #b0bec5;border-radius:6px">
           <input type="checkbox" id="show-mgmt-cb" onchange="toggleMgmtPeople(this)">
           管理者・営業を含む
         </label>
@@ -660,12 +662,17 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
         <select id="est-fA" onchange="renderEstimate()" style="padding:6px 10px;border:1px solid #d0dae6;border-radius:6px;font-size:12px"><option value="">全員</option></select>
         <label style="font-size:12px;color:#607d8b;font-weight:600">Job No.:</label>
         <select id="est-fJ" onchange="renderEstimate()" style="padding:6px 10px;border:1px solid #d0dae6;border-radius:6px;font-size:12px"><option value="">全て</option></select>
+        <label style="font-size:12px;color:#607d8b;font-weight:600">クライアント:</label>
+        <select id="est-fClient" onchange="renderEstimate()" style="padding:6px 10px;border:1px solid #d0dae6;border-radius:6px;font-size:12px"><option value="">社内基準</option></select>
+        <label style="font-size:12px;color:#607d8b;font-weight:600">月:</label>
+        <select id="est-fMonth" onchange="renderEstimate()" style="padding:6px 10px;border:1px solid #d0dae6;border-radius:6px;font-size:12px"><option value="">全期間</option></select>
       </div>
       <div class="estimate-summary" id="estimate-summary"></div>
       <div style="overflow-x:auto">
         <table class="rate-table" id="estimate-table">
           <thead><tr>
             <th style="width:90px">担当者</th><th style="width:80px">Job No.</th><th>件名</th><th style="width:80px">役職</th>
+            <th style="width:90px">レートカード</th>
             <th style="text-align:right;width:80px">レート(¥/h)</th>
             <th style="text-align:right;width:60px">予定h</th>
             <th style="text-align:right;width:80px">予算</th>
@@ -1574,21 +1581,30 @@ function onPeriodChange(){
   periodTo   = fpPeriodTo?.selectedDates[0]
     ? fpPeriodTo.formatDate(fpPeriodTo.selectedDates[0],'Y-m-d') : '';
   const hint=document.getElementById('period-hint');
-  if(hint) hint.textContent=periodFrom&&periodTo?`${periodFrom} 〜 ${periodTo}`:'未設定時は本日±3ヶ月を表示';
-  // 期間変更時は月ボタン選択を解除（月指定が期間より優先されるため）
-  if(periodFrom&&periodTo){ activeMonth=''; updateMonthNavActive('gantt-month-nav'); updateMonthNavActive('wl-month-nav'); }
+  if(periodFrom||periodTo){
+    const s=periodFrom||'開始未設定', e=periodTo||'終了未設定';
+    if(hint) hint.textContent=`${s} 〜 ${e}`;
+    // 片方でも入力されたら月ボタン選択を解除
+    activeMonth=''; updateMonthNavActive('gantt-month-nav'); updateMonthNavActive('wl-month-nav');
+  } else {
+    if(hint) hint.textContent='未設定時は本日±3ヶ月を表示';
+  }
   if(allRows.length) renderCurrent();
 }
 function resetPeriod(){
   fpPeriodFrom?.clear(); fpPeriodTo?.clear();
   periodFrom=''; periodTo='';
+  activeMonth=''; updateMonthNavActive('gantt-month-nav'); updateMonthNavActive('wl-month-nav');
   const hint=document.getElementById('period-hint');
   if(hint) hint.textContent='未設定時は本日±3ヶ月を表示';
   if(allRows.length) renderCurrent();
 }
 function getViewCols(){
   if(activeMonth) return allCols.filter(c=>c.mo===activeMonth);
-  if(periodFrom&&periodTo) return allCols.filter(c=>c.ds>=periodFrom&&c.ds<=periodTo);
+  // 片方のみ設定でも機能する（片方未設定は範囲制限なし）
+  if(periodFrom||periodTo) return allCols.filter(c=>
+    (!periodFrom||c.ds>=periodFrom) && (!periodTo||c.ds<=periodTo)
+  );
   const dFrom=new Date(TODAY+'T12:00:00'); dFrom.setMonth(dFrom.getMonth()-3);
   const dTo=new Date(TODAY+'T12:00:00'); dTo.setMonth(dTo.getMonth()+3);
   return allCols.filter(c=>c.ds>=dFrom.toISOString().slice(0,10)&&c.ds<=dTo.toISOString().slice(0,10));
@@ -2714,9 +2730,10 @@ function renderPersonal(){
       <div class="chart-title">担当タスク一覧</div>
       <div style="overflow-x:auto">
         <table class="task-list-table">
-          <thead><tr><th style="width:80px">JOB No.</th><th>件名</th><th style="width:70px">状態</th><th style="width:78px">開始</th><th style="width:78px">期限</th><th style="text-align:right;width:52px">予定h</th><th style="text-align:right;width:52px">実績h</th><th style="width:100px">カテゴリー</th></tr></thead>
+          <thead><tr><th style="width:70px">JOB No.</th><th style="width:96px">課題No.</th><th>件名</th><th style="width:70px">状態</th><th style="width:78px">開始</th><th style="width:78px">期限</th><th style="text-align:right;width:52px">予定h</th><th style="text-align:right;width:52px">実績h</th><th style="width:100px">カテゴリー</th></tr></thead>
           <tbody>${taskRows.map(r=>`<tr>
-            <td><code style="font-size:11px;color:#607d8b">${esc(r.jobNo||r.key||'-')}</code></td>
+            <td><code style="font-size:11px;color:#607d8b">${esc(r.jobNo||'-')}</code></td>
+            <td><code style="font-size:11px;color:#1a3a5c">${esc(r.key||'-')}</code></td>
             <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r.title)}">${esc(trunc(r.title,28))}</td>
             <td>${badge(r.status)}</td>
             <td style="font-size:11px">${r.startDs||'-'}</td>
@@ -2732,18 +2749,24 @@ function renderPersonal(){
 
 // ==================== ESTIMATE ====================
 function getRate(assignee, client){
+  const {rate}=getRateInfo(assignee,client);
+  return rate;
+}
+function getRateInfo(assignee, client){
+  const displayRates=rates.length?rates:DEMO_RATES;
   const talent=talents.find(t=>t.name===assignee);
   const role=talent?.role||'';
-  if(!role) return 0;
-  // クライアント指定 → 社内基準フォールバック
-  let r=rates.find(r=>r.client===client&&r.role===role);
-  if(!r) r=rates.find(r=>r.client==='社内基準'&&r.role===role);
-  return r?.hourlyRate||0;
+  if(!role) return {rate:0, client:'-', role:'-'};
+  const preferred=client||'社内基準';
+  let r=displayRates.find(r=>r.client===preferred&&r.role===role);
+  const actualClient=r?preferred:'社内基準';
+  if(!r) r=displayRates.find(r=>r.client==='社内基準'&&r.role===role);
+  return {rate:r?.hourlyRate||0, client:r?actualClient:'-', role};
 }
 
 function renderEstimate(){
   if(!['admin','sales','leader'].includes(currentUser?.role||'')){
-    document.getElementById('estimate-body').innerHTML=`<tr><td colspan="10" class="empty-state">閲覧権限がありません</td></tr>`; return;
+    document.getElementById('estimate-body').innerHTML=`<tr><td colspan="11" class="empty-state">閲覧権限がありません</td></tr>`; return;
   }
   // レートカード横並び表示
   const ratesEl=document.getElementById('rates-display');
@@ -2770,47 +2793,70 @@ function renderEstimate(){
       </table></div>
     </div>`:'';
   ratesEl.innerHTML=`<div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">${mkInternalTbl()}${mkClientTbl()}</div>`;
+  // クライアントドロップダウンを最新のrates一覧で再構築
+  const clientSel=document.getElementById('est-fClient');
+  if(clientSel){
+    const cur=clientSel.value;
+    clientSel.innerHTML='<option value="">社内基準</option>';
+    clientNames.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; if(c===cur) o.selected=true; clientSel.appendChild(o); });
+  }
+  // 月ドロップダウンを最新のallMonths一覧で再構築
+  const monthSel=document.getElementById('est-fMonth');
+  if(monthSel){
+    const curMo=monthSel.value;
+    monthSel.innerHTML='<option value="">全期間</option>';
+    allMonths.forEach(m=>{ const o=document.createElement('option'); o.value=m; o.textContent=m.replace('/','年')+'月'; if(m===curMo) o.selected=true; monthSel.appendChild(o); });
+  }
   const fa=document.getElementById('est-fA')?.value||'';
   const fj=document.getElementById('est-fJ')?.value||'';
-  const rows=allRows.filter(r=>{
+  const fClient=document.getElementById('est-fClient')?.value||'';
+  const fMonth=document.getElementById('est-fMonth')?.value||'';
+  let rows=allRows.filter(r=>{
     if(fa&&r.assignee!==fa) return false;
     if(fj&&r.jobNo!==fj) return false;
+    if(fMonth&&!(r.monthTotals?.[fMonth]>0)) return false;
     return true;
   });
   let totalBudget=0, totalActual=0, totalEst=0, totalAct=0;
   const rowsHtml=rows.map(r=>{
-    const rate=getRate(r.assignee,'社内基準');
-    const budget=r2(r.estHours*rate);
-    const actual=r2(r.actHours*rate);
+    const ri=getRateInfo(r.assignee, fClient||'社内基準');
+    const {rate, client:usedClient, role:usedRole}=ri;
+    // 月フィルター時はその月の按分時間を使用
+    const estH=fMonth?(r.monthTotals?.[fMonth]||0):r.estHours;
+    const actH=fMonth?(r.distHours>0?r2(r.actHours*estH/r.distHours):0):r.actHours;
+    const budget=r2(estH*rate);
+    const actual=r2(actH*rate);
     const diff=r2(actual-budget);
-    totalBudget+=budget; totalActual+=actual; totalEst+=r.estHours; totalAct+=r.actHours;
+    totalBudget+=budget; totalActual+=actual; totalEst+=estH; totalAct+=actH;
     return `<tr>
       <td>${esc(dispName(r.assignee))}</td>
       <td><code style="font-size:10px;color:#607d8b">${esc(r.jobNo||'')}</code></td>
       <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r.title)}">${esc(trunc(r.title,26))}</td>
-      <td style="font-size:11px;color:#607d8b">${esc(talents.find(t=>t.name===r.assignee)?.role||'-')}</td>
+      <td style="font-size:11px;color:#607d8b">${esc(usedRole||'-')}</td>
+      <td style="font-size:11px;color:#1a3a5c;font-weight:600">${esc(usedClient)}</td>
       <td style="text-align:right">${rate>0?rate.toLocaleString():'-'}</td>
-      <td style="text-align:right">${r.estHours}</td>
+      <td style="text-align:right">${estH.toFixed(1)}</td>
       <td style="text-align:right;font-weight:700">${rate>0?fmtYen(budget):'-'}</td>
-      <td style="text-align:right">${r.actHours}</td>
+      <td style="text-align:right">${actH.toFixed(1)}</td>
       <td style="text-align:right">${rate>0?fmtYen(actual):'-'}</td>
       <td style="text-align:right;font-weight:700" class="${diff>0?'cost-over':diff<0?'cost-ok':''}">${rate>0?(diff>0?'+':'')+fmtYen(diff):'-'}</td>
     </tr>`;
   }).join('');
-  document.getElementById('estimate-body').innerHTML=rowsHtml||`<tr><td colspan="10" class="empty-state">データなし</td></tr>`;
+  document.getElementById('estimate-body').innerHTML=rowsHtml||`<tr><td colspan="11" class="empty-state">データなし</td></tr>`;
+  const filterLabel=fMonth?fMonth.replace('/','年')+'月':'全期間';
   document.getElementById('estimate-summary').innerHTML=`
     <div class="es-group">
-      <div class="es-item"><div class="es-val">${totalEst.toFixed(1)}h</div><div class="es-lbl">予定時間</div></div>
-      <div class="es-item"><div class="es-val">${fmtYen(totalBudget)}</div><div class="es-lbl">予算合計</div></div>
+      <div class="es-item"><div class="es-val">${totalEst.toFixed(1)}h</div><div class="es-lbl">予定時間<span style="font-size:9px;color:#90a4ae;display:block">${filterLabel}</span></div></div>
+      <div class="es-item"><div class="es-val">${fmtYen(totalBudget)}</div><div class="es-lbl">予算合計<span style="font-size:9px;color:#90a4ae;display:block">${filterLabel}</span></div></div>
     </div>
     <div class="es-group-divider"></div>
     <div class="es-group">
-      <div class="es-item"><div class="es-val">${totalAct.toFixed(1)}h</div><div class="es-lbl">実績時間</div></div>
-      <div class="es-item"><div class="es-val ${totalActual>totalBudget?'cost-over':''}">${fmtYen(totalActual)}</div><div class="es-lbl">実費合計</div></div>
+      <div class="es-item"><div class="es-val">${totalAct.toFixed(1)}h</div><div class="es-lbl">実績時間<span style="font-size:9px;color:#90a4ae;display:block">${filterLabel}</span></div></div>
+      <div class="es-item"><div class="es-val ${totalActual>totalBudget?'cost-over':''}">${fmtYen(totalActual)}</div><div class="es-lbl">実費合計<span style="font-size:9px;color:#90a4ae;display:block">${filterLabel}</span></div></div>
     </div>
     <div class="es-group-divider"></div>
     <div class="es-group">
-      <div class="es-item"><div class="es-val ${totalActual-totalBudget>0?'cost-over':'cost-ok'}">${totalActual>=totalBudget?'+':''}${fmtYen(totalActual-totalBudget)}</div><div class="es-lbl">予算差異</div></div>
+      <div class="es-item"><div class="es-val ${totalActual-totalBudget>0?'cost-over':'cost-ok'}">${totalActual>=totalBudget?'+':''}${fmtYen(totalActual-totalBudget)}</div><div class="es-lbl">予算差異<span style="font-size:9px;color:#90a4ae;display:block">${filterLabel}</span></div></div>
     </div>`;
 }
 
