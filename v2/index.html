@@ -1587,11 +1587,13 @@ function onPeriodChange(){
   if(periodFrom||periodTo){
     const s=periodFrom||'開始未設定', e=periodTo||'終了未設定';
     if(hint){ hint.textContent=`${s} 〜 ${e}`; hint.style.color='#1a3a5c'; hint.style.fontWeight='700'; }
-    activeMonth=''; updateMonthNavActive('gantt-month-nav'); updateMonthNavActive('wl-month-nav');
+    activeMonth='';
   } else {
     if(hint){ hint.textContent='未設定時は本日±3ヶ月を表示'; hint.style.color=''; hint.style.fontWeight=''; }
   }
   if(!allRows.length) return;
+  buildMonthNav('gantt-month-nav', ()=>renderGantt());
+  buildMonthNav('wl-month-nav',    ()=>renderWorkload());
   renderDashboard();
   renderGantt();
   renderWorkload();
@@ -1609,10 +1611,12 @@ function applyPeriodBtn(){
 function resetPeriod(){
   fpPeriodFrom?.clear(false); fpPeriodTo?.clear(false);
   periodFrom=''; periodTo='';
-  activeMonth=''; updateMonthNavActive('gantt-month-nav'); updateMonthNavActive('wl-month-nav');
+  activeMonth='';
   const hint=document.getElementById('period-hint');
   if(hint){ hint.textContent='未設定時は本日±3ヶ月を表示'; hint.style.color=''; hint.style.fontWeight=''; }
   if(!allRows.length) return;
+  buildMonthNav('gantt-month-nav', ()=>renderGantt());
+  buildMonthNav('wl-month-nav',    ()=>renderWorkload());
   renderDashboard(); renderGantt(); renderWorkload();
   toast('表示期間をリセットしました（本日±3ヶ月）', false);
 }
@@ -1677,6 +1681,17 @@ function onCapChange(){
   if(allRows.length) renderCurrent();
 }
 
+function getNavMonths(){
+  let cols;
+  if(periodFrom||periodTo){
+    cols=allCols.filter(c=>(!periodFrom||c.ds>=periodFrom)&&(!periodTo||c.ds<=periodTo));
+  } else {
+    const dFrom=new Date(TODAY+'T12:00:00'); dFrom.setMonth(dFrom.getMonth()-3);
+    const dTo=new Date(TODAY+'T12:00:00'); dTo.setMonth(dTo.getMonth()+3);
+    cols=allCols.filter(c=>c.ds>=dFrom.toISOString().slice(0,10)&&c.ds<=dTo.toISOString().slice(0,10));
+  }
+  return [...new Set(cols.map(c=>c.mo))];
+}
 function buildMonthNav(navId, onMonthChange){
   const nav=document.getElementById(navId); if(!nav) return;
   const tw=navId.includes('gantt')?document.getElementById('gantt-wrap'):document.getElementById('wl-wrap');
@@ -1690,7 +1705,7 @@ function buildMonthNav(navId, onMonthChange){
     prev.className='scroll-week-btn'; prev.textContent='◀'; prev.title='1週前へ';
     prev.onclick=()=>{ tw.scrollLeft-=44*5; }; nav.appendChild(prev);
   }
-  allMonths.forEach(m=>{
+  getNavMonths().forEach(m=>{
     const b=document.createElement('button');
     b.className='month-btn'; b.textContent=m.replace('/','年')+'月'; b.dataset.month=m;
     b.onclick=()=>{ activeMonth=m; updateMonthNavActive(navId); onMonthChange(); };
@@ -1701,6 +1716,7 @@ function buildMonthNav(navId, onMonthChange){
     next.className='scroll-week-btn'; next.textContent='▶'; next.title='1週後へ';
     next.onclick=()=>{ tw.scrollLeft+=44*5; }; nav.appendChild(next);
   }
+  updateMonthNavActive(navId);
 }
 function updateMonthNavActive(navId){
   const nav=document.getElementById(navId); if(!nav) return;
