@@ -1578,8 +1578,11 @@ function switchMainTab(name,btn){
   if(name==='settings'){ renderSettingsAccountList(); renderTalentsList(); renderCurrentRatesList(); }
 }
 
+// Date → 'YYYY-MM-DD'（ローカル時刻・UTC変換なし）
+function fmtLocalDate(d){ if(!d) return ''; return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+
 function onPeriodChange(){
-  // periodFrom/periodTo はflatpickrのonChange(sel,dateStr)で直接セット済み
+  // periodFrom/periodTo はflatpickrのselectedDates[0]からローカル日付文字列で設定済み
   const hint=document.getElementById('period-hint');
   if(periodFrom||periodTo){
     const s=periodFrom||'開始未設定', e=periodTo||'終了未設定';
@@ -1595,9 +1598,13 @@ function onPeriodChange(){
 }
 
 function applyPeriodBtn(){
+  // セットボタン押下時: selectedDates[0]から直接ローカル日付を取得（最も確実）
+  periodFrom = fmtLocalDate(fpPeriodFrom?.selectedDates[0]);
+  periodTo   = fmtLocalDate(fpPeriodTo?.selectedDates[0]);
   onPeriodChange();
-  const s=periodFrom||'開始未設定', e=periodTo||'終了未設定';
-  toast(periodFrom||periodTo?`表示期間をセットしました: ${s} 〜 ${e}`:'表示期間をリセット（±3ヶ月表示）', false);
+  const vcols=getViewCols();
+  const s=periodFrom||'（未設定）', e=periodTo||'（未設定）';
+  toast(periodFrom||periodTo?`表示期間: ${s} 〜 ${e}（${vcols.length}日）`:'表示期間リセット（±3ヶ月）', false);
 }
 function resetPeriod(){
   fpPeriodFrom?.clear(false); fpPeriodTo?.clear(false);
@@ -3143,8 +3150,9 @@ const FP_PERIOD_BASE = {
   locale: { ...flatpickr.l10ns.ja, firstDayOfWeek: 1 },
   disableMobile: true,
 };
-fpPeriodFrom = flatpickr('#period-from', { ...FP_PERIOD_BASE, onChange: (_sel,ds) => { periodFrom=ds||''; onPeriodChange(); } });
-fpPeriodTo   = flatpickr('#period-to',   { ...FP_PERIOD_BASE, onChange: (_sel,ds) => { periodTo  =ds||''; onPeriodChange(); } });
+// selectedDates[0]（Dateオブジェクト）をローカル日付文字列に変換してセット
+fpPeriodFrom = flatpickr('#period-from', { ...FP_PERIOD_BASE, onChange: (sel) => { periodFrom=fmtLocalDate(sel[0]); onPeriodChange(); } });
+fpPeriodTo   = flatpickr('#period-to',   { ...FP_PERIOD_BASE, onChange: (sel) => { periodTo  =fmtLocalDate(sel[0]); onPeriodChange(); } });
 
 // モーダル
 function closeRecommendModal(){ document.getElementById('recommend-modal').classList.remove('open'); }
