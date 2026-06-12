@@ -518,7 +518,7 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
           <input type="text" id="period-from" placeholder="開始日" readonly style="cursor:pointer;min-width:110px">
           <span style="font-size:12px;color:#90a4ae">〜</span>
           <input type="text" id="period-to" placeholder="終了日" readonly style="cursor:pointer;min-width:110px">
-          <button class="btn btn-primary btn-sm" onclick="onPeriodChange()">セット</button>
+          <button class="btn btn-primary btn-sm" onclick="applyPeriodBtn()">セット</button>
           <button class="btn btn-secondary btn-xs" onclick="resetPeriod()" style="margin-left:4px">リセット</button>
           <span id="period-hint" style="font-size:11px;color:#90a4ae">未設定時は本日±3ヶ月を表示</span>
         </div>
@@ -659,13 +659,13 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
       <div class="card-title">タスク別 見積・実績コスト</div>
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px">
         <label style="font-size:12px;color:#607d8b;font-weight:600">担当者:</label>
-        <select id="est-fA" onchange="renderEstimate()" style="padding:6px 10px;border:1px solid #d0dae6;border-radius:6px;font-size:12px"><option value="">全員</option></select>
+        <select id="est-fA" onchange="renderEstimate()" style="padding:6px 10px;border:1px solid #d0dae6;border-radius:6px;font-size:12px;min-width:120px"><option value="">全員</option></select>
         <label style="font-size:12px;color:#607d8b;font-weight:600">Job No.:</label>
-        <select id="est-fJ" onchange="renderEstimate()" style="padding:6px 10px;border:1px solid #d0dae6;border-radius:6px;font-size:12px"><option value="">全て</option></select>
+        <select id="est-fJ" onchange="renderEstimate()" style="padding:6px 10px;border:1px solid #d0dae6;border-radius:6px;font-size:12px;min-width:90px"><option value="">全て</option></select>
         <label style="font-size:12px;color:#607d8b;font-weight:600">クライアント:</label>
-        <select id="est-fClient" onchange="renderEstimate()" style="padding:6px 10px;border:1px solid #d0dae6;border-radius:6px;font-size:12px"><option value="">社内基準</option></select>
+        <select id="est-fClient" onchange="renderEstimate()" style="padding:6px 10px;border:1px solid #d0dae6;border-radius:6px;font-size:12px;min-width:130px"><option value="">全て</option></select>
         <label style="font-size:12px;color:#607d8b;font-weight:600">月:</label>
-        <select id="est-fMonth" onchange="renderEstimate()" style="padding:6px 10px;border:1px solid #d0dae6;border-radius:6px;font-size:12px"><option value="">全期間</option></select>
+        <select id="est-fMonth" onchange="renderEstimate()" style="padding:6px 10px;border:1px solid #d0dae6;border-radius:6px;font-size:12px;min-width:110px"><option value="">全期間</option></select>
       </div>
       <div class="estimate-summary" id="estimate-summary"></div>
       <div style="overflow-x:auto">
@@ -1583,21 +1583,31 @@ function onPeriodChange(){
   const hint=document.getElementById('period-hint');
   if(periodFrom||periodTo){
     const s=periodFrom||'開始未設定', e=periodTo||'終了未設定';
-    if(hint) hint.textContent=`${s} 〜 ${e}`;
-    // 片方でも入力されたら月ボタン選択を解除
+    if(hint){ hint.textContent=`${s} 〜 ${e}`; hint.style.color='#1a3a5c'; hint.style.fontWeight='700'; }
     activeMonth=''; updateMonthNavActive('gantt-month-nav'); updateMonthNavActive('wl-month-nav');
   } else {
-    if(hint) hint.textContent='未設定時は本日±3ヶ月を表示';
+    if(hint){ hint.textContent='未設定時は本日±3ヶ月を表示'; hint.style.color=''; hint.style.fontWeight=''; }
   }
-  if(allRows.length) renderCurrent();
+  if(!allRows.length) return;
+  renderDashboard();
+  renderGantt();
+  renderWorkload();
+}
+
+function applyPeriodBtn(){
+  onPeriodChange();
+  const s=periodFrom||'開始未設定', e=periodTo||'終了未設定';
+  toast(periodFrom||periodTo?`表示期間をセットしました: ${s} 〜 ${e}`:'表示期間をリセット（±3ヶ月表示）', false);
 }
 function resetPeriod(){
   fpPeriodFrom?.clear(); fpPeriodTo?.clear();
   periodFrom=''; periodTo='';
   activeMonth=''; updateMonthNavActive('gantt-month-nav'); updateMonthNavActive('wl-month-nav');
   const hint=document.getElementById('period-hint');
-  if(hint) hint.textContent='未設定時は本日±3ヶ月を表示';
-  if(allRows.length) renderCurrent();
+  if(hint){ hint.textContent='未設定時は本日±3ヶ月を表示'; hint.style.color=''; hint.style.fontWeight=''; }
+  if(!allRows.length) return;
+  renderDashboard(); renderGantt(); renderWorkload();
+  toast('表示期間をリセットしました（本日±3ヶ月）', false);
 }
 function getViewCols(){
   if(activeMonth) return allCols.filter(c=>c.mo===activeMonth);
@@ -2556,7 +2566,7 @@ function renderGantt(){
     if(ft&&!r.key.toLowerCase().includes(ft)&&!(r.jobNo||'').toLowerCase().includes(ft)&&!r.title.toLowerCase().includes(ft)) return false;
     if(fj==='__blank__'){ if(r.jobNo) return false; }
     else if(fj){ if(r.jobNo!==fj&&!r.jobNo.startsWith(fj+'-')) return false; }
-    if(activeMonth&&r.weekdayCount>0&&!vcols.some(c=>(r.daily[c.col]||0)>0)) return false;
+    if(r.weekdayCount>0&&!vcols.some(c=>(r.daily[c.col]||0)>0)) return false;
     return true;
   });
   const byPerson=groupBy(rows,'assignee');
@@ -2797,8 +2807,9 @@ function renderEstimate(){
   const clientSel=document.getElementById('est-fClient');
   if(clientSel){
     const cur=clientSel.value;
-    clientSel.innerHTML='<option value="">社内基準</option>';
+    clientSel.innerHTML='<option value="">全て</option><option value="社内基準">社内基準</option>';
     clientNames.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; if(c===cur) o.selected=true; clientSel.appendChild(o); });
+    if(cur) clientSel.value=cur; // 選択値を保持
   }
   // 月ドロップダウンを最新のallMonths一覧で再構築
   const monthSel=document.getElementById('est-fMonth');
@@ -3017,11 +3028,11 @@ function openRecommendModal(person, ds, h, colIdx){
     <h4>この日の担当タスク — クリックして選択（カテゴリー: ${cats.length?cats.map(c=>`<span style="background:#e8eaf6;color:#3949ab;padding:1px 6px;border-radius:8px;font-size:10px">${esc(c)}</span>`).join(' '):'なし'}）</h4>
     ${tasks.map(t=>`<div class="rec-task-item" onclick="selectReassignTask(${JSON.stringify(t.key)},${JSON.stringify(t.title)},${JSON.stringify(t.jobNo||'')})">${t.jobNo?`<span class="rlt-jobno">[${esc(t.jobNo)}] </span>`:''}<b style="font-family:monospace;font-size:11px">${esc(t.key)}</b> ${esc(trunc(t.title,38))} — <b>${(t.daily[colIdx]||0).toFixed(2)}h</b></div>`).join('')}`
     :'<h4>タスク情報なし</h4>';
-  document.getElementById('rec-candidates').innerHTML=`<h4>引き継ぎ候補スタッフ — クリックして選択</h4>`+
+  document.getElementById('rec-candidates').innerHTML=`<h4>引き継ぎ候補スタッフ — クリックして選択<span style="font-size:10px;font-weight:400;color:#78909c;margin-left:8px">★ = タスクのカテゴリーとスタッフのスキルの一致数（多いほど適任）</span></h4>`+
     (candidates.length?candidates.map(c=>{
       const matchColor=c.matchScore>0?'#3949ab':'#b0bec5';
       return `<div class="rec-candidate" onclick="selectReassignCandidate(${JSON.stringify(c.name)})">
-        <div class="rc-score" style="color:${matchColor}">${c.matchScore>0?'★'.repeat(Math.min(c.matchScore,3)):'—'}</div>
+        <div class="rc-score" style="color:${matchColor}" title="${c.matchScore>0?`スキル一致 ${c.matchScore}件`:'スキル一致なし'}">${c.matchScore>0?'★'.repeat(Math.min(c.matchScore,3)):'—'}</div>
         <div style="flex:1">
           <div class="rc-name">${esc(dispName(c.name))}</div>
           <div class="rc-detail">${esc(c.role)} ／ 当日稼働: ${c.dayH.toFixed(1)}h
