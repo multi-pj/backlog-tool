@@ -517,7 +517,7 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
         <input type="text" id="period-from" placeholder="開始日" readonly style="cursor:pointer;min-width:110px">
         <span style="font-size:12px;color:#90a4ae">〜</span>
         <input type="text" id="period-to" placeholder="終了日" readonly style="cursor:pointer;min-width:110px">
-        <button class="btn btn-primary btn-sm" onclick="applyPeriodBtn()">セット</button>
+        <button id="period-set-btn" class="btn btn-primary btn-sm" onclick="applyPeriodBtn()">セット</button>
         <button class="btn btn-secondary btn-xs" onclick="resetPeriod()" style="margin-left:4px">リセット</button>
         <span id="period-hint" style="font-size:11px;color:#90a4ae">未設定時は本日±3ヶ月を表示</span>
         <span style="width:1px;height:18px;background:#d0dae6;flex-shrink:0;margin:0 4px"></span>
@@ -831,7 +831,7 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
       <div class="settings-section">
         <h4>CSVインポート</h4>
         <p style="font-size:12px;color:#607d8b;margin-bottom:10px">
-          形式: <code>name,role,skills</code><br>
+          形式: <code>name,display_name,role,skills</code>（display_name は省略可）<br>
           skills: Backlogのカテゴリー名をスラッシュ区切り（例: <code>WEB制作/UI設計/DTP</code>）
         </p>
         <div class="csv-upload-area" id="talents-drop" onclick="document.getElementById('talents-file').click()">
@@ -1609,6 +1609,8 @@ function applyPeriodBtn(){
   const vcols=getViewCols();
   const s=periodFrom||'（未設定）', e=periodTo||'（未設定）';
   toast(periodFrom||periodTo?`表示期間: ${s} 〜 ${e}（${vcols.length}日）`:'表示期間リセット（±3ヶ月）', false);
+  const btn=document.getElementById('period-set-btn');
+  if(btn){ btn.textContent='セットOK ✓'; btn.style.background='#388e3c'; }
 }
 function resetPeriod(){
   fpPeriodFrom?.clear(false); fpPeriodTo?.clear(false);
@@ -1616,6 +1618,8 @@ function resetPeriod(){
   activeMonth='';
   const hint=document.getElementById('period-hint');
   if(hint){ hint.textContent='未設定時は本日±3ヶ月を表示'; hint.style.color=''; hint.style.fontWeight=''; }
+  const btn=document.getElementById('period-set-btn');
+  if(btn){ btn.textContent='セット'; btn.style.background=''; }
   if(!allRows.length) return;
   buildMonthNav('gantt-month-nav', ()=>renderGantt());
   buildMonthNav('wl-month-nav',    ()=>renderWorkload());
@@ -2119,11 +2123,11 @@ function exportTalentsTemplate(){
   const content=[
     '# Backlogリソース管理ツール - タレントインポートテンプレート',
     '# 【role 参考一覧】プロジェクト管理 / 進行管理 / 企画・構成 / コピーライティング / デザイン制作 / デジタルデザイン制作 / コーディング / デバッグ・校正 / 動画制作 / 入稿・納品作業 / CA業務 / その他',
-    '# name は Backlogの担当者名と完全一致させること　skills はスラッシュ区切りで複数入力可',
-    'name,role,skills',
-    '守屋 太郎,プロジェクト管理,プロジェクト管理/進行管理',
-    '田中 花子,デザイン制作,WEB制作/UI設計/DTP',
-    '山田 次郎,コーディング,フロントエンド開発/WEB制作',
+    '# name は Backlogの担当者名と完全一致させること　display_name はツール上の表示名（省略可・省略時はnameをそのまま表示）　skills はスラッシュ区切りで複数入力可',
+    'name,display_name,role,skills',
+    '守屋 太郎,守屋 太郎,プロジェクト管理,プロジェクト管理/進行管理',
+    '田中 花子,田中 花子,デザイン制作,WEB制作/UI設計/DTP',
+    '山田 次郎,山田 次郎,コーディング,フロントエンド開発/WEB制作',
   ].join('\r\n');
   downloadText('talents_template.csv', bom+content, 'text/csv;charset=utf-8');
   toast('テンプレートをダウンロードしました',false);
@@ -2157,7 +2161,7 @@ async function exportCurrentAccounts(){
 }
 function exportCurrentTalents(){
   const list=talents.length?talents:DEMO_TALENTS;
-  const csvData=list.map(t=>({name:t.name,role:t.role||'',skills:(t.skills||[]).join('/')}));
+  const csvData=list.map(t=>({name:t.name,display_name:dispName(t.name)!==t.name?dispName(t.name):'',role:t.role||'',skills:(t.skills||[]).join('/')}));
   downloadText('talents_export.csv','﻿'+toCSV(csvData),'text/csv;charset=utf-8');
   toast(`タレント${list.length}件をエクスポートしました（${!talents.length?'デモデータ':'本番データ'}）`,false);
 }
@@ -2786,7 +2790,7 @@ function renderPersonal(){
           <tbody>${taskRows.map(r=>`<tr>
             <td><code style="font-size:11px;color:#607d8b">${esc(r.jobNo||'-')}</code></td>
             <td><code style="font-size:11px;color:#1a3a5c">${esc(r.key||'-')}</code></td>
-            <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r.title)}">${esc(trunc(r.title,28))}</td>
+            <td style="white-space:normal;min-width:180px" title="${esc(r.title)}">${esc(r.title)}</td>
             <td>${badge(r.status)}</td>
             <td style="font-size:11px">${r.startDs||'-'}</td>
             <td style="font-size:11px">${r.endDs||'-'}</td>
@@ -2884,7 +2888,7 @@ function renderEstimate(){
     return `<tr>
       <td>${esc(dispName(r.assignee))}</td>
       <td><code style="font-size:10px;color:#607d8b">${esc(r.jobNo||'')}</code></td>
-      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r.title)}">${esc(trunc(r.title,26))}</td>
+      <td style="white-space:normal;min-width:160px" title="${esc(r.title)}">${esc(r.title)}</td>
       <td style="font-size:11px;color:#607d8b">${esc(usedRole||'-')}</td>
       <td style="font-size:11px;color:#1a3a5c;font-weight:600">${esc(usedClient)}</td>
       <td style="text-align:right">${rate>0?rate.toLocaleString():'-'}</td>
