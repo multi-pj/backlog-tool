@@ -809,7 +809,9 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
         <h4 style="display:flex;align-items:center;justify-content:space-between">現在のアカウント
           <button class="btn btn-secondary btn-xs" onclick="exportCurrentAccounts()">⬇ エクスポート</button>
         </h4>
-        <p style="font-size:11px;color:#90a4ae;margin-bottom:6px">※ エクスポートにパスワード列は含まれません。再インポート時はCSVの <code>password</code> 列を必ず入力してください（空欄の場合ログイン不可になります）。</p>
+        <div style="background:#fff3e0;border:1px solid #ffb74d;border-radius:6px;padding:8px 12px;margin-bottom:8px;font-size:11px;color:#e65100">
+          ⚠ エクスポートCSVの <code>password</code> 列はすべて空欄です。再インポートする前に必ずパスワードを入力してください（空欄のままインポートするとログイン不可になります）。
+        </div>
         <div id="accounts-list" class="settings-accounts-list" style="max-height:320px;overflow-y:auto">
           <div style="font-size:12px;color:#90a4ae;padding:12px">読み込み中...</div>
         </div>
@@ -2148,7 +2150,7 @@ async function exportCurrentAccounts(){
     if(!res.ok) throw new Error('取得失敗');
     const list=await res.json();
     if(!list.length){ toast('アカウントデータがありません（KV未設定）',true); return; }
-    const csvData=list.map(a=>({username:a.username,role:a.role,display_name:a.displayName||'',talent_name:a.talentName||''}));
+    const csvData=list.map(a=>({username:a.username,password:'',role:a.role,display_name:a.displayName||'',talent_name:a.talentName||''}));
     downloadText('accounts_export.csv','﻿'+toCSV(csvData),'text/csv;charset=utf-8');
     toast(`アカウント${list.length}件をエクスポートしました`,false);
   }catch(e){ toast('エクスポートエラー: '+e.message,true); }
