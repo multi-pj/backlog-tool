@@ -1367,6 +1367,10 @@ function toggleMgmtPeople(el){
   fillPersonSelect();
   renderCurrent();
   renderDashboard();
+  // 表示中のタブ（個人/見積/月次レポート）も管理者・営業フィルタを反映して再描画
+  if(activeMainTab==='personal') renderPersonal();
+  if(activeMainTab==='estimate') renderEstimate();
+  if(activeMainTab==='report')   renderReport();
 }
 
 // ==================== BILLABLE / NON-BILLABLE ====================
@@ -1390,6 +1394,7 @@ function toggleBillableFilter(el){
   if(activeMainTab==='workload') renderWorkload();
   if(activeMainTab==='personal') renderPersonal();
   if(activeMainTab==='estimate') renderEstimate();
+  if(activeMainTab==='report')   renderReport();
 }
 
 async function checkUnlinkedAssignees(){
@@ -1692,6 +1697,7 @@ function switchMainTab(name,btn){
     if(el) el.hidden=(s!==name);
   });
   // 遅延レンダリング
+  if(name==='dashboard'&&allRows.length) renderDashboard();  // 月ナビ/フィルタ変更後の復帰でも最新化
   if(name==='gantt'&&allRows.length)     renderGantt();
   if(name==='workload'&&allRows.length)  renderWorkload();
   if(name==='personal')                  renderPersonal();
@@ -2767,7 +2773,11 @@ function renderGantt(){
   const ft=(document.getElementById('fT')?.value||'').toLowerCase();
   const fj=activeJobNo;
   const todayMode=activeMonth===''&&!periodFrom;
+  // 月選択 or 期間設定時は「合計h」を表示期間内の小計＋全期間合計で表示（±3ヶ月デフォルト時は全期間合計のみ）
+  const subMode=!!(activeMonth||periodFrom||periodTo);
+  const subLbl=activeMonth?'月計':'期間計';
   const vcols=getViewCols();
+  updateMonthNavActive('gantt-month-nav');
   const shint=document.getElementById('scroll-hint'); if(shint) shint.hidden=false;
   const mGroups=buildMonthGroups(vcols);
   const STICKY_W=[170,100,200,140,90];
@@ -2804,9 +2814,10 @@ function renderGantt(){
     personEntries.forEach(([name,tasksRaw])=>{
       let tasks=ganttSortDir!==0?[...tasksRaw].sort((a,b)=>{ const aE=!a.jobNo,bE=!b.jobNo; if(aE&&bE) return 0; if(aE) return 1; if(bE) return -1; return ganttSortDir*(parseFloat(a.jobNo)-parseFloat(b.jobNo)); }):tasksRaw;
       const personTotal=r2(tasks.reduce((s,r)=>s+r.distHours,0));
-      const personMonthTotal=activeMonth?r2(tasks.reduce((s,r)=>s+vcols.reduce((sv,c)=>sv+(r.daily[c.col]||0),0),0)):null;
-      const groupTotalCell=activeMonth?`<span style="font-weight:700;color:#546e7a">${personMonthTotal.toFixed(2)}</span><span style="color:#7898b8;font-size:10px"> /${personTotal.toFixed(2)}</span>`:`<span style="color:#9e9e9e;font-size:11px">合計</span>`;
-      const groupLabel=activeMonth?`${tasks.length}件 ／ 月計 <b>${personMonthTotal.toFixed(2)}h</b><span style="color:#7898b8;font-size:10px"> / ${personTotal.toFixed(2)}h</span>`:`${tasks.length}件 ／ 合計 ${personTotal.toFixed(2)}h`;
+      // 月選択 or 期間設定時は「表示期間内の小計 / 全期間合計」を表示（日次セルと整合・期間連動）
+      const personMonthTotal=subMode?r2(tasks.reduce((s,r)=>s+vcols.reduce((sv,c)=>sv+(r.daily[c.col]||0),0),0)):null;
+      const groupTotalCell=subMode?`<span style="font-weight:700;color:#546e7a">${personMonthTotal.toFixed(2)}</span><span style="color:#7898b8;font-size:10px"> /${personTotal.toFixed(2)}</span>`:`<span style="color:#9e9e9e;font-size:11px">合計</span>`;
+      const groupLabel=subMode?`${tasks.length}件 ／ ${subLbl} <b>${personMonthTotal.toFixed(2)}h</b><span style="color:#7898b8;font-size:10px"> / ${personTotal.toFixed(2)}h</span>`:`${tasks.length}件 ／ 合計 ${personTotal.toFixed(2)}h`;
       html+=`<tr class="ag-row">
         <td colspan="4" class="s0 sticky-bg" style="left:0">👤 <span style="${!name?'color:#e65100':''}">
           ${esc(dispName(name))}</span> <span style="font-size:11px;font-weight:400;color:#607d8b;margin-left:8px">${groupLabel}</span></td>
@@ -2815,8 +2826,8 @@ function renderGantt(){
       </tr>`;
       tasks.forEach(row=>{
         const total=row.distHours;
-        const monthTotal=activeMonth?r2(vcols.reduce((sv,c)=>sv+(row.daily[c.col]||0),0)):null;
-        const totalCell=activeMonth?`<span style="font-weight:700;color:#1a3a5c">${monthTotal.toFixed(2)}</span><span style="color:#7898b8;font-size:10px"> /${total.toFixed(2)}</span>`:`${total.toFixed(2)}`;
+        const monthTotal=subMode?r2(vcols.reduce((sv,c)=>sv+(row.daily[c.col]||0),0)):null;
+        const totalCell=subMode?`<span style="font-weight:700;color:#1a3a5c">${monthTotal.toFixed(2)}</span><span style="color:#7898b8;font-size:10px"> /${total.toFixed(2)}</span>`:`${total.toFixed(2)}`;
         html+=`<tr>
           <td class="info-td s0 sticky-bg" style="left:${left[0]}px"><code style="font-size:10px;color:#607d8b">${esc(row.jobNo||'')}</code></td>
           <td class="info-td s0 sticky-bg tip-cell" style="left:${left[1]}px;max-width:${STICKY_W[1]}px;overflow:hidden;text-overflow:ellipsis;font-size:11px;color:#607d8b;cursor:default" data-tip="${esc(row.cat)}">${esc(trunc(row.cat,10))}</td>
@@ -2840,6 +2851,7 @@ function renderWorkload(){
   const fa=document.getElementById('wl-fA')?.value||'';
   const todayMode=activeMonth===''&&!periodFrom;
   const vcols=getViewCols();
+  updateMonthNavActive('wl-month-nav');
   const wl=filteredWorkload();   // 計上区分(billableFilter)反映済み
   const mGroups=buildMonthGroups(vcols);
   const people=filterPeople(Object.keys(wl)).sort((a,b)=>{
@@ -3231,7 +3243,7 @@ function renderReport(){
   const mCols=allCols.filter(c=>c.mo===mo);
   const wl=filteredWorkload();    // 計上区分(billableFilter)反映
   const fr=filteredRows();
-  const people=Object.keys(wl).sort();
+  const people=filterPeople(Object.keys(wl)).sort();  // 管理者・営業フィルタ(showMgmtPeople)を反映
   const rows=people.map(name=>{
     const pd=wl[name]||{};
     const h=r2(mCols.reduce((s,c)=>s+(pd[c.col]||0),0));
