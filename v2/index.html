@@ -525,7 +525,7 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
         <span id="period-hint" style="font-size:11px;color:#90a4ae">未設定時は本日±3ヶ月を表示</span>
         <span style="width:1px;height:18px;background:#d0dae6;flex-shrink:0;margin:0 4px"></span>
         <label style="font-size:11px;color:#607d8b;display:flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap">
-          <input type="checkbox" id="show-mgmt-cb" onchange="toggleMgmtPeople(this)">
+          <input type="checkbox" id="show-mgmt-cb" onchange="toggleMgmtPeople(this)" checked>
           管理者・営業を含む
         </label>
         <span style="width:1px;height:18px;background:#d0dae6;flex-shrink:0;margin:0 4px"></span>
@@ -577,7 +577,7 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
         <label>担当者:</label>
         <select id="fA" onchange="renderCurrent()"><option value="">全員</option></select>
         <label style="font-size:11px;color:#607d8b;display:flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap;margin-left:4px">
-          <input type="checkbox" id="gantt-mgmt-cb" onchange="toggleMgmtPeople(this)">管理者・営業を含む
+          <input type="checkbox" id="gantt-mgmt-cb" onchange="toggleMgmtPeople(this)" checked>管理者・営業を含む
         </label>
         <div class="filter-sep"></div>
         <label>計上区分:</label>
@@ -620,7 +620,7 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
         <label>担当者:</label>
         <select id="wl-fA" onchange="renderWorkload()"><option value="">全員</option></select>
         <label style="font-size:11px;color:#607d8b;display:flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap;margin-left:4px">
-          <input type="checkbox" id="wl-mgmt-cb" onchange="toggleMgmtPeople(this)">管理者・営業を含む
+          <input type="checkbox" id="wl-mgmt-cb" onchange="toggleMgmtPeople(this)" checked>管理者・営業を含む
         </label>
         <div class="filter-sep"></div>
         <label>計上区分:</label>
@@ -1029,7 +1029,7 @@ let rates         = []; // [{client,role,hourlyRate}]
 let reassignments = [];
 let displayNameMap= {}; // talentName → displayName（アカウント登録値）
 let talentRoleMap  = {}; // talentName → role（admin/sales/leader/staff）
-let showMgmtPeople = false; // 管理者・営業を担当者リストに含むか
+let showMgmtPeople = true; // 管理者・営業を担当者リストに含むか（デフォルトON）
 let unlinkedAssignees=[]; // Backlog担当者のうちアカウント未登録の人
 let companyHolidaysCache = [];
 let useDemoTalents = false;
@@ -1262,7 +1262,8 @@ function logout(){
     currentUser=null;
     allRows=[]; allCols=[]; allMonths=[]; allWorkload={};
     talents=[]; rates=[]; reassignments=[];
-    displayNameMap={}; talentRoleMap={}; showMgmtPeople=false; unlinkedAssignees=[];
+    displayNameMap={}; talentRoleMap={}; showMgmtPeople=true; unlinkedAssignees=[];
+    ['show-mgmt-cb','gantt-mgmt-cb','wl-mgmt-cb'].forEach(id=>{ const cb=document.getElementById(id); if(cb) cb.checked=true; });
     useDemoTalents=false; useDemoRates=false;
     document.getElementById('login-overlay').style.display='flex';
     document.getElementById('login-pass').value='';
