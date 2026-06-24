@@ -383,6 +383,16 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 .csel-item{padding:6px 14px;font-size:13px;cursor:pointer;white-space:nowrap;color:#333}
 .csel-item:hover{background:#e8f0fe;color:#1a3a5c}
 .csel-item.sel{font-weight:700;color:#1a3a5c;background:#f0f5ff}
+/* 汎用カスタムドロップダウン（必ず下方向に開く・隠しselectを値の源とする） */
+.csel2{position:relative;display:inline-block;vertical-align:middle}
+.csel2-cur{padding:6px 26px 6px 10px;border:1px solid #d0dae6;border-radius:6px;font-size:12px;background:#fff;color:#333;cursor:pointer;white-space:nowrap;position:relative;min-width:110px}
+.csel2-cur::after{content:'▾';position:absolute;right:8px;top:50%;transform:translateY(-50%);color:#90a4ae;font-size:10px;pointer-events:none}
+.csel2.open .csel2-cur{border-color:#1a3a5c;box-shadow:0 0 0 2px rgba(26,58,92,.15)}
+.csel2-list{display:none;position:absolute;top:calc(100% + 3px);left:0;min-width:100%;max-height:260px;overflow-y:auto;background:#fff;border:1px solid #d0dae6;border-radius:6px;box-shadow:0 6px 18px rgba(0,0,0,.18);z-index:700}
+.csel2.open .csel2-list{display:block}
+.csel2-item{padding:6px 12px;font-size:12px;cursor:pointer;white-space:nowrap;color:#333}
+.csel2-item:hover{background:#e8f0fe;color:#1a3a5c}
+.csel2-item.sel{font-weight:700;color:#1a3a5c;background:#f0f5ff}
 .flatpickr-input.flatpickr-alt-input{width:190px!important;padding:6px 8px;border:1px solid #d0dae6;border-radius:6px;font-size:12px;color:#333;background:#fff;cursor:pointer}
 .file-label{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border:2px dashed #b0bec5;border-radius:8px;cursor:pointer;font-size:13px;color:#607d8b;transition:all .2s}
 .file-label:hover{border-color:#1a3a5c;background:#f0f5ff;color:#1a3a5c}
@@ -705,8 +715,7 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
         </select>
       </div>
       <div class="estimate-summary" id="estimate-summary"></div>
-      <!-- min-height: 明細が少なくてもフィルター行の下に余白を確保し、Job No./月の長いリストが下方向に開くようにする -->
-      <div style="overflow-x:auto;min-height:440px">
+      <div style="overflow-x:auto">
         <table class="rate-table" id="estimate-table">
           <thead><tr>
             <th style="width:90px">担当者</th><th style="width:80px">Job No.</th><th>件名</th><th style="width:80px">役職</th>
@@ -1465,6 +1474,7 @@ function applyLoadedData(rows, cols, months, workload, zeroTasks, fetchedAt){
   fillSel('fS',[...new Set(allRows.map(r=>r.status))].sort());
   fillSel('est-fA',people,dispName);
   fillSel('est-fJ',[...new Set(allRows.map(r=>r.jobNo).filter(Boolean))].sort());
+  buildCsel('est-fJ'); // Job No.を下方向カスタムドロップダウン化
   fillPersonSelect();
   fillJobNoSel();
   buildMonthNav('gantt-month-nav', ()=>{renderGantt();});
@@ -2962,6 +2972,41 @@ function getRateInfo(assignee, client){
   return {rate:r?.hourlyRate||0, client:r?actualClient:'-', role};
 }
 
+// ===== 汎用カスタムドロップダウン：隠しselectを源に必ず下方向へ開く =====
+function buildCsel(selectId){
+  const sel=document.getElementById(selectId); if(!sel) return;
+  let wrap=document.getElementById(selectId+'-csel');
+  if(!wrap){
+    wrap=document.createElement('div');
+    wrap.className='csel2'; wrap.id=selectId+'-csel';
+    wrap.innerHTML='<div class="csel2-cur"></div><div class="csel2-list"></div>';
+    sel.style.display='none';
+    sel.parentNode.insertBefore(wrap, sel.nextSibling);
+    wrap.querySelector('.csel2-cur').addEventListener('click',e=>{
+      e.stopPropagation();
+      document.querySelectorAll('.csel2.open').forEach(w=>{ if(w!==wrap) w.classList.remove('open'); });
+      wrap.classList.toggle('open');
+    });
+    wrap.querySelector('.csel2-list').addEventListener('click',e=>{
+      const it=e.target.closest('.csel2-item'); if(!it) return;
+      sel.selectedIndex=+it.dataset.i;
+      wrap.classList.remove('open');
+      refreshCsel(selectId);
+      sel.dispatchEvent(new Event('change')); // 既存の onchange="renderEstimate()" を発火
+    });
+  }
+  refreshCsel(selectId);
+}
+function refreshCsel(selectId){
+  const sel=document.getElementById(selectId);
+  const wrap=document.getElementById(selectId+'-csel');
+  if(!sel||!wrap) return;
+  const idx=sel.selectedIndex<0?0:sel.selectedIndex;
+  wrap.querySelector('.csel2-cur').textContent=sel.options[idx]?sel.options[idx].textContent:'';
+  wrap.querySelector('.csel2-list').innerHTML=[...sel.options].map((o,i)=>`<div class="csel2-item${i===idx?' sel':''}" data-i="${i}">${esc(o.textContent)}</div>`).join('');
+}
+document.addEventListener('click',e=>{ document.querySelectorAll('.csel2.open').forEach(w=>{ if(!w.contains(e.target)) w.classList.remove('open'); }); });
+
 function renderEstimate(){
   if(!['admin','sales','leader'].includes(currentUser?.role||'')){
     document.getElementById('estimate-body').innerHTML=`<tr><td colspan="11" class="empty-state">閲覧権限がありません</td></tr>`; return;
@@ -3007,6 +3052,9 @@ function renderEstimate(){
     // 降順（新しい月＝上、古い月ほど下）
     [...allMonths].sort((a,b)=>b.localeCompare(a)).forEach(m=>{ const o=document.createElement('option'); o.value=m; o.textContent=m.replace('/','年')+'月'; if(m===curMo) o.selected=true; monthSel.appendChild(o); });
   }
+  // Job No./月を「必ず下方向に開く」カスタムドロップダウン化（ネイティブselectの上開き対策）
+  buildCsel('est-fJ');
+  buildCsel('est-fMonth');
   const fa=document.getElementById('est-fA')?.value||'';
   const fj=document.getElementById('est-fJ')?.value||'';
   const fClient=document.getElementById('est-fClient')?.value||'';
