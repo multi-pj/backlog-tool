@@ -1887,6 +1887,8 @@ let reassignLogPage = 1;
 let modalFromPerson = '';
 let modalSelectedTask = null; // {key, title, jobNo}
 let modalSelectedCandidate = '';
+let modalTasks = [];       // モーダル表示中のタスク配列（data-idxで参照）
+let modalCandidates = [];  // モーダル表示中の候補スタッフ配列（data-idxで参照）
 
 async function renderSettingsAccountList(){
   const container=document.getElementById('accounts-list'); if(!container) return;
@@ -2836,6 +2838,17 @@ document.getElementById('wl-body').addEventListener('click',e=>{
   const h=parseFloat(cell.querySelector('.wl-hours')?.textContent||'0');
   if(h>0) openRecommendModal(cell.dataset.person, cell.dataset.ds, h, +cell.dataset.col);
 });
+// モーダル内タスク／候補スタッフのクリック選択（イベント委譲・data-idx参照で確実に動作）
+document.getElementById('rec-tasks').addEventListener('click',e=>{
+  const el=e.target.closest('.rec-task-item'); if(!el||el.dataset.idx===undefined) return;
+  const t=modalTasks[+el.dataset.idx]; if(!t) return;
+  selectReassignTask(el, t.key, t.title, t.jobNo||'');
+});
+document.getElementById('rec-candidates').addEventListener('click',e=>{
+  const el=e.target.closest('.rec-candidate'); if(!el||el.dataset.idx===undefined) return;
+  const c=modalCandidates[+el.dataset.idx]; if(!c) return;
+  selectReassignCandidate(el, c.name);
+});
 
 // ==================== PERSONAL SUMMARY ====================
 function renderPersonal(){
@@ -2987,7 +3000,8 @@ function renderEstimate(){
   if(monthSel){
     const curMo=monthSel.value;
     monthSel.innerHTML='<option value="">表示期間に従う</option>';
-    allMonths.forEach(m=>{ const o=document.createElement('option'); o.value=m; o.textContent=m.replace('/','年')+'月'; if(m===curMo) o.selected=true; monthSel.appendChild(o); });
+    // 降順（新しい月＝上、古い月ほど下）
+    [...allMonths].sort((a,b)=>b.localeCompare(a)).forEach(m=>{ const o=document.createElement('option'); o.value=m; o.textContent=m.replace('/','年')+'月'; if(m===curMo) o.selected=true; monthSel.appendChild(o); });
   }
   const fa=document.getElementById('est-fA')?.value||'';
   const fj=document.getElementById('est-fJ')?.value||'';
@@ -3197,18 +3211,21 @@ function openRecommendModal(person, ds, h, colIdx){
     .filter(c=>c.avail>0||c.matchScore>0)
     .sort((a,b)=>b.matchScore-a.matchScore||(b.avail>0?1:0)-(a.avail>0?1:0)||b.avail-a.avail)
     .slice(0,6);
+  // クリック選択用にモーダルの候補配列を保持（イベント委譲でインデックス参照）
+  modalTasks=tasks;
+  modalCandidates=candidates;
   const d=new Date(ds+'T12:00:00');
   const dateLabel=`${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())}（${WD_JA[d.getDay()]}）`;
   document.getElementById('rec-info').innerHTML=
     `<b>${esc(dispName(person))}</b> ／ ${dateLabel} ／ 稼働 <b style="color:#c62828">${h.toFixed(1)}h</b> ／ 超過 <b style="color:#c62828">${overH.toFixed(1)}h</b>`;
   document.getElementById('rec-tasks').innerHTML=tasks.length?`
     <h4>この日の担当タスク — クリックして選択（カテゴリー: ${cats.length?cats.map(c=>`<span style="background:#e8eaf6;color:#3949ab;padding:1px 6px;border-radius:8px;font-size:10px">${esc(c)}</span>`).join(' '):'なし'}）</h4>
-    ${tasks.map(t=>`<div class="rec-task-item" onclick="selectReassignTask(this,${JSON.stringify(t.key)},${JSON.stringify(t.title)},${JSON.stringify(t.jobNo||'')})">${t.jobNo?`<span class="rlt-jobno">[${esc(t.jobNo)}] </span>`:''}<b style="font-family:monospace;font-size:11px">${esc(t.key)}</b> ${nbBadge(t)} ${esc(trunc(t.title,38))} — <b>${(t.daily[colIdx]||0).toFixed(2)}h</b></div>`).join('')}`
+    ${tasks.map((t,i)=>`<div class="rec-task-item" data-idx="${i}">${t.jobNo?`<span class="rlt-jobno">[${esc(t.jobNo)}] </span>`:''}<b style="font-family:monospace;font-size:11px">${esc(t.key)}</b> ${nbBadge(t)} ${esc(trunc(t.title,38))} — <b>${(t.daily[colIdx]||0).toFixed(2)}h</b></div>`).join('')}`
     :'<h4>タスク情報なし</h4>';
   document.getElementById('rec-candidates').innerHTML=`<h4>引き継ぎ候補スタッフ — クリックして選択<div style="font-size:10px;font-weight:400;color:#78909c;margin-top:3px">★ = タスクのカテゴリーとスタッフのスキルの一致数（多いほど適任）</div></h4>`+
-    (candidates.length?candidates.map(c=>{
+    (candidates.length?candidates.map((c,i)=>{
       const matchColor=c.matchScore>0?'#3949ab':'#b0bec5';
-      return `<div class="rec-candidate" onclick="selectReassignCandidate(this,${JSON.stringify(c.name)})">
+      return `<div class="rec-candidate" data-idx="${i}">
         <div class="rc-score" style="color:${matchColor}" title="${c.matchScore>0?`スキル一致 ${c.matchScore}件`:'スキル一致なし'}">${c.matchScore>0?'★'.repeat(Math.min(c.matchScore,3)):'—'}</div>
         <div style="flex:1">
           <div class="rc-name">${esc(dispName(c.name))}</div>
