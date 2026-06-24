@@ -24,6 +24,9 @@ body{font-family:'Segoe UI','Meiryo',Arial,sans-serif;background:#f0f2f5;color:#
 .login-field input{width:100%;padding:10px 14px;border:1.5px solid #d0dae6;border-radius:8px;font-size:14px;outline:none;transition:border-color .2s}
 .login-field input:focus{border-color:#1a3a5c}
 .login-field input.error{border-color:#e53935;animation:shake .3s}
+#login-remember-row{display:flex;align-items:center;gap:7px;margin:2px 0 4px;cursor:pointer;user-select:none}
+#login-remember-row input{width:15px;height:15px;cursor:pointer;accent-color:#1a3a5c}
+#login-remember-row span{font-size:12px;color:#607d8b;font-weight:600}
 #login-btn{margin-top:8px;width:100%;padding:12px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;transition:opacity .15s}
 #login-btn:hover{opacity:.85}
 #login-btn:disabled{opacity:.45;cursor:not-allowed}
@@ -441,6 +444,7 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
       <label>パスワード</label>
       <input type="password" id="login-pass" autocomplete="current-password" placeholder="••••••">
     </div>
+    <label id="login-remember-row"><input type="checkbox" id="login-remember"><span>ログイン情報を記憶する</span></label>
     <button id="login-btn" onclick="login()">ログイン</button>
     <div id="login-err"></div>
     <div id="setup-notice">
@@ -561,7 +565,7 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
         </div>
       </div>
       <div class="card">
-        <div class="card-title">📈 担当者別 稼働サマリー（表示期間）</div>
+        <div class="card-title">📈 担当者別 稼働サマリー <span id="db-summary-period" style="font-size:11px;font-weight:600;color:#1a3a5c;background:#e8eef5;padding:2px 8px;border-radius:10px;margin-left:4px;white-space:nowrap"></span></div>
         <div id="monthly-summary-list"></div>
       </div>
     </div>
@@ -1227,6 +1231,15 @@ async function saveCompanyHolidays(list){
     applyRole(currentUser.role);
     loadDisplayNames().then(()=>tryRestoreFromSession());
   }
+  // ログイン情報の記憶（localStorage）を復元してプリフィル
+  try{
+    const rem=JSON.parse(localStorage.getItem('bl_v2_remember')||'null');
+    if(rem&&rem.username){
+      document.getElementById('login-user').value=rem.username;
+      if(rem.password) document.getElementById('login-pass').value=rem.password;
+      document.getElementById('login-remember').checked=true;
+    }
+  }catch{}
   document.getElementById('login-user').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('login-pass').focus(); });
   document.getElementById('login-pass').addEventListener('keydown',e=>{ if(e.key==='Enter') login(); });
 })();
@@ -1247,6 +1260,11 @@ async function login(){
     if(data.role){
       currentUser={token:data.token,role:data.role,displayName:data.displayName||username,talentName:data.talentName||'',username:data.username||username};
       sessionStorage.setItem('bl_v2_user',JSON.stringify(currentUser));
+      // ログイン情報の記憶（localStorage）。チェックON時のみ保存、OFF時は消去
+      try{
+        if(document.getElementById('login-remember').checked) localStorage.setItem('bl_v2_remember',JSON.stringify({username,password}));
+        else localStorage.removeItem('bl_v2_remember');
+      }catch{}
       document.getElementById('login-overlay').style.display='none';
       errEl.textContent='';
       if(data.needsSetup) setTimeout(()=>toast('アカウント未設定です。設定タブからCSVをインポートしてください。',false),600);
@@ -1275,9 +1293,20 @@ function logout(){
     ['show-mgmt-cb','gantt-mgmt-cb','wl-mgmt-cb'].forEach(id=>{ const cb=document.getElementById(id); if(cb) cb.checked=true; });
     useDemoTalents=false; useDemoRates=false;
     document.getElementById('login-overlay').style.display='flex';
-    document.getElementById('login-pass').value='';
     document.getElementById('login-err').textContent='';
-    document.getElementById('login-user').focus();
+    // 記憶ONなら次回ログイン用に再プリフィル、OFFなら空に
+    let rem=null; try{ rem=JSON.parse(localStorage.getItem('bl_v2_remember')||'null'); }catch{}
+    if(rem&&rem.username){
+      document.getElementById('login-user').value=rem.username;
+      document.getElementById('login-pass').value=rem.password||'';
+      document.getElementById('login-remember').checked=true;
+      document.getElementById('login-btn').focus();
+    } else {
+      document.getElementById('login-user').value='';
+      document.getElementById('login-pass').value='';
+      document.getElementById('login-remember').checked=false;
+      document.getElementById('login-user').focus();
+    }
   }, 'ログアウト', false);
 }
 
@@ -1746,6 +1775,14 @@ function updatePeriodBadges(){
     el.style.color       = isFiltered ? '#1a3a5c' : '#78909c';
     el.style.fontWeight  = isFiltered ? '700' : '400';
   });
+}
+// 現在の表示期間を人が読めるラベルにする（ダッシュボード稼働サマリー等で使用）
+function viewPeriodLabel(){
+  if(activeMonth) return `${activeMonth.replace('/','年')}月`;
+  if(periodFrom||periodTo) return `${periodFrom||'開始未設定'} 〜 ${periodTo||'終了未設定'}`;
+  const dFrom=new Date(TODAY+'T12:00:00'); dFrom.setMonth(dFrom.getMonth()-3);
+  const dTo=new Date(TODAY+'T12:00:00'); dTo.setMonth(dTo.getMonth()+3);
+  return `${dFrom.toISOString().slice(0,10)} 〜 ${dTo.toISOString().slice(0,10)}（±3ヶ月）`;
 }
 function autoPopulateTalents(){
   if(!allRows.length){ toast('先にBacklogと連携してください',true); return; }
@@ -2675,6 +2712,8 @@ function renderDashboard(){
   }
   // 月次サマリー
   const summaryEl=document.getElementById('monthly-summary-list');
+  const periodBadge=document.getElementById('db-summary-period');
+  if(periodBadge) periodBadge.textContent='📅 '+viewPeriodLabel();
   const sumCols=viewCols;  // 表示期間で稼働サマリーを集計（期間連動）
   const utilList=people.map(name=>{
     const pd=baseWL[name]||{};
@@ -2889,9 +2928,13 @@ function renderPersonal(){
     return {mo,h,cap,pct:cap>0?h/cap:0};
   });
   const maxMoH=Math.max(...monthlyData.map(m=>m.h),1);
-  // カテゴリー別時間
+  // カテゴリー別時間（表示期間/選択月 vcols 内の日次按分のみ集計＝月・期間連動）
   const catMap={};
-  pRows.forEach(r=>{ (r.categories||[]).forEach(cat=>{ catMap[cat]=(catMap[cat]||0)+r.distHours; }); });
+  pRows.forEach(r=>{
+    const hInView=vcols.reduce((sv,c)=>sv+(r.daily[c.col]||0),0);
+    if(hInView<=0) return;
+    (r.categories||[]).forEach(cat=>{ catMap[cat]=(catMap[cat]||0)+hInView; });
+  });
   const catList=Object.entries(catMap).sort((a,b)=>b[1]-a[1]).slice(0,8);
   const maxCatH=catList.length?catList[0][1]:1;
   // 担当タスク一覧
