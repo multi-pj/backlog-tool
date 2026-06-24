@@ -169,6 +169,8 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 .b3{background:#b4ddd7;color:#1d5c55}
 .b4{background:#fff3cd;color:#856404}
 .b5{background:#ede7f6;color:#5e35b1}
+.b6{background:#e0f2f1;color:#00695c}
+.nb-flag{display:inline-block;padding:1px 6px;border-radius:6px;font-size:9px;font-weight:700;background:#5e35b1;color:#fff;margin-left:4px;letter-spacing:.3px;vertical-align:middle}
 
 /* ===== Dashboard ===== */
 .alert-list{display:flex;flex-direction:column;gap:8px}
@@ -218,6 +220,7 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 .filter-bar select,.filter-bar input[type=text],.filter-bar input[type=number]{padding:6px 10px;border:1.5px solid #b0bec5;border-radius:6px;font-size:12px;background:#fff;color:#1a3a5c}
 .filter-bar select:focus,.filter-bar input:focus{outline:none;border-color:#1a3a5c}
 .filter-sep{width:1px;height:22px;background:#c5cfe8;flex-shrink:0}
+.cap-badge{font-size:11px;background:#fff3e0;color:#e65100;border:1px solid #ffcc80;border-radius:10px;padding:2px 10px;white-space:nowrap;font-weight:700}
 
 /* ===== Period Range ===== */
 .period-range{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;padding:8px 14px;background:#fff;border-radius:6px;border:1.5px solid #b0bec5;width:fit-content}
@@ -525,12 +528,19 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
           <input type="checkbox" id="show-mgmt-cb" onchange="toggleMgmtPeople(this)">
           管理者・営業を含む
         </label>
+        <span style="width:1px;height:18px;background:#d0dae6;flex-shrink:0;margin:0 4px"></span>
+        <label style="font-size:11px;color:#607d8b;white-space:nowrap">計上区分:</label>
+        <select id="db-billable" onchange="toggleBillableFilter(this)" style="padding:5px 8px;border:1px solid #d0dae6;border-radius:6px;font-size:12px">
+          <option value="">全て</option>
+          <option value="billable">Billableのみ</option>
+          <option value="nonbillable">Non-billableのみ</option>
+        </select>
       </div>
     </div>
     <div class="stats-row" id="db-stats-row">
       <div class="stat"><div class="lbl">担当者数</div><div class="val"><span class="v-main" id="db-people">-</span></div></div>
       <div class="stat"><div class="lbl">稼働タスク</div><div class="val"><span class="v-main" id="db-tasks">-</span></div></div>
-      <div class="stat"><div class="lbl">今月 按分時間</div><div class="val"><span class="v-main" id="db-wdh">-</span><span class="v-sep">h</span></div></div>
+      <div class="stat"><div class="lbl">按分時間 <span class="lbl-sub">表示期間</span></div><div class="val"><span class="v-main" id="db-wdh">-</span><span class="v-sep">h</span></div></div>
       <div class="stat alert"><div class="lbl">過負荷スタッフ <span class="lbl-sub">今後2週間</span></div><div class="val"><span class="v-main" id="db-alert-count">-</span><span class="v-sep">人</span></div></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;flex-wrap:wrap" class="dash-grid">
@@ -541,7 +551,7 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
         </div>
       </div>
       <div class="card">
-        <div class="card-title">📈 担当者別 今月稼働サマリー</div>
+        <div class="card-title">📈 担当者別 稼働サマリー（表示期間）</div>
         <div id="monthly-summary-list"></div>
       </div>
     </div>
@@ -570,10 +580,14 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
           <input type="checkbox" id="gantt-mgmt-cb" onchange="toggleMgmtPeople(this)">管理者・営業を含む
         </label>
         <div class="filter-sep"></div>
-        <label>稼働上限</label>
-        <input type="number" id="cap-input" value="8" min="1" max="24" step="0.5" onchange="onCapChange()" style="width:56px;text-align:center">
-        <span style="font-size:12px;color:#607d8b">h/日</span>
+        <label>計上区分:</label>
+        <select id="gantt-billable" onchange="toggleBillableFilter(this)">
+          <option value="">全て</option>
+          <option value="billable">Billableのみ</option>
+          <option value="nonbillable">Non-billableのみ</option>
+        </select>
         <div class="filter-sep"></div>
+        <span class="cap-badge" id="gantt-cap-badge" title="1日労働時間（管理者設定で変更）">稼働上限 7h/日</span>
         <span id="gantt-period-badge" style="font-size:11px;background:#f0f4f8;color:#78909c;border-radius:10px;padding:2px 10px;white-space:nowrap"></span>
       </div>
       <div class="month-nav" id="gantt-month-nav"></div>
@@ -609,6 +623,14 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
           <input type="checkbox" id="wl-mgmt-cb" onchange="toggleMgmtPeople(this)">管理者・営業を含む
         </label>
         <div class="filter-sep"></div>
+        <label>計上区分:</label>
+        <select id="wl-billable" onchange="toggleBillableFilter(this)">
+          <option value="">全て</option>
+          <option value="billable">Billableのみ</option>
+          <option value="nonbillable">Non-billableのみ</option>
+        </select>
+        <div class="filter-sep"></div>
+        <span class="cap-badge" id="wl-cap-badge" title="1日労働時間（管理者設定で変更）">稼働上限 7h/日</span>
         <span id="wl-period-badge" style="font-size:11px;background:#f0f4f8;color:#78909c;border-radius:10px;padding:2px 10px;white-space:nowrap"></span>
       </div>
       <div class="month-nav" id="wl-month-nav"></div>
@@ -642,7 +664,13 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
       <label style="font-size:13px;font-weight:700;color:#607d8b">担当者を選択:</label>
       <select id="person-select" onchange="renderPersonal()"><option value="">-- 選択してください --</option></select>
       <select id="person-month-sel" onchange="renderPersonal()" style="padding:8px 10px;border:1px solid #d0dae6;border-radius:6px;font-size:12px">
-        <option value="">全期間</option>
+        <option value="">表示期間に従う</option>
+      </select>
+      <label style="font-size:12px;font-weight:700;color:#607d8b">計上区分:</label>
+      <select id="person-billable" onchange="toggleBillableFilter(this)" style="padding:8px 10px;border:1px solid #d0dae6;border-radius:6px;font-size:12px">
+        <option value="">全て</option>
+        <option value="billable">Billableのみ</option>
+        <option value="nonbillable">Non-billableのみ</option>
       </select>
     </div>
     <div id="personal-content">
@@ -668,7 +696,13 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
         <label style="font-size:12px;color:#607d8b;font-weight:600">クライアント:</label>
         <select id="est-fClient" onchange="renderEstimate()" style="padding:6px 10px;border:1px solid #d0dae6;border-radius:6px;font-size:12px;min-width:130px"><option value="">全て</option></select>
         <label style="font-size:12px;color:#607d8b;font-weight:600">月:</label>
-        <select id="est-fMonth" onchange="renderEstimate()" style="padding:6px 10px;border:1px solid #d0dae6;border-radius:6px;font-size:12px;min-width:110px"><option value="">全期間</option></select>
+        <select id="est-fMonth" onchange="renderEstimate()" style="padding:6px 10px;border:1px solid #d0dae6;border-radius:6px;font-size:12px;min-width:130px"><option value="">表示期間に従う</option></select>
+        <label style="font-size:12px;color:#607d8b;font-weight:600">計上区分:</label>
+        <select id="est-billable" onchange="toggleBillableFilter(this)" style="padding:6px 10px;border:1px solid #d0dae6;border-radius:6px;font-size:12px;min-width:120px">
+          <option value="">全て</option>
+          <option value="billable">Billableのみ</option>
+          <option value="nonbillable">Non-billableのみ</option>
+        </select>
       </div>
       <div class="estimate-summary" id="estimate-summary"></div>
       <div style="overflow-x:auto">
@@ -916,6 +950,16 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 <div id="admin-modal">
   <div id="admin-box">
     <h3>⚙ 管理者設定</h3>
+    <div style="margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid #e3e9f0">
+      <div class="card-title">1日労働時間（会社共通・稼働上限）</div>
+      <div style="font-size:11px;color:#90a4ae;margin-bottom:8px">全ユーザー・全タブ共通の会社基準です。ガント／ワークロードの負荷判定・稼働率計算に使用します。</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <input type="number" id="company-cap-input" min="1" max="24" step="0.5" style="width:84px;padding:7px 10px;border:1.5px solid #d0dae6;border-radius:6px;font-size:13px;text-align:center">
+        <span style="font-size:12px;color:#607d8b">h / 日</span>
+        <button class="btn btn-primary btn-sm" onclick="saveCompanyCapacity()">保存</button>
+        <span id="company-cap-msg" style="font-size:11px;font-weight:600;min-height:14px"></span>
+      </div>
+    </div>
     <div style="margin-bottom:16px">
       <div class="card-title">会社カレンダー（休日追加）</div>
       <div style="font-size:11px;color:#90a4ae;margin-bottom:8px">土日・祝日以外の会社固有の休日（最大8件）</div>
@@ -973,7 +1017,9 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 const WORKER_URL = 'https://backlog-proxy.multi-pj.workers.dev';
 const TODAY = new Date().toISOString().slice(0,10);
 const WD_JA = ['日','月','火','水','木','金','土'];
-let CAPACITY = 8;
+const DEFAULT_CAPACITY = 7;       // 1日労働時間の初期値（会社共通・管理者設定で変更可）
+let CAPACITY = DEFAULT_CAPACITY;  // /settings からロードして上書き
+let billableFilter = '';          // '' = 全て(Billable+Non-billable) / 'billable' / 'nonbillable'
 
 let currentUser   = null; // {token,role,displayName,talentName}
 let allRows       = [], allCols = [], allMonths = [], allWorkload = {};
@@ -1241,6 +1287,8 @@ function applyRole(role){
   document.getElementById('nav-settings').hidden=!isAdmin;
   // 初期データ読み込み
   Promise.all([loadNationalHolidays(), loadCompanyHolidays()]).catch(()=>{});
+  // 会社共通の1日労働時間（CAPACITY）をロード。確定後にデータがあれば再描画。
+  loadCompanySettings().then(()=>{ if(allRows.length) renderAllViews(); }).catch(()=>{});
   loadSupportData(r);
   renderDashboard();
 }
@@ -1280,6 +1328,30 @@ function toggleMgmtPeople(el){
   renderCurrent();
   renderDashboard();
 }
+
+// ==================== BILLABLE / NON-BILLABLE ====================
+// nonBillable=true の課題（Backlog「Non-billable」フィールドに値あり）を区別する。
+function rowBillableOK(r){
+  if(billableFilter==='billable')    return !r.nonBillable;
+  if(billableFilter==='nonbillable') return !!r.nonBillable;
+  return true; // 全て（Billable + Non-billable）
+}
+// billableFilter を反映した行配列／ワークロード（未指定時は全件をそのまま返す＝低負荷）
+function filteredRows(){ return billableFilter ? allRows.filter(rowBillableOK) : allRows; }
+function filteredWorkload(){ return billableFilter ? buildWorkload(filteredRows(), allCols) : allWorkload; }
+function nbBadge(r){ return r&&r.nonBillable?'<span class="nb-flag" title="Non-billable（非請求）">NB</span>':''; }
+function toggleBillableFilter(el){
+  billableFilter=el.value;
+  ['gantt-billable','wl-billable','db-billable','person-billable','est-billable'].forEach(id=>{
+    const s=document.getElementById(id); if(s&&s.value!==billableFilter) s.value=billableFilter;
+  });
+  renderDashboard();
+  if(activeMainTab==='gantt')    renderGantt();
+  if(activeMainTab==='workload') renderWorkload();
+  if(activeMainTab==='personal') renderPersonal();
+  if(activeMainTab==='estimate') renderEstimate();
+}
+
 async function checkUnlinkedAssignees(){
   if(currentUser?.role!=='admin'||!allRows.length) return;
   try{
@@ -1448,19 +1520,27 @@ function tryRestoreFromSession(){
 
 // ==================== CORE PROCESSING ====================
 function mapApiToRawRows(issues){
-  return issues.map(issue=>({
-    key:      issue.issueKey||'',
-    jobNo:    (issue.customFields||[]).find(f=>f.name==='Job No.')?.value||'',
-    cat:      issue.issueType?.name||'',
-    categories:(issue.category||[]).map(c=>c.name), // カテゴリー（タレントマッチング用）
-    title:    issue.summary||'',
-    status:   issue.status?.name||'',
-    assignee: issue.assignee?.name||'',
-    estHours: parseFloat(issue.estimatedHours)||0,
-    actHours: parseFloat(issue.actualHours)||0,
-    startDs:  issue.startDate?String(issue.startDate).slice(0,10):null,
-    endDs:    issue.dueDate?String(issue.dueDate).slice(0,10):null,
-  }));
+  return issues.map(issue=>{
+    // Non-billable: Backlogの複数選択リスト型カスタムフィールド。値（選択肢）が
+    // 1つでも入っていれば Non-billable、空欄なら Billable とみなす。
+    const nbField=(issue.customFields||[]).find(f=>f.name==='Non-billable');
+    const nbVal=nbField?.value;
+    const nonBillable=Array.isArray(nbVal)?nbVal.length>0:!!nbVal;
+    return {
+      key:      issue.issueKey||'',
+      jobNo:    (issue.customFields||[]).find(f=>f.name==='Job No.')?.value||'',
+      cat:      issue.issueType?.name||'',
+      categories:(issue.category||[]).map(c=>c.name), // カテゴリー（タレントマッチング用）
+      title:    issue.summary||'',
+      status:   issue.status?.name||'',
+      assignee: issue.assignee?.name||'',
+      estHours: parseFloat(issue.estimatedHours)||0,
+      actHours: parseFloat(issue.actualHours)||0,
+      startDs:  issue.startDate?String(issue.startDate).slice(0,10):null,
+      endDs:    issue.dueDate?String(issue.dueDate).slice(0,10):null,
+      nonBillable,
+    };
+  });
 }
 
 function buildFromRawRows(rawRows){
@@ -1504,7 +1584,7 @@ function buildFromRawRows(rawRows){
       key:raw.key, jobNo:raw.jobNo, cat:raw.cat, categories:raw.categories||[],
       title:raw.title, status:raw.status, assignee:raw.assignee,
       startDs:raw.startDs||null, endDs:raw.endDs||null,
-      estHours:raw.estHours, actHours:raw.actHours,
+      estHours:raw.estHours, actHours:raw.actHours, nonBillable:!!raw.nonBillable,
       distHours, newWeekdayValue, weekdayCount, noDate, monthTotals, daily,
     };
   });
@@ -1550,7 +1630,7 @@ function wlColor(h,cap){
   return '#ef9a9a';
 }
 function badge(s){
-  const map={'処理中':'b0','完了':'b1','未対応':'b2','処理済み':'b3','レビュー待ち':'b4'};
+  const map={'処理中':'b0','完了':'b1','未対応':'b2','処理済み':'b3','レビュー待ち':'b4','承認済み':'b6'};
   return `<span class="badge ${map[s]||'b5'}">${esc(s)}</span>`;
 }
 function buildMonthGroups(vcols){
@@ -1599,6 +1679,8 @@ function onPeriodChange(){
   renderDashboard();
   renderGantt();
   renderWorkload();
+  if(activeMainTab==='personal') renderPersonal();
+  if(activeMainTab==='estimate') renderEstimate();
 }
 
 function applyPeriodBtn(){
@@ -1624,6 +1706,8 @@ function resetPeriod(){
   buildMonthNav('gantt-month-nav', ()=>renderGantt());
   buildMonthNav('wl-month-nav',    ()=>renderWorkload());
   renderDashboard(); renderGantt(); renderWorkload();
+  if(activeMainTab==='personal') renderPersonal();
+  if(activeMainTab==='estimate') renderEstimate();
   toast('表示期間をリセットしました（本日±3ヶ月）', false);
 }
 function getViewCols(){
@@ -1682,9 +1766,44 @@ function autoPopulateTalents(){
     .catch(()=>{});
 }
 
-function onCapChange(){
-  CAPACITY=parseFloat(document.getElementById('cap-input').value)||8;
-  if(allRows.length) renderCurrent();
+// ==================== 会社共通設定（1日労働時間=CAPACITY） ====================
+function updateCapBadges(){
+  ['gantt-cap-badge','wl-cap-badge'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent=`稼働上限 ${CAPACITY}h/日`; });
+}
+async function loadCompanySettings(){
+  try{
+    const res=await fetch(`${WORKER_URL}/settings`);
+    if(res.ok){ const s=await res.json(); if(s&&typeof s.capacity==='number'&&s.capacity>0) CAPACITY=s.capacity; }
+  }catch{}
+  updateCapBadges();
+}
+function renderAllViews(){
+  updateCapBadges();
+  renderDashboard();
+  if(activeMainTab==='gantt')    renderGantt();
+  if(activeMainTab==='workload') renderWorkload();
+  if(activeMainTab==='personal') renderPersonal();
+  if(activeMainTab==='estimate') renderEstimate();
+  if(activeMainTab==='report')   renderReport();
+}
+async function saveCompanyCapacity(){
+  const inp=document.getElementById('company-cap-input');
+  const msg=document.getElementById('company-cap-msg');
+  const cap=parseFloat(inp?.value);
+  if(!(cap>0&&cap<=24)){ if(msg){ msg.style.color='#c62828'; msg.textContent='0〜24の数値で入力してください'; } return; }
+  if(msg){ msg.style.color='#607d8b'; msg.textContent='保存中...'; }
+  try{
+    const res=await fetch(`${WORKER_URL}/settings`,{
+      method:'POST', headers:{'Content-Type':'application/json',Authorization:`Bearer ${currentUser?.token||''}`},
+      body:JSON.stringify({capacity:cap}),
+    });
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data.error||'保存失敗');
+    CAPACITY=cap;
+    renderAllViews();
+    if(msg){ msg.style.color='#2e7d32'; msg.textContent='保存しました（全ユーザーに反映）'; setTimeout(()=>{ msg.textContent=''; },4000); }
+    toast(`1日労働時間を ${cap}h に変更しました`,false);
+  }catch(e){ if(msg){ msg.style.color='#c62828'; msg.textContent='❌ '+e.message; } }
 }
 
 function getNavMonths(){
@@ -1745,12 +1864,12 @@ function fillPersonSelect(){
     sel.value=currentUser.talentName;
     sel.disabled=true; sel.style.opacity='.6'; sel.title='自分のデータのみ表示';
   }
-  // 月選択（デフォルト=当月）
+  // 月選択（デフォルト=表示期間に従う＝ダッシュボードの期間連動）
   const ms=document.getElementById('person-month-sel'); if(!ms) return;
-  ms.innerHTML='<option value="">全期間</option>';
+  const prevMs=ms.value;
+  ms.innerHTML='<option value="">表示期間に従う</option>';
   allMonths.forEach(m=>{ const o=document.createElement('option'); o.value=m; o.textContent=m.replace('/','年')+'月'; ms.appendChild(o); });
-  const curMo=`${new Date().getFullYear()}/${pad(new Date().getMonth()+1)}`;
-  if(allMonths.includes(curMo)) ms.value=curMo;
+  if(prevMs&&allMonths.includes(prevMs)) ms.value=prevMs; // 既存の月選択は保持
 }
 
 function buildReportMonthSel(){
@@ -2258,6 +2377,10 @@ async function deleteRate(key){
 // ==================== ADMIN SETTINGS ====================
 function openAdminPanel(){
   renderCompanyHolidayList();
+  const capInp=document.getElementById('company-cap-input');
+  if(capInp) capInp.value=CAPACITY;
+  const capMsg=document.getElementById('company-cap-msg');
+  if(capMsg) capMsg.textContent='';
   document.getElementById('admin-modal').classList.add('open');
   const fpBase={
     dateFormat:'Y-m-d', altInput:true, altFormat:'Y/m/d（D）',
@@ -2490,23 +2613,23 @@ function renderDashboard(){
   }
   const isStaff=currentUser?.role==='staff';
   const staffName=currentUser?.talentName||'';
-  const allPeople=filterPeople(Object.keys(allWorkload));
+  const baseWL=filteredWorkload();          // 計上区分(billableFilter)反映済みワークロード
+  const baseRows=filteredRows();            // 計上区分反映済み行
+  const allPeople=filterPeople(Object.keys(baseWL));
   const people=isStaff && staffName ? allPeople.filter(p=>p===staffName) : allPeople;
-  const dbRows=isStaff && staffName ? allRows.filter(r=>r.assignee===staffName) : allRows;
-  const curMo=`${new Date().getFullYear()}/${pad(new Date().getMonth()+1)}`;
-  const moRows=dbRows.filter(r=>r.monthTotals&&r.monthTotals[curMo]);
-  const wdH=r2(moRows.reduce((s,r)=>s+(r.monthTotals[curMo]||0),0));
-  // 表示期間で担当者数・稼働タスク数を絞る
+  const dbRows=isStaff && staffName ? baseRows.filter(r=>r.assignee===staffName) : baseRows;
+  // 統計カード・サマリーはすべて「表示期間(getViewCols)」で集計 → 期間変更に連動
   const viewCols=getViewCols();
-  const activePeople=people.filter(name=>{ const pd=allWorkload[name]||{}; return viewCols.some(c=>(pd[c.col]||0)>0); });
+  const wdH=r2(dbRows.reduce((s,r)=>s+viewCols.reduce((sv,c)=>sv+(r.daily[c.col]||0),0),0));
+  const activePeople=people.filter(name=>{ const pd=baseWL[name]||{}; return viewCols.some(c=>(pd[c.col]||0)>0); });
   const activeTasks=dbRows.filter(r=>viewCols.some(c=>(r.daily[c.col]||0)>0));
-  // 今後2週間の過負荷チェック（常に固定）
+  // 今後2週間の過負荷チェック（常に固定の先読みウィンドウ）
   const twoWeeksLater=new Date(TODAY+'T12:00:00'); twoWeeksLater.setDate(twoWeeksLater.getDate()+14);
   const twStr=twoWeeksLater.toISOString().slice(0,10);
   const upcomingCols=allCols.filter(c=>c.ds>=TODAY&&c.ds<=twStr);
   const overloadPeople=[];
   people.forEach(name=>{
-    const pd=allWorkload[name]||{};
+    const pd=baseWL[name]||{};
     const overDays=upcomingCols.filter(c=>(pd[c.col]||0)>CAPACITY);
     const maxH=Math.max(...upcomingCols.map(c=>pd[c.col]||0));
     if(overDays.length>0) overloadPeople.push({name,overDays:overDays.length,maxH,pct:maxH/CAPACITY});
@@ -2536,11 +2659,11 @@ function renderDashboard(){
   }
   // 月次サマリー
   const summaryEl=document.getElementById('monthly-summary-list');
-  const moCols=allCols.filter(c=>c.mo===curMo);
+  const sumCols=viewCols;  // 表示期間で稼働サマリーを集計（期間連動）
   const utilList=people.map(name=>{
-    const pd=allWorkload[name]||{};
-    const h=r2(moCols.reduce((s,c)=>s+(pd[c.col]||0),0));
-    const cap=moCols.length*CAPACITY;
+    const pd=baseWL[name]||{};
+    const h=r2(sumCols.reduce((s,c)=>s+(pd[c.col]||0),0));
+    const cap=sumCols.length*CAPACITY;
     const pct=cap>0?Math.round(h/cap*100):0;
     const registered=name!==''&&displayNameMap[name]!==undefined;
     return {name,h,pct,registered};
@@ -2605,6 +2728,7 @@ function renderGantt(){
     </tr>
     <tr>${vcols.map(c=>`<th class="day-th${c.ds===TODAY?' today-th':''}">${c.lbl}<br><span style="font-weight:400;opacity:.8">${c.dayJa}</span></th>`).join('')}</tr>`;
   const rows=allRows.filter(r=>{
+    if(!rowBillableOK(r)) return false;
     if(fa&&r.assignee!==fa) return false;
     if(fs&&r.status!==fs) return false;
     if(fc&&r.cat!==fc) return false;
@@ -2642,7 +2766,7 @@ function renderGantt(){
           <td class="info-td s0 sticky-bg" style="left:${left[0]}px"><code style="font-size:10px;color:#607d8b">${esc(row.jobNo||'')}</code></td>
           <td class="info-td s0 sticky-bg tip-cell" style="left:${left[1]}px;max-width:${STICKY_W[1]}px;overflow:hidden;text-overflow:ellipsis;font-size:11px;color:#607d8b;cursor:default" data-tip="${esc(row.cat)}">${esc(trunc(row.cat,10))}</td>
           <td class="info-td s1 sticky-bg tip-cell" style="left:${left[2]}px;max-width:${STICKY_W[2]}px;overflow:hidden;text-overflow:ellipsis;cursor:default" data-tip="${esc(row.title)}">${esc(trunc(row.title,22))}</td>
-          <td class="info-td s2 sticky-bg" style="left:${left[3]}px">${badge(row.status)}</td>
+          <td class="info-td s2 sticky-bg" style="left:${left[3]}px">${badge(row.status)}${nbBadge(row)}</td>
           <td class="info-td s3 sticky-bg" style="left:${left[4]}px;text-align:right;padding-right:6px;font-weight:700">${totalCell}</td>
           ${vcols.map(c=>{ const v=row.daily[c.col]; const tc=c.ds===TODAY?' today-cell':''; return v>0?`<td class="day-val${tc}">${v.toFixed(2)}</td>`:`<td class="day-zero${tc}">-</td>`; }).join('')}
         </tr>`;
@@ -2661,8 +2785,9 @@ function renderWorkload(){
   const fa=document.getElementById('wl-fA')?.value||'';
   const todayMode=activeMonth===''&&!periodFrom;
   const vcols=getViewCols();
+  const wl=filteredWorkload();   // 計上区分(billableFilter)反映済み
   const mGroups=buildMonthGroups(vcols);
-  const people=filterPeople(Object.keys(allWorkload)).sort((a,b)=>{
+  const people=filterPeople(Object.keys(wl)).sort((a,b)=>{
     if(!a&&b) return 1; if(a&&!b) return -1; return a.localeCompare(b);
   }).filter(p=>!fa||p===fa);
   document.getElementById('wl-head').innerHTML=`
@@ -2675,7 +2800,7 @@ function renderWorkload(){
   if(!people.length){ html=`<tr><td colspan="${vcols.length+1}" class="empty-state">データがありません</td></tr>`; }
   else {
     people.forEach(name=>{
-      const pd=allWorkload[name]||{};
+      const pd=wl[name]||{};
       html+=`<tr>
         <td class="info-td s0 sticky-bg" style="left:0;font-weight:700;color:${name?'#1a3a5c':'#e65100'}">${esc(dispName(name))}</td>
         ${vcols.map(c=>{
@@ -2697,7 +2822,7 @@ function renderWorkload(){
     if(people.length>1){
       html+=`<tr style="border-top:2px solid #1a3a5c">
         <td class="info-td s0 sticky-bg" style="left:0;font-weight:700;color:#607d8b">チーム合計</td>
-        ${vcols.map(c=>{ const total=r2(people.reduce((s,p)=>s+(allWorkload[p]?.[c.col]||0),0)); return total>0?`<td class="wl-cell" style="background:#e3f2fd;color:#1a3a5c;font-weight:700;font-size:11px">${total.toFixed(2)}</td>`:`<td class="wl-cell" style="background:#f5f5f5"></td>`; }).join('')}
+        ${vcols.map(c=>{ const total=r2(people.reduce((s,p)=>s+(wl[p]?.[c.col]||0),0)); return total>0?`<td class="wl-cell" style="background:#e3f2fd;color:#1a3a5c;font-weight:700;font-size:11px">${total.toFixed(2)}</td>`:`<td class="wl-cell" style="background:#f5f5f5"></td>`; }).join('')}
       </tr>`;
     }
   }
@@ -2718,16 +2843,16 @@ function renderPersonal(){
   const mo=document.getElementById('person-month-sel')?.value||'';
   const content=document.getElementById('personal-content');
   if(!sel||!allRows.length){ content.innerHTML='<div style="text-align:center;padding:60px;color:#90a4ae;font-size:14px">担当者を選択してください</div>'; return; }
-  const pRows=allRows.filter(r=>r.assignee===sel);
+  const pRows=filteredRows().filter(r=>r.assignee===sel);  // 計上区分(billableFilter)反映済み
   const talent=talents.find(t=>t.name===sel);
-  // 月選択時は月フィルタ、未選択時はダッシュボード期間（getViewCols）を使用
+  // 月選択時は月フィルタ、未選択時はダッシュボード表示期間（getViewCols）を使用＝期間連動
   const vcols=mo?allCols.filter(c=>c.mo===mo):getViewCols();
   // KPIカード
   const activeTasks=pRows.filter(r=>vcols.some(c=>(r.daily[c.col]||0)>0));
   const totalDistH=r2(pRows.reduce((s,r)=>s+vcols.reduce((sv,c)=>sv+(r.daily[c.col]||0),0),0));
   const capH=vcols.length*CAPACITY;
   const util=capH>0?Math.round(totalDistH/capH*100):0;
-  const pd=allWorkload[sel]||{};
+  const pd=filteredWorkload()[sel]||{};
   const overDays=allCols.filter(c=>(pd[c.col]||0)>CAPACITY).length;
   // 月別稼働（全期間モードのみ）
   const monthlyData=allMonths.map(mo=>{
@@ -2756,7 +2881,7 @@ function renderPersonal(){
     </div>
     <div class="stats-row">
       <div class="stat"><div class="lbl">担当タスク</div><div class="val"><span class="v-main">${activeTasks.length}</span><span class="v-sep"> / </span><span class="v-sub">${pRows.length}</span></div></div>
-      <div class="stat"><div class="lbl">按分済時間 <span class="lbl-sub">${mo||'全期間'}</span></div><div class="val"><span class="v-main">${totalDistH.toFixed(1)}</span><span class="v-sep">h</span></div></div>
+      <div class="stat"><div class="lbl">按分済時間 <span class="lbl-sub">${mo?mo.replace('/','年')+'月':'表示期間'}</span></div><div class="val"><span class="v-main">${totalDistH.toFixed(1)}</span><span class="v-sep">h</span></div></div>
       <div class="stat ${util>100?'alert':util>80?'warn':'ok'}"><div class="lbl">稼働率</div><div class="val"><span class="v-main">${util}</span><span class="v-sep">%</span></div></div>
       <div class="stat ${overDays>5?'alert':overDays>0?'warn':'ok'}"><div class="lbl">過負荷日数 <span class="lbl-sub">全期間</span></div><div class="val"><span class="v-main">${overDays}</span><span class="v-sep">日</span></div></div>
     </div>
@@ -2790,7 +2915,7 @@ function renderPersonal(){
           <tbody>${taskRows.map(r=>`<tr>
             <td><code style="font-size:11px;color:#607d8b">${esc(r.jobNo||'-')}</code></td>
             <td><code style="font-size:11px;color:#1a3a5c">${esc(r.key||'-')}</code></td>
-            <td style="white-space:normal;min-width:180px" title="${esc(r.title)}">${esc(r.title)}</td>
+            <td style="white-space:normal;min-width:180px" title="${esc(r.title)}">${esc(r.title)}${nbBadge(r)}</td>
             <td>${badge(r.status)}</td>
             <td style="font-size:11px">${r.startDs||'-'}</td>
             <td style="font-size:11px">${r.endDs||'-'}</td>
@@ -2861,26 +2986,29 @@ function renderEstimate(){
   const monthSel=document.getElementById('est-fMonth');
   if(monthSel){
     const curMo=monthSel.value;
-    monthSel.innerHTML='<option value="">全期間</option>';
+    monthSel.innerHTML='<option value="">表示期間に従う</option>';
     allMonths.forEach(m=>{ const o=document.createElement('option'); o.value=m; o.textContent=m.replace('/','年')+'月'; if(m===curMo) o.selected=true; monthSel.appendChild(o); });
   }
   const fa=document.getElementById('est-fA')?.value||'';
   const fj=document.getElementById('est-fJ')?.value||'';
   const fClient=document.getElementById('est-fClient')?.value||'';
   const fMonth=document.getElementById('est-fMonth')?.value||'';
-  let rows=allRows.filter(r=>{
+  // 月選択時はその月、未選択時はダッシュボード表示期間（getViewCols）で按分集計＝期間連動
+  const ecols=fMonth?allCols.filter(c=>c.mo===fMonth):getViewCols();
+  const baseRows=allRows.filter(r=>{
+    if(!rowBillableOK(r)) return false;          // 計上区分(billableFilter)反映
     if(fa&&r.assignee!==fa) return false;
     if(fj&&r.jobNo!==fj) return false;
-    if(fMonth&&!(r.monthTotals?.[fMonth]>0)) return false;
     return true;
   });
   let totalBudget=0, totalActual=0, totalEst=0, totalAct=0;
-  const rowsHtml=rows.map(r=>{
+  const rowsHtml=baseRows.map(r=>{
+    // 対象期間内の按分時間。この期間に稼働がない課題は表に出さない（期間連動）
+    const estH=r2(ecols.reduce((s,c)=>s+(r.daily[c.col]||0),0));
+    if(estH<=0) return '';
     const ri=getRateInfo(r.assignee, fClient||'社内基準');
     const {rate, client:usedClient, role:usedRole}=ri;
-    // 月フィルター時はその月の按分時間を使用
-    const estH=fMonth?(r.monthTotals?.[fMonth]||0):r.estHours;
-    const actH=fMonth?(r.distHours>0?r2(r.actHours*estH/r.distHours):0):r.actHours;
+    const actH=r.distHours>0?r2(r.actHours*estH/r.distHours):0;
     const budget=r2(estH*rate);
     const actual=r2(actH*rate);
     const diff=r2(actual-budget);
@@ -2888,7 +3016,7 @@ function renderEstimate(){
     return `<tr>
       <td>${esc(dispName(r.assignee))}</td>
       <td><code style="font-size:10px;color:#607d8b">${esc(r.jobNo||'')}</code></td>
-      <td style="white-space:normal;min-width:160px" title="${esc(r.title)}">${esc(r.title)}</td>
+      <td style="white-space:normal;min-width:160px" title="${esc(r.title)}">${esc(r.title)}${nbBadge(r)}</td>
       <td style="font-size:11px;color:#607d8b">${esc(usedRole||'-')}</td>
       <td style="font-size:11px;color:#1a3a5c;font-weight:600">${esc(usedClient)}</td>
       <td style="text-align:right">${rate>0?rate.toLocaleString():'-'}</td>
@@ -2900,7 +3028,7 @@ function renderEstimate(){
     </tr>`;
   }).join('');
   document.getElementById('estimate-body').innerHTML=rowsHtml||`<tr><td colspan="11" class="empty-state">データなし</td></tr>`;
-  const filterLabel=fMonth?fMonth.replace('/','年')+'月':'全期間';
+  const filterLabel=fMonth?fMonth.replace('/','年')+'月':'表示期間';
   document.getElementById('estimate-summary').innerHTML=`
     <div class="es-group">
       <div class="es-item"><div class="es-val">${totalEst.toFixed(1)}h</div><div class="es-lbl">予定時間<span style="font-size:9px;color:#90a4ae;display:block">${filterLabel}</span></div></div>
@@ -2992,14 +3120,16 @@ function renderReassignLog(page){
 function renderReport(){
   const mo=document.getElementById('report-month-sel')?.value; if(!mo||!allRows.length) return;
   const mCols=allCols.filter(c=>c.mo===mo);
-  const people=Object.keys(allWorkload).sort();
+  const wl=filteredWorkload();    // 計上区分(billableFilter)反映
+  const fr=filteredRows();
+  const people=Object.keys(wl).sort();
   const rows=people.map(name=>{
-    const pd=allWorkload[name]||{};
+    const pd=wl[name]||{};
     const h=r2(mCols.reduce((s,c)=>s+(pd[c.col]||0),0));
     const cap=mCols.length*CAPACITY;
     const util=cap>0?Math.round(h/cap*100):0;
     const overD=mCols.filter(c=>(pd[c.col]||0)>CAPACITY).length;
-    const pRows=allRows.filter(r=>r.assignee===name&&mCols.some(c=>(r.daily[c.col]||0)>0));
+    const pRows=fr.filter(r=>r.assignee===name&&mCols.some(c=>(r.daily[c.col]||0)>0));
     return {name,h,cap,util,overD,tasks:pRows.length};
   }).filter(r=>r.h>0);
   const totalH=r2(rows.reduce((s,r)=>s+r.h,0));
@@ -3051,12 +3181,13 @@ function openRecommendModal(person, ds, h, colIdx){
   if(memo) memo.value='';
 
   const overH=r2(h-CAPACITY);
-  const tasks=allRows.filter(r=>r.assignee===person&&(r.daily[colIdx]||0)>0);
+  const wl=filteredWorkload();
+  const tasks=filteredRows().filter(r=>r.assignee===person&&(r.daily[colIdx]||0)>0);
   const cats=[...new Set(tasks.flatMap(r=>r.categories||[]))];
-  const candidates=Object.keys(allWorkload)
+  const candidates=Object.keys(wl)
     .filter(name=>name!==person&&!isMgmtPerson(name))
     .map(name=>{
-      const dayH=r2(allWorkload[name]?.[colIdx]||0);
+      const dayH=r2(wl[name]?.[colIdx]||0);
       const avail=r2(CAPACITY-dayH);
       const talent=talents.find(t=>t.name===name);
       const skills=talent?.skills||[];
@@ -3072,12 +3203,12 @@ function openRecommendModal(person, ds, h, colIdx){
     `<b>${esc(dispName(person))}</b> ／ ${dateLabel} ／ 稼働 <b style="color:#c62828">${h.toFixed(1)}h</b> ／ 超過 <b style="color:#c62828">${overH.toFixed(1)}h</b>`;
   document.getElementById('rec-tasks').innerHTML=tasks.length?`
     <h4>この日の担当タスク — クリックして選択（カテゴリー: ${cats.length?cats.map(c=>`<span style="background:#e8eaf6;color:#3949ab;padding:1px 6px;border-radius:8px;font-size:10px">${esc(c)}</span>`).join(' '):'なし'}）</h4>
-    ${tasks.map(t=>`<div class="rec-task-item" onclick="selectReassignTask(${JSON.stringify(t.key)},${JSON.stringify(t.title)},${JSON.stringify(t.jobNo||'')})">${t.jobNo?`<span class="rlt-jobno">[${esc(t.jobNo)}] </span>`:''}<b style="font-family:monospace;font-size:11px">${esc(t.key)}</b> ${esc(trunc(t.title,38))} — <b>${(t.daily[colIdx]||0).toFixed(2)}h</b></div>`).join('')}`
+    ${tasks.map(t=>`<div class="rec-task-item" onclick="selectReassignTask(this,${JSON.stringify(t.key)},${JSON.stringify(t.title)},${JSON.stringify(t.jobNo||'')})">${t.jobNo?`<span class="rlt-jobno">[${esc(t.jobNo)}] </span>`:''}<b style="font-family:monospace;font-size:11px">${esc(t.key)}</b> ${nbBadge(t)} ${esc(trunc(t.title,38))} — <b>${(t.daily[colIdx]||0).toFixed(2)}h</b></div>`).join('')}`
     :'<h4>タスク情報なし</h4>';
   document.getElementById('rec-candidates').innerHTML=`<h4>引き継ぎ候補スタッフ — クリックして選択<div style="font-size:10px;font-weight:400;color:#78909c;margin-top:3px">★ = タスクのカテゴリーとスタッフのスキルの一致数（多いほど適任）</div></h4>`+
     (candidates.length?candidates.map(c=>{
       const matchColor=c.matchScore>0?'#3949ab':'#b0bec5';
-      return `<div class="rec-candidate" onclick="selectReassignCandidate(${JSON.stringify(c.name)})">
+      return `<div class="rec-candidate" onclick="selectReassignCandidate(this,${JSON.stringify(c.name)})">
         <div class="rc-score" style="color:${matchColor}" title="${c.matchScore>0?`スキル一致 ${c.matchScore}件`:'スキル一致なし'}">${c.matchScore>0?'★'.repeat(Math.min(c.matchScore,3)):'—'}</div>
         <div style="flex:1">
           <div class="rc-name">${esc(dispName(c.name))}</div>
@@ -3092,20 +3223,21 @@ function openRecommendModal(person, ds, h, colIdx){
   document.getElementById('recommend-modal').classList.add('open');
 }
 
-function selectReassignTask(key, title, jobNo){
+function selectReassignTask(elClicked, key, title, jobNo){
   modalSelectedTask={key, title, jobNo};
   document.querySelectorAll('.rec-task-item').forEach(el=>el.classList.remove('selected'));
-  const clicked=(event.target||event.srcElement).closest('.rec-task-item');
+  // クリックされた要素自体を確実にハイライト（グローバルeventに依存しない）
+  const clicked=elClicked&&elClicked.closest?elClicked.closest('.rec-task-item'):null;
   if(clicked) clicked.classList.add('selected');
   const el=document.getElementById('rec-sel-task');
   if(el) el.textContent=`${jobNo?'['+jobNo+'] ':''}${key} ${trunc(title,30)}`;
   updateRecModalBtn();
 }
 
-function selectReassignCandidate(name){
+function selectReassignCandidate(elClicked, name){
   modalSelectedCandidate=name;
   document.querySelectorAll('.rec-candidate').forEach(el=>el.classList.remove('selected'));
-  const clicked=(event.target||event.srcElement).closest('.rec-candidate');
+  const clicked=elClicked&&elClicked.closest?elClicked.closest('.rec-candidate'):null;
   if(clicked) clicked.classList.add('selected');
   const el=document.getElementById('rec-sel-candidate');
   if(el) el.textContent=dispName(name);
