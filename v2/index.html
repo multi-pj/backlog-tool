@@ -717,6 +717,7 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
           <option value="billable">Billableのみ</option>
           <option value="nonbillable">Non-billableのみ</option>
         </select>
+        <span id="est-period-badge" style="font-size:11px;font-weight:600;color:#1a3a5c;background:#e8eef5;padding:3px 10px;border-radius:10px;white-space:nowrap"></span>
       </div>
       <div class="estimate-summary" id="estimate-summary"></div>
       <div style="overflow-x:auto">
@@ -1537,8 +1538,13 @@ function applyLoadedData(rows, cols, months, workload, zeroTasks, fetchedAt){
     });
   }
   renderDashboard();
-  if(activeMainTab==='gantt') renderGantt();
-  if(activeMainTab==='workload') renderWorkload();
+  // 現在表示中のタブを必ず再描画（データ取得/キャッシュ復元時に見積・個人・レポートを開いていても反映されるように）
+  if(activeMainTab==='gantt')         renderGantt();
+  else if(activeMainTab==='workload') renderWorkload();
+  else if(activeMainTab==='personal') renderPersonal();
+  else if(activeMainTab==='estimate') renderEstimate();
+  else if(activeMainTab==='report')   renderReport();
+  else if(activeMainTab==='reassign') renderReassignLog();
   checkUnlinkedAssignees();
 }
 
@@ -3116,6 +3122,9 @@ function renderEstimate(){
   const fMonth=document.getElementById('est-fMonth')?.value||'';
   // 月選択時はその月、未選択時はダッシュボード表示期間（getViewCols）で按分集計＝期間連動
   const ecols=fMonth?allCols.filter(c=>c.mo===fMonth):getViewCols();
+  // 表示期間バッジ（選択月 or 表示期間の実日付を明示）
+  const estBadge=document.getElementById('est-period-badge');
+  if(estBadge) estBadge.textContent='📅 '+(fMonth?fMonth.replace('/','年')+'月':viewPeriodLabel());
   const baseRows=allRows.filter(r=>{
     if(!rowBillableOK(r)) return false;          // 計上区分(billableFilter)反映
     if(fa&&r.assignee!==fa) return false;
