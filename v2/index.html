@@ -740,7 +740,7 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
       <div style="overflow-x:auto">
         <table class="rate-table" id="estimate-table">
           <thead><tr>
-            <th style="width:90px">担当者</th><th style="width:80px">Job No.</th><th>件名</th><th style="width:80px">役職</th>
+            <th style="width:90px">担当者</th><th style="width:102px">Job No.</th><th>件名</th><th style="width:80px">役職</th>
             <th style="width:90px">レートカード</th>
             <th style="text-align:right;width:80px">レート(¥/h)</th>
             <th style="text-align:right;width:60px">予定h</th>
@@ -3032,11 +3032,11 @@ function renderPersonal(){
       <div class="chart-title">担当タスク一覧</div>
       <div style="overflow-x:auto">
         <table class="task-list-table">
-          <thead><tr><th style="width:70px">JOB No.</th><th style="width:96px">課題No.</th><th>件名</th><th style="width:70px">状態</th><th style="width:78px">開始</th><th style="width:78px">期限</th><th style="text-align:right;width:52px">予定h</th><th style="text-align:right;width:52px">実績h</th><th style="width:100px">カテゴリー</th></tr></thead>
+          <thead><tr><th style="width:92px">JOB No.</th><th style="width:96px">課題No.</th><th>件名</th><th style="width:70px">状態</th><th style="width:78px">開始</th><th style="width:78px">期限</th><th style="text-align:right;width:52px">予定h</th><th style="text-align:right;width:52px">実績h</th><th style="width:100px">カテゴリー</th></tr></thead>
           <tbody>${taskRows.map(r=>`<tr>
-            <td><code style="font-size:11px;color:#607d8b">${esc(r.jobNo||'-')}</code></td>
+            <td><div style="display:flex;align-items:center;justify-content:space-between;gap:4px"><code style="font-size:11px;color:#607d8b">${esc(r.jobNo||'-')}</code>${nbBadge(r)}</div></td>
             <td><code style="font-size:11px;color:#1a3a5c">${esc(r.key||'-')}</code></td>
-            <td style="white-space:normal;min-width:180px" title="${esc(r.title)}">${esc(r.title)}${nbBadge(r)}</td>
+            <td style="white-space:normal;min-width:160px" title="${esc(r.title)}">${esc(r.title)}</td>
             <td>${badge(r.status)}</td>
             <td style="font-size:11px">${r.startDs||'-'}</td>
             <td style="font-size:11px">${r.endDs||'-'}</td>
@@ -3178,8 +3178,8 @@ function renderEstimate(){
     totalBudget+=budget; totalActual+=actual; totalEst+=estH; totalAct+=actH;
     return `<tr>
       <td>${esc(dispName(r.assignee))}</td>
-      <td><code style="font-size:10px;color:#607d8b">${esc(r.jobNo||'')}</code></td>
-      <td style="white-space:normal;min-width:160px" title="${esc(r.title)}">${esc(r.title)}${nbBadge(r)}</td>
+      <td><div style="display:flex;align-items:center;justify-content:space-between;gap:4px"><code style="font-size:10px;color:#607d8b">${esc(r.jobNo||'')}</code>${nbBadge(r)}</div></td>
+      <td style="white-space:normal;min-width:140px" title="${esc(r.title)}">${esc(r.title)}</td>
       <td style="font-size:11px;color:#607d8b">${esc(usedRole||'-')}</td>
       <td style="font-size:11px;color:#1a3a5c;font-weight:600">${esc(usedClient)}</td>
       <td style="text-align:right">${rate>0?rate.toLocaleString():'-'}</td>
