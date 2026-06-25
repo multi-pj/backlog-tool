@@ -76,6 +76,14 @@ nav{background:#fff;border-bottom:2px solid #e3e9f0;padding:0 20px;display:flex;
 .stat.alert .v-main{color:#c62828}
 .stat.warn .v-main{color:#e65100}
 .stat.ok .v-main{color:#2e7d32}
+.db-stats-frame{border:1.5px solid #d4e0ec;border-radius:12px;padding:12px 14px 2px;margin-bottom:16px;background:#f6f9fc}
+.db-stats-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.db-stats-title{font-size:13px;font-weight:700;color:#1a3a5c}
+.db-stats-scope{font-size:11px;color:#5a7f96}
+.db-stats-scope b{color:#1a3a5c;background:#e8eef5;padding:1px 7px;border-radius:8px;font-weight:700}
+.db-stats-frame .stats-row{margin-bottom:10px}
+.stat.period-stat{border-top:3px solid #5b8fc7}
+.stat.alert{border-top:3px solid #e0a3a3}
 
 /* ===== Buttons ===== */
 .btn{padding:9px 20px;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:600;transition:opacity .15s}
@@ -551,11 +559,17 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
         </select>
       </div>
     </div>
-    <div class="stats-row" id="db-stats-row">
-      <div class="stat"><div class="lbl">担当者数</div><div class="val"><span class="v-main" id="db-people">-</span></div></div>
-      <div class="stat"><div class="lbl">稼働タスク</div><div class="val"><span class="v-main" id="db-tasks">-</span></div></div>
-      <div class="stat"><div class="lbl">按分時間 <span class="lbl-sub">表示期間</span></div><div class="val"><span class="v-main" id="db-wdh">-</span><span class="v-sep">h</span></div></div>
-      <div class="stat alert"><div class="lbl">過負荷スタッフ <span class="lbl-sub">今後2週間</span></div><div class="val"><span class="v-main" id="db-alert-count">-</span><span class="v-sep">人</span></div></div>
+    <div class="db-stats-frame">
+      <div class="db-stats-head">
+        <span class="db-stats-title">📊 サマリー</span>
+        <span class="db-stats-scope">「担当者数・稼働タスク・按分時間」は <b id="db-stats-period">表示期間</b> の集計です</span>
+      </div>
+      <div class="stats-row" id="db-stats-row">
+        <div class="stat period-stat"><div class="lbl">担当者数 <span class="lbl-sub">表示期間</span></div><div class="val"><span class="v-main" id="db-people">-</span></div></div>
+        <div class="stat period-stat"><div class="lbl">稼働タスク <span class="lbl-sub">表示期間</span></div><div class="val"><span class="v-main" id="db-tasks">-</span></div></div>
+        <div class="stat period-stat"><div class="lbl">按分時間 <span class="lbl-sub">表示期間</span></div><div class="val"><span class="v-main" id="db-wdh">-</span><span class="v-sep">h</span></div></div>
+        <div class="stat alert"><div class="lbl">過負荷スタッフ <span class="lbl-sub">今後2週間（期間外）</span></div><div class="val"><span class="v-main" id="db-alert-count">-</span><span class="v-sep">人</span></div></div>
+      </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;flex-wrap:wrap" class="dash-grid">
       <div class="card">
@@ -2705,6 +2719,7 @@ function renderDashboard(){
   document.getElementById('db-tasks').textContent=activeTasks.length;
   document.getElementById('db-wdh').textContent=wdH.toFixed(1);
   document.getElementById('db-alert-count').textContent=overloadPeople.length;
+  const dbStatsPeriod=document.getElementById('db-stats-period'); if(dbStatsPeriod) dbStatsPeriod.textContent=viewPeriodLabel();
   // アラートリスト
   const alertEl=document.getElementById('alert-list');
   if(!overloadPeople.length){
@@ -3237,7 +3252,7 @@ function renderReassignLog(page){
   el.innerHTML=`
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
       <button class="btn btn-secondary btn-sm" id="ra-del-selected" disabled>選択削除（<span id="ra-sel-count">0</span>件）</button>
-      <button class="btn btn-secondary btn-sm" id="ra-del-all" style="color:#c62828;border-color:#f0c0c0">🗑 全件削除（${total}件）</button>
+      <button class="btn btn-secondary btn-sm" id="ra-del-all">🗑 全件削除（${total}件）</button>
       <span style="font-size:11px;color:#90a4ae">行頭のチェックで選択 →「選択削除」／行末「削除」で個別削除</span>
     </div>
     <div style="overflow-x:auto">
@@ -3245,11 +3260,11 @@ function renderReassignLog(page){
       <thead><tr>
         <th style="width:34px;text-align:center"><input type="checkbox" id="ra-cb-all" title="このページを全選択"></th>
         <th style="width:82px">日時</th>
-        <th style="width:140px">移管元 → 移管先</th>
+        <th style="width:182px">移管元 → 移管先</th>
         <th style="width:92px">JOB No.</th>
         <th style="width:100px">課題キー</th>
-        <th>タスク名</th>
-        <th style="width:240px">理由</th>
+        <th style="width:200px">タスク名</th>
+        <th>理由</th>
         <th style="width:60px;text-align:center">操作</th>
       </tr></thead>
       <tbody>
