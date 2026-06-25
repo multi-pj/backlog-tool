@@ -1947,6 +1947,7 @@ function buildReportMonthSel(){
 // ==================== ACCOUNTS SETTINGS (段階3で描画) ====================
 let editingAccountUsername = null;
 let reassignLogPage = 1;
+let raSelected = new Set();   // 再アサイン履歴で選択中の記録キー（ページ跨ぎで保持）
 let modalFromPerson = '';
 let modalSelectedTask = null; // {key, title, jobNo}
 let modalSelectedCandidate = '';
@@ -2920,6 +2921,20 @@ document.getElementById('rec-candidates').addEventListener('click',e=>{
   const c=modalCandidates[+el.dataset.idx]; if(!c) return;
   selectReassignCandidate(el, c.name);
 });
+// 再アサイン履歴の選択・削除（イベント委譲。#reassign-log-list は再描画されても親は不変）
+(function(){
+  const raList=document.getElementById('reassign-log-list'); if(!raList) return;
+  raList.addEventListener('change',e=>{
+    const t=e.target;
+    if(t.id==='ra-cb-all'){ toggleRaSelectAllPage(t.checked); }
+    else if(t.classList.contains('ra-cb')){ const k=t.dataset.rakey; if(t.checked) raSelected.add(k); else raSelected.delete(k); updateRaToolbar(); }
+  });
+  raList.addEventListener('click',e=>{
+    const one=e.target.closest('.ra-del-one'); if(one){ deleteReassignOne(one.dataset.rakey); return; }
+    if(e.target.closest('#ra-del-selected')){ deleteReassignSelected(); return; }
+    if(e.target.closest('#ra-del-all')){ deleteReassignAll(); return; }
+  });
+})();
 
 // ==================== PERSONAL SUMMARY ====================
 function renderPersonal(){
@@ -3205,6 +3220,9 @@ function clearReassignForm(){
   ['ra-job-no','ra-task-key','ra-task-title','ra-reason'].forEach(id=>{const el=document.getElementById(id); if(el) el.value='';});
 }
 
+// 記録1件を一意に識別するキー（選択・削除の照合用。値の解析はせず等価比較のみ）
+function raKey(r){ return [r.recordedAt||'', r.fromAssignee||'', r.toAssignee||'', r.taskKey||'', r.jobNo||''].join('|'); }
+
 function renderReassignLog(page){
   if(page!==undefined) reassignLogPage=page;
   const el=document.getElementById('reassign-log-list'); if(!el) return;
@@ -3217,25 +3235,34 @@ function renderReassignLog(page){
   const start=(reassignLogPage-1)*pageSize;
   const slice=reassignments.slice(start, start+pageSize);
   el.innerHTML=`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+      <button class="btn btn-secondary btn-sm" id="ra-del-selected" disabled>選択削除（<span id="ra-sel-count">0</span>件）</button>
+      <button class="btn btn-secondary btn-sm" id="ra-del-all" style="color:#c62828;border-color:#f0c0c0">🗑 全件削除（${total}件）</button>
+      <span style="font-size:11px;color:#90a4ae">行頭のチェックで選択 →「選択削除」／行末「削除」で個別削除</span>
+    </div>
     <div style="overflow-x:auto">
     <table class="reassign-log-table">
       <thead><tr>
-        <th style="width:84px">日時</th>
-        <th style="width:148px">移管元 → 移管先</th>
-        <th style="width:96px">JOB No.</th>
-        <th style="width:104px">課題キー</th>
+        <th style="width:34px;text-align:center"><input type="checkbox" id="ra-cb-all" title="このページを全選択"></th>
+        <th style="width:82px">日時</th>
+        <th style="width:140px">移管元 → 移管先</th>
+        <th style="width:92px">JOB No.</th>
+        <th style="width:100px">課題キー</th>
         <th>タスク名</th>
-        <th style="width:280px">理由</th>
+        <th style="width:240px">理由</th>
+        <th style="width:60px;text-align:center">操作</th>
       </tr></thead>
       <tbody>
-        ${slice.map(r=>`<tr>
+        ${slice.map(r=>{ const k=raKey(r); return `<tr>
+          <td style="text-align:center"><input type="checkbox" class="ra-cb" data-rakey="${esc(k)}" ${raSelected.has(k)?'checked':''}></td>
           <td><span class="rli-date">${esc((r.recordedAt||'').slice(0,10))}</span></td>
           <td><span class="rlt-from">${esc(dispName(r.fromAssignee))}</span><span style="color:#90a4ae;margin:0 4px">→</span><span class="rlt-to">${esc(dispName(r.toAssignee))}</span>${r.recordedBy?`<br><span style="font-size:10px;color:#b0bec5">by ${esc(r.recordedBy)}</span>`:''}</td>
           <td class="rlt-jobno">${esc(r.jobNo||'')}</td>
           <td class="rlt-key">${esc(r.taskKey||'')}</td>
           <td class="rlt-title">${esc(r.taskTitle||'')}</td>
           <td class="rlt-reason">${esc(r.reason||'')}</td>
-        </tr>`).join('')}
+          <td style="text-align:center"><button class="btn btn-secondary btn-sm ra-del-one" data-rakey="${esc(k)}" style="padding:2px 8px;font-size:11px;color:#c62828">削除</button></td>
+        </tr>`; }).join('')}
       </tbody>
     </table>
     </div>
@@ -3244,6 +3271,51 @@ function renderReassignLog(page){
       <span>${reassignLogPage} / ${totalPages} ページ（全${total}件）</span>
       <button class="btn btn-secondary btn-sm" onclick="renderReassignLog(${reassignLogPage+1})" ${reassignLogPage>=totalPages?'disabled':''}>次へ ▶</button>
     </div>`:''}`;
+  updateRaToolbar();
+}
+// 選択件数・ボタン活性・ページ全選択チェックの状態を同期
+function updateRaToolbar(){
+  const cnt=document.getElementById('ra-sel-count'); if(cnt) cnt.textContent=raSelected.size;
+  const btn=document.getElementById('ra-del-selected'); if(btn) btn.disabled=raSelected.size===0;
+  const all=document.getElementById('ra-cb-all');
+  if(all){ const cbs=[...document.querySelectorAll('#reassign-log-list .ra-cb')]; all.checked=cbs.length>0&&cbs.every(c=>c.checked); }
+}
+function toggleRaSelectAllPage(checked){
+  document.querySelectorAll('#reassign-log-list .ra-cb').forEach(cb=>{
+    cb.checked=checked; const k=cb.dataset.rakey; if(checked) raSelected.add(k); else raSelected.delete(k);
+  });
+  updateRaToolbar();
+}
+// 削除の永続化（Worker /reassignments/replace で全件置換）。失敗時はローカル無変更
+async function persistReassignments(newArr, okMsg){
+  try{
+    const res=await fetch(`${WORKER_URL}/reassignments/replace`,{
+      method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${currentUser?.token||''}`},
+      body:JSON.stringify({records:newArr}),
+    });
+    if(res.status===404||res.status===405) throw new Error('Workerが未更新です（/reassignments/replace 未デプロイ）。事務所でWorkerをデプロイしてください');
+    if(!res.ok) throw new Error('サーバー保存に失敗しました');
+    reassignments=newArr; raSelected.clear();
+    renderReassignLog(); renderDbRecentReassign();
+    toast(okMsg,false);
+  }catch(e){ toast('削除エラー: '+e.message,true); }
+}
+function deleteReassignOne(key){
+  const t=reassignments.find(r=>raKey(r)===key); if(!t) return;
+  showConfirm(`この再アサイン記録を削除しますか？<br><b>${esc(dispName(t.fromAssignee))} → ${esc(dispName(t.toAssignee))}</b>${t.taskKey?` ／ ${esc(t.taskKey)}`:''}`,
+    ()=>persistReassignments(reassignments.filter(r=>raKey(r)!==key), '記録を削除しました'), '削除', true);
+}
+function deleteReassignSelected(){
+  if(!raSelected.size) return;
+  const n=raSelected.size;
+  showConfirm(`選択した <b>${n}件</b> の再アサイン記録を削除しますか？`,
+    ()=>persistReassignments(reassignments.filter(r=>!raSelected.has(raKey(r))), `${n}件を削除しました`), '削除', true);
+}
+function deleteReassignAll(){
+  if(!reassignments.length) return;
+  const n=reassignments.length;
+  showConfirm(`再アサイン記録を<b>全件（${n}件）</b>削除しますか？<br><span style="color:#c62828">この操作は元に戻せません。</span>`,
+    ()=>persistReassignments([], '全件削除しました'), '全件削除', true);
 }
 
 // ==================== MONTHLY REPORT ====================
