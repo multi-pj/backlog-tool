@@ -256,6 +256,9 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 .rate-table tr:hover td{background:#f5f7fa}
 .cost-over{color:#c62828;font-weight:700}
 .cost-ok{color:#2e7d32}
+/* 見積・単価の差異/実績h用：キツくない柔らかめの赤・緑 */
+.val-good{color:#2e8b57}  /* 緑系：予算内・効率的 */
+.val-bad{color:#d9534f}   /* 赤系：超過・負荷 */
 /* レートカード横並び表 */
 .rate-cross-table{border-collapse:collapse;font-size:12px;width:auto;min-width:420px}
 .rate-cross-table th{background:#1a3a5c;color:#fff;padding:8px 16px;text-align:center;font-size:11px;white-space:nowrap}
@@ -517,8 +520,8 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 <!-- ===================== NAVIGATION ===================== -->
 <nav id="main-nav">
   <button class="nav-btn active" data-tab="dashboard" onclick="switchMainTab('dashboard',this)">🏠 ダッシュボード</button>
-  <button class="nav-btn" data-tab="gantt" onclick="switchMainTab('gantt',this)">📅 ガント</button>
   <button class="nav-btn" data-tab="workload" onclick="switchMainTab('workload',this)">📊 ワークロード</button>
+  <button class="nav-btn" data-tab="gantt" onclick="switchMainTab('gantt',this)">📅 ガント</button>
   <button class="nav-btn" data-tab="personal" onclick="switchMainTab('personal',this)">👤 個人サマリー</button>
   <button class="nav-btn" data-tab="estimate" id="nav-estimate" onclick="switchMainTab('estimate',this)" hidden>💴 見積・単価</button>
   <button class="nav-btn" data-tab="reassign" id="nav-reassign" onclick="switchMainTab('reassign',this)" hidden>🔄 再アサイン</button>
@@ -580,6 +583,11 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
       </div>
       <div class="card">
         <div class="card-title">📈 担当者別 稼働サマリー <span id="db-summary-period" style="font-size:11px;font-weight:600;color:#1a3a5c;background:#e8eef5;padding:2px 8px;border-radius:10px;margin-left:4px;white-space:nowrap"></span></div>
+        <div style="font-size:11px;color:#90a4ae;margin:-4px 0 10px;line-height:1.5">
+          右端の<span style="color:#2e7d32;font-weight:700">緑の数値</span>＝<b>表示期間の按分稼働時間（h）</b>と<b>稼働率（%）</b>。
+          稼働率＝期間内の按分時間 ÷（期間の稼働日数 × 1日労働時間<span id="db-summary-cap"></span>）。
+          <span style="color:#e65100">80%超=オレンジ</span>／<span style="color:#c62828">100%超=赤</span>で負荷を色分け。
+        </div>
         <div id="monthly-summary-list"></div>
       </div>
     </div>
@@ -745,9 +753,9 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
             <th style="text-align:right;width:80px">レート(¥/h)</th>
             <th style="text-align:right;width:60px">予定h</th>
             <th style="text-align:right;width:80px">予算</th>
-            <th style="text-align:right;width:60px">実績h</th>
+            <th style="text-align:right;width:60px" title="予定hより多い=赤（負荷大）／少ない=緑（スムーズ）／同値・0.0h=黒">実績h</th>
             <th style="text-align:right;width:80px">実費</th>
-            <th style="text-align:right;width:80px">差異</th>
+            <th style="text-align:right;width:80px" title="予算 − 実費。＋＝予算内/節約（緑）／−＝超過（赤）／¥0=黒">差異</th>
           </tr></thead>
           <tbody id="estimate-body"></tbody>
         </table>
@@ -759,6 +767,11 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
   <div id="sec-reassign" hidden>
     <div class="card">
       <div class="card-title">再アサイン記録</div>
+      <div style="background:#eef4fb;border:1px solid #c5d8ec;border-left:4px solid #1a3a5c;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#37474f;line-height:1.6">
+        📝 <b>このページは「誰の・どの案件を・誰へ引き継いだか」を残すための記録専用ページです。</b><br>
+        ここに記録しても、ガント／ワークロード／見積／月次レポート／ダッシュボードの<b>各数値には一切反映されません</b>（Backlog側の担当者も変更しません）。
+        実際の担当変更はBacklog上で行い、その「いつ・誰へ・なぜ移したか」の履歴をここに手控えとして残す用途です。
+      </div>
       <div class="reassign-form" id="reassign-form">
         <div class="rf-field">
           <label>移管元（過負荷スタッフ）</label>
@@ -808,8 +821,15 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
       <div class="report-controls">
         <label style="font-size:12px;font-weight:700;color:#607d8b">対象月:</label>
         <select id="report-month-sel" onchange="renderReport()" style="padding:7px 10px;border:1px solid #d0dae6;border-radius:6px;font-size:12px"></select>
+        <label style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:#607d8b;font-weight:600;cursor:pointer">
+          <input type="checkbox" id="report-mgmt-cb" onchange="toggleMgmtPeople(this)" checked>管理者・営業を含む
+        </label>
         <button class="btn btn-success btn-sm" onclick="printReport()">🖨 印刷 / PDF保存</button>
         <button class="btn btn-secondary btn-sm" onclick="downloadReport()">⬇ HTMLダウンロード</button>
+      </div>
+      <div style="font-size:11px;color:#90a4ae;margin-top:8px;line-height:1.6">
+        💡 <b>「🖨 印刷 / PDF保存」</b>＝ブラウザの印刷画面からそのまま紙印刷・PDF化できます。
+        <b>「⬇ HTMLダウンロード」</b>＝このレポートを1枚のHTMLファイルとして保存します。<b>アプリやログイン不要で誰でもブラウザで開け</b>、メール添付・社内共有フォルダでの保管・そのまま印刷・Excel／Wordへの表の貼り付けなどに使えます。
       </div>
     </div>
     <div id="report-content" class="card">
@@ -1125,6 +1145,8 @@ function setLoad(on,msg){
   if(msg) document.getElementById('loading-msg').textContent=msg;
 }
 function fmtYen(v){ return v>=1?'¥'+Math.round(v).toLocaleString():'¥0'; }
+// 符号付き円表示（負数にも対応。fmtYenは v<1 をすべて¥0にしてしまうため差異表示には使えない）
+function fmtYenSigned(v){ const n=Math.round(v); if(n===0) return '¥0'; return (n>0?'+¥':'-¥')+Math.abs(n).toLocaleString(); }
 function fmtH(v){ return r2(v).toFixed(1)+'h'; }
 
 function dispName(n){ if(!n) return '未設定'; return displayNameMap[n]||n; }
@@ -1308,7 +1330,7 @@ function logout(){
     allRows=[]; allCols=[]; allMonths=[]; allWorkload={};
     talents=[]; rates=[]; reassignments=[];
     displayNameMap={}; talentRoleMap={}; showMgmtPeople=true; unlinkedAssignees=[];
-    ['show-mgmt-cb','gantt-mgmt-cb','wl-mgmt-cb'].forEach(id=>{ const cb=document.getElementById(id); if(cb) cb.checked=true; });
+    ['show-mgmt-cb','gantt-mgmt-cb','wl-mgmt-cb','report-mgmt-cb'].forEach(id=>{ const cb=document.getElementById(id); if(cb) cb.checked=true; });
     useDemoTalents=false; useDemoRates=false;
     document.getElementById('login-overlay').style.display='flex';
     document.getElementById('login-err').textContent='';
@@ -1368,14 +1390,16 @@ async function loadDisplayNames(){
   }catch{}
 }
 function isMgmtPerson(name){
-  return ['admin','sales','leader'].includes(talentRoleMap[name]||'');
+  // 「管理者・営業」フィルタの対象は admin / sales のみ。
+  // leader（リーダー）はスタッフ同様に常時表示し、このフィルタの影響を受けない（切り分け）。
+  return ['admin','sales'].includes(talentRoleMap[name]||'');
 }
 function filterPeople(people){
   return showMgmtPeople ? people : people.filter(p=>!isMgmtPerson(p));
 }
 function toggleMgmtPeople(el){
   showMgmtPeople=el.checked;
-  ['show-mgmt-cb','gantt-mgmt-cb','wl-mgmt-cb'].forEach(id=>{
+  ['show-mgmt-cb','gantt-mgmt-cb','wl-mgmt-cb','report-mgmt-cb'].forEach(id=>{
     const cb=document.getElementById(id); if(cb) cb.checked=showMgmtPeople;
   });
   const people=filterPeople([...new Set(allRows.map(r=>r.assignee).filter(Boolean))].sort());
@@ -2745,6 +2769,7 @@ function renderDashboard(){
   const summaryEl=document.getElementById('monthly-summary-list');
   const periodBadge=document.getElementById('db-summary-period');
   if(periodBadge) periodBadge.textContent='📅 '+viewPeriodLabel();
+  const capHint=document.getElementById('db-summary-cap'); if(capHint) capHint.textContent=`（${CAPACITY}h）`;
   const sumCols=viewCols;  // 表示期間で稼働サマリーを集計（期間連動）
   const utilList=people.map(name=>{
     const pd=baseWL[name]||{};
@@ -2990,6 +3015,7 @@ function renderPersonal(){
   const maxCatH=catList.length?catList[0][1]:1;
   // 担当タスク一覧
   const taskRows=pRows.sort((a,b)=>(a.startDs||'').localeCompare(b.startDs||''));
+  const perLbl=mo?mo.replace('/','年')+'月':'表示期間';
   const skillTags=(talent?.skills||[]).map(s=>`<span class="skill-tag">${esc(s)}</span>`).join('');
   content.innerHTML=`
     <div class="person-header">
@@ -3001,10 +3027,10 @@ function renderPersonal(){
       </div>
     </div>
     <div class="stats-row">
-      <div class="stat"><div class="lbl">担当タスク</div><div class="val"><span class="v-main">${activeTasks.length}</span><span class="v-sep"> / </span><span class="v-sub">${pRows.length}</span></div></div>
-      <div class="stat"><div class="lbl">按分済時間 <span class="lbl-sub">${mo?mo.replace('/','年')+'月':'表示期間'}</span></div><div class="val"><span class="v-main">${totalDistH.toFixed(1)}</span><span class="v-sep">h</span></div></div>
-      <div class="stat ${util>100?'alert':util>80?'warn':'ok'}"><div class="lbl">稼働率</div><div class="val"><span class="v-main">${util}</span><span class="v-sep">%</span></div></div>
-      <div class="stat ${overDays>5?'alert':overDays>0?'warn':'ok'}"><div class="lbl">過負荷日数 <span class="lbl-sub">${mo?mo.replace('/','年')+'月':'表示期間'}</span></div><div class="val"><span class="v-main">${overDays}</span><span class="v-sep">日</span></div></div>
+      <div class="stat" title="表示期間内に稼働があるタスク数 ／ この担当者の担当タスク総数"><div class="lbl">担当タスク <span class="lbl-sub">${perLbl}：稼働中／総数</span></div><div class="val"><span class="v-main">${activeTasks.length}</span><span class="v-sep"> / </span><span class="v-sub">${pRows.length}</span></div></div>
+      <div class="stat" title="表示期間内の按分稼働時間（各タスクの予定hを稼働日へ日割りした合計）"><div class="lbl">按分済時間 <span class="lbl-sub">${perLbl}・予定hの日割合計</span></div><div class="val"><span class="v-main">${totalDistH.toFixed(1)}</span><span class="v-sep">h</span></div></div>
+      <div class="stat ${util>100?'alert':util>80?'warn':'ok'}" title="按分時間 ÷（期間の稼働日数 × 1日労働時間${CAPACITY}h）"><div class="lbl">稼働率 <span class="lbl-sub">${perLbl}・対 ${CAPACITY}h/日</span></div><div class="val"><span class="v-main">${util}</span><span class="v-sep">%</span></div></div>
+      <div class="stat ${overDays>5?'alert':overDays>0?'warn':'ok'}" title="1日の按分時間が ${CAPACITY}h を超えた日数（表示期間内）"><div class="lbl">過負荷日数 <span class="lbl-sub">${perLbl}・1日&gt;${CAPACITY}h</span></div><div class="val"><span class="v-main">${overDays}</span><span class="v-sep">日</span></div></div>
     </div>
     ${!mo?`
     <div class="chart-section">
@@ -3174,8 +3200,19 @@ function renderEstimate(){
     const actH=r.distHours>0?r2(r.actHours*estH/r.distHours):0;
     const budget=r2(estH*rate);
     const actual=r2(actH*rate);
-    const diff=r2(actual-budget);
+    const diff=r2(budget-actual);   // 差異 = 予算 − 実費（＋＝予算内/節約・緑, −＝超過・赤）
     totalBudget+=budget; totalActual+=actual; totalEst+=estH; totalAct+=actH;
+    const actEntered = actH>0.05;   // 実績hが入力されているか（0.0h＝未入力とみなす）
+    // 差異の文字色：＋(予算内)=緑 / −(超過)=赤 / ¥0=黒。実績未入力時は測定不能のため「—」黒
+    let diffCls='', diffStr='-';
+    if(rate>0){
+      if(!actEntered){ diffStr='—'; }
+      else if(diff>0.5){ diffCls='val-good'; diffStr=fmtYenSigned(diff); }
+      else if(diff<-0.5){ diffCls='val-bad'; diffStr=fmtYenSigned(diff); }
+      else { diffStr='¥0'; }
+    }
+    // 実績hの文字色：予定hより多い=赤(負荷大) / 少ない=緑(スムーズ) / 同値・0.0h(未入力)=黒
+    const actCls = !actEntered?'':(actH>estH+0.05?'val-bad':actH<estH-0.05?'val-good':'');
     return `<tr>
       <td>${esc(dispName(r.assignee))}</td>
       <td><div style="display:flex;align-items:center;justify-content:space-between;gap:4px"><code style="font-size:10px;color:#607d8b">${esc(r.jobNo||'')}</code>${nbBadge(r)}</div></td>
@@ -3185,9 +3222,9 @@ function renderEstimate(){
       <td style="text-align:right">${rate>0?rate.toLocaleString():'-'}</td>
       <td style="text-align:right">${estH.toFixed(1)}</td>
       <td style="text-align:right;font-weight:700">${rate>0?fmtYen(budget):'-'}</td>
-      <td style="text-align:right">${actH.toFixed(1)}</td>
+      <td style="text-align:right" class="${actCls}">${actH.toFixed(1)}</td>
       <td style="text-align:right">${rate>0?fmtYen(actual):'-'}</td>
-      <td style="text-align:right;font-weight:700" class="${diff>0?'cost-over':diff<0?'cost-ok':''}">${rate>0?(diff>0?'+':'')+fmtYen(diff):'-'}</td>
+      <td style="text-align:right;font-weight:700" class="${diffCls}">${diffStr}</td>
     </tr>`;
   }).join('');
   document.getElementById('estimate-body').innerHTML=rowsHtml||`<tr><td colspan="11" class="empty-state">データなし</td></tr>`;
@@ -3204,7 +3241,7 @@ function renderEstimate(){
     </div>
     <div class="es-group-divider"></div>
     <div class="es-group">
-      <div class="es-item"><div class="es-val ${totalActual-totalBudget>0?'cost-over':'cost-ok'}">${totalActual>=totalBudget?'+':''}${fmtYen(totalActual-totalBudget)}</div><div class="es-lbl">予算差異<span style="font-size:9px;color:#90a4ae;display:block">${filterLabel}</span></div></div>
+      <div class="es-item"><div class="es-val ${(totalBudget-totalActual)>0.5?'val-good':(totalBudget-totalActual)<-0.5?'val-bad':''}">${fmtYenSigned(totalBudget-totalActual)}</div><div class="es-lbl">予算差異（予算−実費）<span style="font-size:9px;color:#90a4ae;display:block">${filterLabel}</span></div></div>
     </div>`;
 }
 
@@ -3404,18 +3441,30 @@ function openRecommendModal(person, ds, h, colIdx){
   const wl=filteredWorkload();
   const tasks=filteredRows().filter(r=>r.assignee===person&&(r.daily[colIdx]||0)>0);
   const cats=[...new Set(tasks.flatMap(r=>r.categories||[]))];
-  const candidates=Object.keys(wl)
+  // 担当者ごとの「過去・現在に担当したカテゴリー（種類）」集合を事前構築（同種担当の判定用）
+  const asgCats={};
+  allRows.forEach(r=>{ if(!r.assignee) return; (asgCats[r.assignee]=asgCats[r.assignee]||new Set()); (r.categories||[]).forEach(c=>asgCats[r.assignee].add(c)); });
+  let candidates=Object.keys(wl)
     .filter(name=>name!==person&&!isMgmtPerson(name))
     .map(name=>{
       const dayH=r2(wl[name]?.[colIdx]||0);
       const avail=r2(CAPACITY-dayH);
       const talent=talents.find(t=>t.name===name);
       const skills=talent?.skills||[];
-      const matchScore=cats.filter(c=>skills.includes(c)).length;
-      return {name,dayH,avail,matchScore,role:talent?.role||'-'};
+      const matchScore=cats.filter(c=>skills.includes(c)).length;          // スキル一致数
+      const sameType=cats.some(c=>asgCats[name]&&asgCats[name].has(c));     // 過去・現在で同種タスクを担当した経験
+      return {name,dayH,avail,matchScore,sameType,role:talent?.role||'-'};
     })
-    .filter(c=>c.avail>0||c.matchScore>0)
-    .sort((a,b)=>b.matchScore-a.matchScore||(b.avail>0?1:0)-(a.avail>0?1:0)||b.avail-a.avail)
+    .filter(c=>c.avail>0||c.matchScore>0);
+  // ★判定：1=スキル一致 / 2=＋過去・現在で同種担当 / 3=＋余力時間が最も多い
+  candidates.forEach(c=>{ c.stars = c.matchScore>0 ? (c.sameType?2:1) : 0; });
+  const twoStar=candidates.filter(c=>c.stars===2 && c.avail>0);
+  if(twoStar.length){
+    const maxAv=Math.max(...twoStar.map(c=>c.avail));   // 2つ星のうち余力が最大の候補を3つ星に昇格
+    twoStar.filter(c=>c.avail>=maxAv-0.01).forEach(c=>c.stars=3);
+  }
+  candidates=candidates
+    .sort((a,b)=>b.stars-a.stars||b.matchScore-a.matchScore||b.avail-a.avail)
     .slice(0,6);
   // クリック選択用にモーダルの候補配列を保持（イベント委譲でインデックス参照）
   modalTasks=tasks;
@@ -3426,17 +3475,18 @@ function openRecommendModal(person, ds, h, colIdx){
     `<b>${esc(dispName(person))}</b> ／ ${dateLabel} ／ 稼働 <b style="color:#c62828">${h.toFixed(1)}h</b> ／ 超過 <b style="color:#c62828">${overH.toFixed(1)}h</b>`;
   document.getElementById('rec-tasks').innerHTML=tasks.length?`
     <h4>この日の担当タスク — クリックして選択（カテゴリー: ${cats.length?cats.map(c=>`<span style="background:#e8eaf6;color:#3949ab;padding:1px 6px;border-radius:8px;font-size:10px">${esc(c)}</span>`).join(' '):'なし'}）</h4>
-    ${tasks.map((t,i)=>`<div class="rec-task-item" data-idx="${i}">${t.jobNo?`<span class="rlt-jobno">[${esc(t.jobNo)}] </span>`:''}<b style="font-family:monospace;font-size:11px">${esc(t.key)}</b> ${nbBadge(t)} ${esc(trunc(t.title,38))} — <b>${(t.daily[colIdx]||0).toFixed(2)}h</b></div>`).join('')}`
+    ${tasks.map((t,i)=>`<div class="rec-task-item" data-idx="${i}">${t.jobNo?`<span class="rlt-jobno">[${esc(t.jobNo)}]</span>`:''}${nbBadge(t)} <b style="font-family:monospace;font-size:11px">${esc(t.key)}</b> ${esc(trunc(t.title,38))} — <b>${(t.daily[colIdx]||0).toFixed(2)}h</b></div>`).join('')}`
     :'<h4>タスク情報なし</h4>';
-  document.getElementById('rec-candidates').innerHTML=`<h4>引き継ぎ候補スタッフ — クリックして選択<div style="font-size:10px;font-weight:400;color:#78909c;margin-top:3px">★ = タスクのカテゴリーとスタッフのスキルの一致数（多いほど適任）</div></h4>`+
+  document.getElementById('rec-candidates').innerHTML=`<h4>引き継ぎ候補スタッフ — クリックして選択<div style="font-size:10px;font-weight:400;color:#78909c;margin-top:3px">★1＝スキル一致／★2＝＋過去・現在で同種タスク担当／★3＝＋余力時間が最も多い（★が多いほど適任）</div></h4>`+
     (candidates.length?candidates.map((c,i)=>{
-      const matchColor=c.matchScore>0?'#3949ab':'#b0bec5';
+      const matchColor=c.stars>0?'#3949ab':'#b0bec5';
+      const starTip=c.stars>=3?'★★★ スキル一致＋同種担当経験＋余力が最も多い':c.stars===2?'★★ スキル一致＋過去・現在で同種タスク担当':c.stars===1?'★ スキル一致':'スキル一致なし';
       return `<div class="rec-candidate" data-idx="${i}">
-        <div class="rc-score" style="color:${matchColor}" title="${c.matchScore>0?`スキル一致 ${c.matchScore}件`:'スキル一致なし'}">${c.matchScore>0?'★'.repeat(Math.min(c.matchScore,3)):'—'}</div>
+        <div class="rc-score" style="color:${matchColor}" title="${starTip}">${c.stars>0?'★'.repeat(c.stars):'—'}</div>
         <div style="flex:1">
           <div class="rc-name">${esc(dispName(c.name))}</div>
           <div class="rc-detail">${esc(c.role)} ／ 当日稼働: ${c.dayH.toFixed(1)}h
-            ${c.matchScore>0?`<span class="rc-match">カテゴリー ${c.matchScore}件一致</span>`:''}
+            ${c.matchScore>0?`<span class="rc-match">スキル${c.matchScore}件一致</span>`:''}${c.sameType?`<span class="rc-match" style="background:#e8f5e9;color:#2e7d32">同種担当経験あり</span>`:''}
           </div>
         </div>
         <div class="rc-avail ${c.avail>0?'ok':'warn'}">${c.avail>0?`余力 ${c.avail.toFixed(1)}h`:'余力なし'}</div>
