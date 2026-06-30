@@ -565,12 +565,12 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
     <div class="db-stats-frame">
       <div class="db-stats-head">
         <span class="db-stats-title">📊 サマリー</span>
-        <span class="db-stats-scope">「担当者数・稼働タスク・按分時間」は <b id="db-stats-period">表示期間</b> の集計です</span>
+        <span class="db-stats-scope">「担当者数・稼働タスク・実稼働／按分時間」は <b id="db-stats-period">表示期間</b> の集計です</span>
       </div>
       <div class="stats-row" id="db-stats-row">
         <div class="stat period-stat"><div class="lbl">担当者数 <span class="lbl-sub">表示期間</span></div><div class="val"><span class="v-main" id="db-people">-</span></div></div>
         <div class="stat period-stat"><div class="lbl">稼働タスク <span class="lbl-sub">表示期間</span></div><div class="val"><span class="v-main" id="db-tasks">-</span></div></div>
-        <div class="stat period-stat"><div class="lbl">按分時間 <span class="lbl-sub">表示期間</span></div><div class="val"><span class="v-main" id="db-wdh">-</span><span class="v-sep">h</span></div></div>
+        <div class="stat period-stat" title="実稼働時間＝Backlogの実績hを表示期間に按分した合計。按分時間＝予定hを稼働日へ日割りした合計（計画値）"><div class="lbl">実稼働時間 <span class="lbl-sub">表示期間</span></div><div class="val"><span class="v-main" id="db-actwdh">-</span><span class="v-sep">h</span></div><div style="font-size:10px;color:#90a4ae;margin-top:3px">按分時間 <b id="db-wdh" style="color:#5a7f96">-</b>h</div></div>
         <div class="stat alert"><div class="lbl">過負荷スタッフ <span class="lbl-sub">今後2週間（期間外）</span></div><div class="val"><span class="v-main" id="db-alert-count">-</span><span class="v-sep">人</span></div></div>
       </div>
     </div>
@@ -2715,6 +2715,7 @@ function renderDashboard(){
     document.getElementById('db-people').textContent='-';
     document.getElementById('db-tasks').textContent='-';
     document.getElementById('db-wdh').textContent='-';
+    const da=document.getElementById('db-actwdh'); if(da) da.textContent='-';
     document.getElementById('db-alert-count').textContent='-';
     return;
   }
@@ -2728,6 +2729,8 @@ function renderDashboard(){
   // 統計カード・サマリーはすべて「表示期間(getViewCols)」で集計 → 期間変更に連動
   const viewCols=getViewCols();
   const wdH=r2(dbRows.reduce((s,r)=>s+viewCols.reduce((sv,c)=>sv+(r.daily[c.col]||0),0),0));
+  // 実稼働時間（表示期間）＝実績hを期間の按分比率で配分した合計（見積タブと同方式：actHours×期間按分/distHours）
+  const actWdH=r2(dbRows.reduce((s,r)=>{ const pd=viewCols.reduce((sv,c)=>sv+(r.daily[c.col]||0),0); return s+(r.distHours>0?r.actHours*pd/r.distHours:0); },0));
   const activePeople=people.filter(name=>{ const pd=baseWL[name]||{}; return viewCols.some(c=>(pd[c.col]||0)>0); });
   const activeTasks=dbRows.filter(r=>viewCols.some(c=>(r.daily[c.col]||0)>0));
   // 今後2週間の過負荷チェック（常に固定の先読みウィンドウ）
@@ -2745,6 +2748,7 @@ function renderDashboard(){
   document.getElementById('db-people').textContent=activePeople.length;
   document.getElementById('db-tasks').textContent=activeTasks.length;
   document.getElementById('db-wdh').textContent=wdH.toFixed(1);
+  const dbActEl=document.getElementById('db-actwdh'); if(dbActEl) dbActEl.textContent=actWdH.toFixed(1);
   document.getElementById('db-alert-count').textContent=overloadPeople.length;
   const dbStatsPeriod=document.getElementById('db-stats-period'); if(dbStatsPeriod) dbStatsPeriod.textContent=viewPeriodLabel();
   // アラートリスト
