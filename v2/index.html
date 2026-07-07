@@ -560,6 +560,10 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
           <option value="billable">Billableのみ</option>
           <option value="nonbillable">Non-billableのみ</option>
         </select>
+        <span style="width:1px;height:18px;background:#d0dae6;flex-shrink:0;margin:0 4px"></span>
+        <label style="font-size:11px;color:#607d8b;white-space:nowrap">チーム:</label>
+        <select id="db-team" onchange="renderDashboard()" style="padding:5px 8px;border:1px solid #d0dae6;border-radius:6px;font-size:12px;min-width:120px"><option value="">全チーム</option></select>
+        <label style="font-size:11px;color:#607d8b;display:flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap"><input type="checkbox" id="db-group-team" onchange="renderDashboard()">所属でまとめる</label>
       </div>
     </div>
     <div class="db-stats-frame">
@@ -626,6 +630,10 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
           <option value="nonbillable">Non-billableのみ</option>
         </select>
         <div class="filter-sep"></div>
+        <label>チーム:</label>
+        <select id="gantt-team" onchange="renderGantt()" style="min-width:120px"><option value="">全チーム</option></select>
+        <label style="font-size:11px;color:#607d8b;display:flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap;margin-left:4px"><input type="checkbox" id="gantt-group-team" onchange="renderGantt()">所属でまとめる</label>
+        <div class="filter-sep"></div>
         <span class="cap-badge" id="gantt-cap-badge" title="1日労働時間（管理者設定で変更）">稼働上限 7h/日</span>
         <span id="gantt-period-badge" style="font-size:11px;background:#f0f4f8;color:#78909c;border-radius:10px;padding:2px 10px;white-space:nowrap"></span>
       </div>
@@ -668,6 +676,10 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
           <option value="billable">Billableのみ</option>
           <option value="nonbillable">Non-billableのみ</option>
         </select>
+        <div class="filter-sep"></div>
+        <label>チーム:</label>
+        <select id="wl-team" onchange="renderWorkload()" style="min-width:120px"><option value="">全チーム</option></select>
+        <label style="font-size:11px;color:#607d8b;display:flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap;margin-left:4px"><input type="checkbox" id="wl-group-team" onchange="renderWorkload()">所属でまとめる</label>
         <div class="filter-sep"></div>
         <span class="cap-badge" id="wl-cap-badge" title="1日労働時間（管理者設定で変更）">稼働上限 7h/日</span>
         <span id="wl-period-badge" style="font-size:11px;background:#f0f4f8;color:#78909c;border-radius:10px;padding:2px 10px;white-space:nowrap"></span>
@@ -742,6 +754,9 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
           <option value="billable">Billableのみ</option>
           <option value="nonbillable">Non-billableのみ</option>
         </select>
+        <label style="font-size:12px;color:#607d8b;font-weight:600">チーム:</label>
+        <select id="est-team" onchange="renderEstimate()" style="padding:6px 10px;border:1px solid #d0dae6;border-radius:6px;font-size:12px;min-width:120px"><option value="">全チーム</option></select>
+        <label style="font-size:11px;color:#607d8b;display:flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap"><input type="checkbox" id="est-group-team" onchange="renderEstimate()">所属でまとめる</label>
         <span id="est-period-badge" style="font-size:11px;font-weight:600;color:#1a3a5c;background:#e8eef5;padding:3px 10px;border-radius:10px;white-space:nowrap"></span>
       </div>
       <div class="estimate-summary" id="estimate-summary"></div>
@@ -824,6 +839,9 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
         <label style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:#607d8b;font-weight:600;cursor:pointer">
           <input type="checkbox" id="report-mgmt-cb" onchange="toggleMgmtPeople(this)" checked>管理者・営業を含む
         </label>
+        <label style="font-size:12px;font-weight:700;color:#607d8b">チーム:</label>
+        <select id="report-team" onchange="renderReport()" style="padding:7px 10px;border:1px solid #d0dae6;border-radius:6px;font-size:12px"><option value="">全チーム</option></select>
+        <label style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:#607d8b;font-weight:600;cursor:pointer"><input type="checkbox" id="report-group-team" onchange="renderReport()">所属でまとめる</label>
         <button class="btn btn-success btn-sm" onclick="printReport()">🖨 印刷 / PDF保存</button>
         <button class="btn btn-secondary btn-sm" onclick="downloadReport()">⬇ HTMLダウンロード</button>
       </div>
@@ -917,7 +935,7 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
       <div class="settings-section">
         <h4>CSVインポート</h4>
         <p style="font-size:12px;color:#607d8b;margin-bottom:10px">
-          形式: <code>name,display_name,role,skills</code>（display_name は省略可）<br>
+          形式: <code>name,display_name,role,skills,team</code>（display_name / team は省略可・skills / team は「/」区切りで複数可）<br>
           skills: Backlogのカテゴリー名をスラッシュ区切り（例: <code>WEB制作/UI設計/DTP</code>）
         </p>
         <div class="csv-upload-area" id="talents-drop" onclick="document.getElementById('talents-file').click()">
@@ -1080,6 +1098,7 @@ let rates         = []; // [{client,role,hourlyRate}]
 let reassignments = [];
 let displayNameMap= {}; // talentName → displayName（アカウント登録値）
 let talentRoleMap  = {}; // talentName → role（admin/sales/leader/staff）
+let talentTeamMap  = {}; // talentName → [所属チーム]（タレントレコード由来・複数可）
 let showMgmtPeople = true; // 管理者・営業を担当者リストに含むか（デフォルトON）
 let unlinkedAssignees=[]; // Backlog担当者のうちアカウント未登録の人
 let companyHolidaysCache = [];
@@ -1088,12 +1107,12 @@ let useDemoRates   = false;
 
 // ==================== DEMO / FALLBACK DATA ====================
 const DEMO_TALENTS = [
-  {name:'守屋 太郎',  role:'ディレクター',    skills:['WEB制作','プロジェクト管理','企画','コンサルティング']},
-  {name:'田中 花子',  role:'デザイナー',      skills:['WEB制作','UI設計','DTP','LP制作','バナー制作']},
-  {name:'山田 次郎',  role:'エンジニア',      skills:['フロントエンド開発','バックエンド開発','WEB制作']},
-  {name:'佐藤 美咲',  role:'コピーライター',  skills:['コピーライティング','企画','WEB制作','SNS運用']},
-  {name:'鈴木 健一',  role:'デザイナー',      skills:['UI設計','WEB制作','LP制作','動画編集']},
-  {name:'中村 浩二',  role:'ディレクター',    skills:['プロジェクト管理','WEB制作','企画','コンサルティング']},
+  {name:'守屋 太郎',  role:'ディレクター',    skills:['WEB制作','プロジェクト管理','企画','コンサルティング'], teams:['ディレクションチーム','Aクライアントチーム']},
+  {name:'田中 花子',  role:'デザイナー',      skills:['WEB制作','UI設計','DTP','LP制作','バナー制作'],        teams:['デザインチーム']},
+  {name:'山田 次郎',  role:'エンジニア',      skills:['フロントエンド開発','バックエンド開発','WEB制作'],      teams:['開発チーム']},
+  {name:'佐藤 美咲',  role:'コピーライター',  skills:['コピーライティング','企画','WEB制作','SNS運用'],        teams:['Aクライアントチーム']},
+  {name:'鈴木 健一',  role:'デザイナー',      skills:['UI設計','WEB制作','LP制作','動画編集'],                 teams:['デザインチーム']},
+  {name:'中村 浩二',  role:'ディレクター',    skills:['プロジェクト管理','WEB制作','企画','コンサルティング'], teams:['ディレクションチーム']},
 ];
 const DEMO_RATES = [
   {client:'社内基準',      role:'ディレクター',   hourlyRate:8000},
@@ -1397,6 +1416,46 @@ function isMgmtPerson(name){
 function filterPeople(people){
   return showMgmtPeople ? people : people.filter(p=>!isMgmtPerson(p));
 }
+
+// ==================== 所属（チーム）ヘルパー ====================
+// talents（タレントレコード）から talentName→[所属チーム] を再構築。
+// 複数チーム対応：teams 配列を正とし、旧単一 team 文字列も後方互換で受ける。
+function rebuildTalentTeamMap(){
+  talentTeamMap={};
+  (talents||[]).forEach(t=>{
+    if(!t||!t.name) return;
+    let arr=Array.isArray(t.teams)?t.teams
+           :(t.team?String(t.team).split('/').map(s=>s.trim()).filter(Boolean):[]);
+    talentTeamMap[t.name]=arr.map(s=>String(s).trim()).filter(Boolean);
+  });
+}
+function personTeams(name){ return talentTeamMap[name]||[]; } // []＝未所属
+// 全チーム名（重複排除・ソート）。ドロップダウン／サジェスト用
+function allTeams(){
+  const s=new Set();
+  Object.values(talentTeamMap).forEach(arr=>arr.forEach(t=>s.add(t)));
+  return [...s].sort((a,b)=>a.localeCompare(b,'ja'));
+}
+// 担当者 name がチーム team に属すか。team=''＝全て通過／team='__none__'＝未所属のみ
+function personInTeam(name,team){
+  if(!team) return true;
+  if(team==='__none__') return personTeams(name).length===0;
+  return personTeams(name).includes(team);
+}
+// 各画面のチーム絞り込みドロップダウンを全チームで充填（選択値は保持）。datalist(#team-suggest)も更新
+function fillTeamSels(){
+  const teams=allTeams();
+  ['gantt-team','wl-team','db-team','est-team','report-team'].forEach(id=>{
+    const el=document.getElementById(id); if(!el) return;
+    const cur=el.value;
+    el.innerHTML='<option value="">全チーム</option>'+
+      teams.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('')+
+      '<option value="__none__">未所属</option>';
+    el.value=[...el.options].some(o=>o.value===cur)?cur:'';
+  });
+  const dl=document.getElementById('team-suggest');
+  if(dl) dl.innerHTML=teams.map(t=>`<option value="${esc(t)}">`).join('');
+}
 function toggleMgmtPeople(el){
   showMgmtPeople=el.checked;
   ['show-mgmt-cb','gantt-mgmt-cb','wl-mgmt-cb','report-mgmt-cb'].forEach(id=>{
@@ -1496,6 +1555,7 @@ async function loadSupportData(role){
       useDemoTalents = !d.length;
     } else { talents=DEMO_TALENTS; useDemoTalents=true; }
   }catch{ talents=DEMO_TALENTS; useDemoTalents=true; }
+  rebuildTalentTeamMap(); fillTeamSels();
 
   // レート・再アサイン（admin/sales/leader）
   if(['admin','sales','leader'].includes(role)){
@@ -1570,6 +1630,7 @@ function applyLoadedData(rows, cols, months, workload, zeroTasks, fetchedAt){
     }
   }
   fillSel('ra-from',people,dispName); fillSel('ra-to',people,dispName);
+  fillTeamSels();
   showZeroWarnBanner(zeroTasks||[]);
   if(currentUser?.role==='staff' && currentUser.talentName){
     const tn=currentUser.talentName;
@@ -2086,7 +2147,7 @@ async function updateAccount(username){
 
 async function ensureTalentStub(talentName){
   if(!talentName||talents.some(t=>t.name===talentName)) return false;
-  const newList=[...talents,{name:talentName,role:'',skills:[]}];
+  const newList=[...talents,{name:talentName,role:'',skills:[],teams:[]}];
   try{
     const res=await fetch(`${WORKER_URL}/talents`,{
       method:'POST',
@@ -2094,7 +2155,7 @@ async function ensureTalentStub(talentName){
       body:JSON.stringify(newList),
     });
     if(!res.ok) return false;
-    talents=newList;
+    talents=newList; rebuildTalentTeamMap(); fillTeamSels();
     return true;
   }catch{ return false; }
 }
@@ -2224,6 +2285,7 @@ async function saveTalents(){
     name:  t.name||t['名前']||'',
     role:  t.role||t['役職']||'',
     skills:(t.skills||t['スキル']||'').split('/').map(s=>s.trim()).filter(Boolean),
+    teams:(t.team||t.teams||t['所属']||t['チーム']||'').split('/').map(s=>s.trim()).filter(Boolean),
   })).filter(t=>t.name);
   try{
     const res=await fetch(`${WORKER_URL}/talents`,{
@@ -2231,10 +2293,10 @@ async function saveTalents(){
       body:JSON.stringify(list),
     });
     if(!res.ok) throw new Error('保存失敗');
-    talents=list;
+    talents=list; rebuildTalentTeamMap(); fillTeamSels();
     document.getElementById('talents-msg').textContent=`✅ ${list.length}件 保存しました`;
     document.getElementById('talents-msg').style.color='#2e7d32';
-    renderTalentsList();
+    renderTalentsList(); renderAllViews();
     toast('タレントデータを保存しました',false);
   }catch(e){ document.getElementById('talents-msg').textContent='❌ '+e.message; document.getElementById('talents-msg').style.color='#c62828'; }
 }
@@ -2267,7 +2329,8 @@ function renderTalentsList(){
   const isReal=talents.length>0;
   const displayList=isReal?talents:DEMO_TALENTS;
   const demoNote=!isReal?'<div style="font-size:11px;color:#e65100;padding:6px 12px;background:#fff3e0;border-radius:4px;margin-bottom:8px">⚠ デモデータ表示中。CSVをインポートすると本番データに切り替わります。</div>':'';
-  el.innerHTML=demoNote+'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px;margin-top:4px">'+
+  const teamDatalist='<datalist id="team-suggest">'+allTeams().map(t=>`<option value="${esc(t)}">`).join('')+'</datalist>';
+  el.innerHTML=teamDatalist+demoNote+'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px;margin-top:4px">'+
     displayList.map((t,idx)=>{
       const isEditing=isReal&&editingTalentName===t.name;
       const editForm=isEditing?`
@@ -2276,8 +2339,10 @@ function renderTalentsList(){
             <input id="et-name" type="text" value="${esc(t.name)}" readonly style="width:100%;padding:5px 8px;border:1.5px solid #d0dae6;border-radius:5px;font-size:12px;box-sizing:border-box;background:#f0f4fa;color:#90a4ae;cursor:default"></div>
           <div style="margin-bottom:6px"><label style="font-size:11px;color:#607d8b;display:block;margin-bottom:2px">役職</label>
             <input id="et-role" type="text" value="${esc(t.role||'')}" style="width:100%;padding:5px 8px;border:1.5px solid #d0dae6;border-radius:5px;font-size:12px;box-sizing:border-box"></div>
-          <div style="margin-bottom:8px"><label style="font-size:11px;color:#607d8b;display:block;margin-bottom:2px">スキル（/区切り）</label>
+          <div style="margin-bottom:6px"><label style="font-size:11px;color:#607d8b;display:block;margin-bottom:2px">スキル（/区切り）</label>
             <input id="et-skills" type="text" value="${esc((t.skills||[]).join('/'))}" style="width:100%;padding:5px 8px;border:1.5px solid #d0dae6;border-radius:5px;font-size:12px;box-sizing:border-box"></div>
+          <div style="margin-bottom:8px"><label style="font-size:11px;color:#607d8b;display:block;margin-bottom:2px">所属チーム（/区切り・複数可）</label>
+            <input id="et-teams" type="text" list="team-suggest" value="${esc(tms.join('/'))}" placeholder="例）Aクライアントチーム/山田チーム" style="width:100%;padding:5px 8px;border:1.5px solid #d0dae6;border-radius:5px;font-size:12px;box-sizing:border-box"></div>
           <div style="display:flex;gap:6px;align-items:center">
             <button class="btn btn-primary btn-xs" onclick="updateTalent('${esc(t.name)}')">保存</button>
             <button class="btn btn-secondary btn-xs" onclick="cancelEditTalent()">キャンセル</button>
@@ -2285,11 +2350,16 @@ function renderTalentsList(){
           </div>
         </div>`:'' ;
       const dispN=dispName(t.name);
+      const tms=Array.isArray(t.teams)?t.teams:(t.team?String(t.team).split('/').map(s=>s.trim()).filter(Boolean):[]);
+      const teamTags=tms.length
+        ? tms.map(tm=>`<span style="background:#e0f2f1;color:#00695c;padding:2px 7px;border-radius:8px;font-size:10px;font-weight:700;margin:0 3px 3px 0;display:inline-block">🏢 ${esc(tm)}</span>`).join('')
+        : `<span style="color:#e65100;font-size:10px;font-weight:600">未所属</span>`;
       return `<div style="padding:10px 12px;background:#f8faff;border:1px solid #d0dae6;border-radius:8px">
         <div style="display:flex;justify-content:space-between;align-items:flex-start">
           <div>
             <div style="font-weight:700;font-size:13px">${esc(dispN)}</div>
             <div style="font-size:11px;color:#607d8b;margin-bottom:4px">${esc(t.role||'-')}</div>
+            <div style="margin-bottom:4px">${teamTags}</div>
             <div>${(t.skills||[]).map(s=>`<span class="skill-tag" style="background:#e8eaf6;color:#3949ab;padding:2px 6px;border-radius:8px;font-size:10px;font-weight:600;margin:2px 2px 0 0;display:inline-block">${esc(s)}</span>`).join('')}</div>
           </div>
           ${isReal?`<div style="display:flex;flex-direction:column;gap:4px;margin-left:8px;flex-shrink:0">
@@ -2307,15 +2377,17 @@ async function updateTalent(oldName){
   const name=(document.getElementById('et-name')?.value||'').trim();
   const role=(document.getElementById('et-role')?.value||'').trim();
   const skills=(document.getElementById('et-skills')?.value||'').split('/').map(s=>s.trim()).filter(Boolean);
+  const teams=(document.getElementById('et-teams')?.value||'').split('/').map(s=>s.trim()).filter(Boolean);
   const msg=document.getElementById('et-msg');
   if(!name){ if(msg){msg.style.color='#c62828';msg.textContent='名前は必須';} return; }
   if(msg){msg.style.color='#607d8b';msg.textContent='保存中...';}
-  const newList=talents.map(t=>t.name===oldName?{name,role,skills}:t);
+  const newList=talents.map(t=>t.name===oldName?{name,role,skills,teams}:t);
   try{
     const res=await fetch(`${WORKER_URL}/talents`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${currentUser?.token||''}`},body:JSON.stringify(newList)});
     if(!res.ok) throw new Error('保存失敗');
-    talents=newList; editingTalentName=null;
+    talents=newList; editingTalentName=null; rebuildTalentTeamMap(); fillTeamSels();
     toast(`タレント「${name}」を更新しました`,false); renderTalentsList();
+    renderAllViews();
   }catch(e){if(msg){msg.style.color='#c62828';msg.textContent='❌ '+e.message;}}
 }
 async function deleteTalent(name){
@@ -2324,7 +2396,8 @@ async function deleteTalent(name){
     try{
       const res=await fetch(`${WORKER_URL}/talents`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${currentUser?.token||''}`},body:JSON.stringify(newList)});
       if(!res.ok) throw new Error('削除失敗');
-      talents=newList; toast(`タレント「${name}」を削除しました`,false); renderTalentsList();
+      talents=newList; rebuildTalentTeamMap(); fillTeamSels();
+      toast(`タレント「${name}」を削除しました`,false); renderTalentsList(); renderAllViews();
     }catch(e){ toast('エラー: '+e.message,true); }
   });
 }
@@ -2349,11 +2422,11 @@ function exportTalentsTemplate(){
   const content=[
     '# Backlogリソース管理ツール - タレントインポートテンプレート',
     '# 【role 参考一覧】プロジェクト管理 / 進行管理 / 企画・構成 / コピーライティング / デザイン制作 / デジタルデザイン制作 / コーディング / デバッグ・校正 / 動画制作 / 入稿・納品作業 / CA業務 / その他',
-    '# name は Backlogの担当者名と完全一致させること　display_name はツール上の表示名（省略可・省略時はnameをそのまま表示）　skills はスラッシュ区切りで複数入力可',
-    'name,display_name,role,skills',
-    '守屋 太郎,守屋 太郎,プロジェクト管理,プロジェクト管理/進行管理',
-    '田中 花子,田中 花子,デザイン制作,WEB制作/UI設計/DTP',
-    '山田 次郎,山田 次郎,コーディング,フロントエンド開発/WEB制作',
+    '# name は Backlogの担当者名と完全一致させること　display_name はツール上の表示名（省略可・省略時はnameをそのまま表示）　skills / team はスラッシュ区切りで複数入力可（team＝所属チーム・省略可）',
+    'name,display_name,role,skills,team',
+    '守屋 太郎,守屋 太郎,プロジェクト管理,プロジェクト管理/進行管理,ディレクションチーム/Aクライアントチーム',
+    '田中 花子,田中 花子,デザイン制作,WEB制作/UI設計/DTP,デザインチーム',
+    '山田 次郎,山田 次郎,コーディング,フロントエンド開発/WEB制作,開発チーム',
   ].join('\r\n');
   downloadText('talents_template.csv', bom+content, 'text/csv;charset=utf-8');
   toast('テンプレートをダウンロードしました',false);
@@ -2387,7 +2460,7 @@ async function exportCurrentAccounts(){
 }
 function exportCurrentTalents(){
   const list=talents.length?talents:DEMO_TALENTS;
-  const csvData=list.map(t=>({name:t.name,display_name:dispName(t.name)!==t.name?dispName(t.name):'',role:t.role||'',skills:(t.skills||[]).join('/')}));
+  const csvData=list.map(t=>({name:t.name,display_name:dispName(t.name)!==t.name?dispName(t.name):'',role:t.role||'',skills:(t.skills||[]).join('/'),team:(Array.isArray(t.teams)?t.teams:(t.team?[t.team]:[])).join('/')}));
   downloadText('talents_export.csv','﻿'+toCSV(csvData),'text/csv;charset=utf-8');
   toast(`タレント${list.length}件をエクスポートしました（${!talents.length?'デモデータ':'本番データ'}）`,false);
 }
@@ -2721,11 +2794,13 @@ function renderDashboard(){
   }
   const isStaff=currentUser?.role==='staff';
   const staffName=currentUser?.talentName||'';
+  const fTeam=document.getElementById('db-team')?.value||'';
+  const groupTeam=!!document.getElementById('db-group-team')?.checked;
   const baseWL=filteredWorkload();          // 計上区分(billableFilter)反映済みワークロード
   const baseRows=filteredRows();            // 計上区分反映済み行
-  const allPeople=filterPeople(Object.keys(baseWL));
+  const allPeople=filterPeople(Object.keys(baseWL)).filter(p=>personInTeam(p,fTeam));
   const people=isStaff && staffName ? allPeople.filter(p=>p===staffName) : allPeople;
-  const dbRows=isStaff && staffName ? baseRows.filter(r=>r.assignee===staffName) : baseRows;
+  const dbRows=(isStaff && staffName ? baseRows.filter(r=>r.assignee===staffName) : baseRows).filter(r=>personInTeam(r.assignee,fTeam));
   // 統計カード・サマリーはすべて「表示期間(getViewCols)」で集計 → 期間変更に連動
   const viewCols=getViewCols();
   const wdH=r2(dbRows.reduce((s,r)=>s+viewCols.reduce((sv,c)=>sv+(r.daily[c.col]||0),0),0));
@@ -2796,12 +2871,25 @@ function renderDashboard(){
       <span style="font-size:12px;font-weight:700;min-width:58px;text-align:right;color:${col}">${u.h.toFixed(1)}h (${u.pct}%)</span>
     </div>`;
   };
-  summaryEl.innerHTML=regList.map(rowHtml).join('')
-    +(unregList.length?`
-      <div style="margin:10px 0 6px;padding-top:8px;border-top:2px dashed #ffe082;font-size:11px;font-weight:700;color:#e65100">
-        ⚠ アカウント未登録 / 担当者未設定
-      </div>`+unregList.map(rowHtml).join('')
-    :'');
+  if(groupTeam){
+    // 所属チームごとに束ねる（複数所属者は各チームに重複表示・未所属は末尾）
+    const teamBanner=(label,items,isNone)=>{ const th=r2(items.reduce((s,u)=>s+u.h,0)); return `<div style="margin:10px 0 4px;padding:5px 9px;background:${isNone?'#fff3e0':'#e0f2f1'};border-radius:6px;font-size:12px;font-weight:800;color:${isNone?'#e65100':'#00695c'}">🏢 ${esc(label)} <span style="font-weight:600;font-size:11px;margin-left:6px;color:${isNone?'#bf6000':'#00796b'}">${items.length}人 ／ 計 ${th.toFixed(1)}h</span></div>`; };
+    let out='';
+    let teamOrder;
+    if(fTeam&&fTeam!=='__none__') teamOrder=[fTeam];
+    else if(fTeam==='__none__') teamOrder=[];
+    else teamOrder=allTeams().filter(tm=>utilList.some(u=>personTeams(u.name).includes(tm)));
+    teamOrder.forEach(tm=>{ const items=utilList.filter(u=>personTeams(u.name).includes(tm)); if(!items.length) return; out+=teamBanner(tm,items,false)+items.map(rowHtml).join(''); });
+    if(fTeam===''||fTeam==='__none__'){ const none=utilList.filter(u=>personTeams(u.name).length===0); if(none.length) out+=teamBanner('未所属',none,true)+none.map(rowHtml).join(''); }
+    summaryEl.innerHTML=out||'<div style="padding:12px;color:#90a4ae;font-size:12px">該当なし</div>';
+  } else {
+    summaryEl.innerHTML=regList.map(rowHtml).join('')
+      +(unregList.length?`
+        <div style="margin:10px 0 6px;padding-top:8px;border-top:2px dashed #ffe082;font-size:11px;font-weight:700;color:#e65100">
+          ⚠ アカウント未登録 / 担当者未設定
+        </div>`+unregList.map(rowHtml).join('')
+      :'');
+  }
   // 最近の再アサイン
   renderDbRecentReassign();
 }
@@ -2826,6 +2914,8 @@ function renderGantt(){
   const fc=document.getElementById('fC')?.value||'';
   const ft=(document.getElementById('fT')?.value||'').toLowerCase();
   const fj=activeJobNo;
+  const fTeam=document.getElementById('gantt-team')?.value||'';
+  const groupTeam=!!document.getElementById('gantt-group-team')?.checked;
   const todayMode=activeMonth===''&&!periodFrom;
   // 月選択 or 期間設定時は「合計h」を表示期間内の小計＋全期間合計で表示（±3ヶ月デフォルト時は全期間合計のみ）
   const subMode=!!(activeMonth||periodFrom||periodTo);
@@ -2849,6 +2939,7 @@ function renderGantt(){
   const rows=allRows.filter(r=>{
     if(!rowBillableOK(r)) return false;
     if(fa&&r.assignee!==fa) return false;
+    if(!personInTeam(r.assignee,fTeam)) return false;
     if(fs&&r.status!==fs) return false;
     if(fc&&r.cat!==fc) return false;
     if(ft&&!r.key.toLowerCase().includes(ft)&&!(r.jobNo||'').toLowerCase().includes(ft)&&!r.title.toLowerCase().includes(ft)) return false;
@@ -2865,15 +2956,18 @@ function renderGantt(){
       if(!a[0]&&b[0]) return 1; if(a[0]&&!b[0]) return -1;
       return a[0].localeCompare(b[0]);
     });
-    personEntries.forEach(([name,tasksRaw])=>{
+    const fullSpan=vcols.length+5;
+    // 1担当者ぶんの見出し＋タスク行HTMLを返す（フラット表示・チームグループ表示で共用）
+    const personGroupHtml=([name,tasksRaw])=>{
+      let out='';
       let tasks=ganttSortDir!==0?[...tasksRaw].sort((a,b)=>{ const aE=!a.jobNo,bE=!b.jobNo; if(aE&&bE) return 0; if(aE) return 1; if(bE) return -1; return ganttSortDir*(parseFloat(a.jobNo)-parseFloat(b.jobNo)); }):tasksRaw;
       const personTotal=r2(tasks.reduce((s,r)=>s+r.distHours,0));
       // 月選択 or 期間設定時は「表示期間内の小計 / 全期間合計」を表示（日次セルと整合・期間連動）
       const personMonthTotal=subMode?r2(tasks.reduce((s,r)=>s+vcols.reduce((sv,c)=>sv+(r.daily[c.col]||0),0),0)):null;
       const groupTotalCell=subMode?`<span style="font-weight:700;color:#546e7a">${personMonthTotal.toFixed(2)}</span><span style="color:#7898b8;font-size:10px"> /${personTotal.toFixed(2)}</span>`:`<span style="color:#9e9e9e;font-size:11px">合計</span>`;
       const groupLabel=subMode?`${tasks.length}件 ／ ${subLbl} <b>${personMonthTotal.toFixed(2)}h</b><span style="color:#7898b8;font-size:10px"> / ${personTotal.toFixed(2)}h</span>`:`${tasks.length}件 ／ 合計 ${personTotal.toFixed(2)}h`;
-      html+=`<tr class="ag-row">
-        <td colspan="4" class="s0 sticky-bg" style="left:0;text-align:left;padding-left:10px">👤 <span style="${!name?'color:#e65100':''}">
+      out+=`<tr class="ag-row">
+        <td colspan="4" class="s0 sticky-bg" style="left:0;text-align:left;padding-left:${groupTeam?'24':'10'}px">👤 <span style="${!name?'color:#e65100':''}">
           ${esc(dispName(name))}</span> <span style="font-size:11px;font-weight:400;color:#607d8b;margin-left:8px">${groupLabel}</span></td>
         <td class="s0 sticky-bg" style="left:${left[4]}px;text-align:right;padding-right:6px">${groupTotalCell}</td>
         ${vcols.map(c=>{ const ds=r2(tasks.reduce((s,r)=>s+(r.daily[c.col]||0),0)); const ts=c.ds===TODAY?'border-left:2px solid #ffa726;border-right:2px solid #ffa726;':''; return ds>0?`<td style="background:#e8eef8;${ts}color:#546e7a;font-weight:700;font-size:11px;text-align:center">${ds.toFixed(2)}</td>`:`<td style="background:#e8eef8;${ts}"></td>`; }).join('')}
@@ -2882,7 +2976,7 @@ function renderGantt(){
         const total=row.distHours;
         const monthTotal=subMode?r2(vcols.reduce((sv,c)=>sv+(row.daily[c.col]||0),0)):null;
         const totalCell=subMode?`<span style="font-weight:700;color:#1a3a5c">${monthTotal.toFixed(2)}</span><span style="color:#7898b8;font-size:10px"> /${total.toFixed(2)}</span>`:`${total.toFixed(2)}`;
-        html+=`<tr>
+        out+=`<tr>
           <td class="info-td s0 sticky-bg" style="left:${left[0]}px"><div style="display:flex;align-items:center;justify-content:space-between;gap:4px"><code style="font-size:10px;color:#607d8b">${esc(row.jobNo||'')}</code>${nbBadge(row)}</div></td>
           <td class="info-td s0 sticky-bg tip-cell" style="left:${left[1]}px;max-width:${STICKY_W[1]}px;overflow:hidden;text-overflow:ellipsis;font-size:11px;color:#607d8b;cursor:default" data-tip="${esc(row.cat)}">${esc(trunc(row.cat,10))}</td>
           <td class="info-td s1 sticky-bg tip-cell" style="left:${left[2]}px;max-width:${STICKY_W[2]}px;overflow:hidden;text-overflow:ellipsis;cursor:default" data-tip="${esc(row.title)}">${esc(trunc(row.title,22))}</td>
@@ -2891,7 +2985,32 @@ function renderGantt(){
           ${vcols.map(c=>{ const v=row.daily[c.col]; const tc=c.ds===TODAY?' today-cell':''; return v>0?`<td class="day-val${tc}">${v.toFixed(2)}</td>`:`<td class="day-zero${tc}">-</td>`; }).join('')}
         </tr>`;
       });
-    });
+      return out;
+    };
+    // チーム見出し行（バナー）。members＝そのチームの[name,tasks]配列
+    const teamBanner=(label,members,isNone)=>{
+      const tot=r2(members.reduce((s,[n,ts])=>s+ts.reduce((s2,r)=>s2+(subMode?vcols.reduce((sv,c)=>sv+(r.daily[c.col]||0),0):r.distHours),0),0));
+      return `<tr class="team-row"><td colspan="${fullSpan}" class="sticky-bg" style="position:sticky;left:0;text-align:left;padding:7px 10px;background:${isNone?'#fff3e0':'#e0f2f1'};border-top:2px solid ${isNone?'#ffb74d':'#4db6ac'};font-weight:800;color:${isNone?'#e65100':'#00695c'};font-size:13px">🏢 ${esc(label)} <span style="font-weight:600;font-size:11px;margin-left:8px;color:${isNone?'#bf6000':'#00796b'}">${members.length}人 ／ ${subMode?subLbl:'合計'} ${tot.toFixed(2)}h</span></td></tr>`;
+    };
+    if(groupTeam){
+      // fTeam絞り込み時はそのチームのみ／未所属のみ。未指定時は全チーム＋末尾に未所属
+      let teamOrder;
+      if(fTeam&&fTeam!=='__none__') teamOrder=[fTeam];
+      else if(fTeam==='__none__') teamOrder=[];
+      else teamOrder=allTeams().filter(tm=>personEntries.some(([n])=>personTeams(n).includes(tm)));
+      teamOrder.forEach(tm=>{
+        const members=personEntries.filter(([n])=>personTeams(n).includes(tm));
+        if(!members.length) return;
+        html+=teamBanner(tm,members,false);
+        members.forEach(e=>{ html+=personGroupHtml(e); }); // 複数所属者は各チームに重複表示
+      });
+      if(fTeam===''||fTeam==='__none__'){
+        const noneMembers=personEntries.filter(([n])=>personTeams(n).length===0);
+        if(noneMembers.length){ html+=teamBanner('未所属',noneMembers,true); noneMembers.forEach(e=>{ html+=personGroupHtml(e); }); }
+      }
+    } else {
+      personEntries.forEach(e=>{ html+=personGroupHtml(e); });
+    }
   }
   document.getElementById('gantt-body').innerHTML=html;
   if(activeMonth==='') scrollToToday('gantt-wrap');
@@ -2903,6 +3022,8 @@ function renderWorkload(){
   updatePeriodBadges();
   if(!allRows.length){ document.getElementById('wl-body').innerHTML=`<tr><td colspan="10" class="empty-state">Backlog APIに接続してデータを取得してください</td></tr>`; return; }
   const fa=document.getElementById('wl-fA')?.value||'';
+  const fTeam=document.getElementById('wl-team')?.value||'';
+  const groupTeam=!!document.getElementById('wl-group-team')?.checked;
   const todayMode=activeMonth===''&&!periodFrom;
   const vcols=getViewCols();
   updateMonthNavActive('wl-month-nav');
@@ -2910,7 +3031,7 @@ function renderWorkload(){
   const mGroups=buildMonthGroups(vcols);
   const people=filterPeople(Object.keys(wl)).sort((a,b)=>{
     if(!a&&b) return 1; if(a&&!b) return -1; return a.localeCompare(b);
-  }).filter(p=>!fa||p===fa);
+  }).filter(p=>(!fa||p===fa)&&personInTeam(p,fTeam));
   document.getElementById('wl-head').innerHTML=`
     <tr>
       <th class="info-th s0 sticky-bg" style="left:0;min-width:140px" rowspan="2">担当者</th>
@@ -2920,10 +3041,12 @@ function renderWorkload(){
   let html='';
   if(!people.length){ html=`<tr><td colspan="${vcols.length+1}" class="empty-state">データがありません</td></tr>`; }
   else {
-    people.forEach(name=>{
+    const fullSpan=vcols.length+1;
+    // 1担当者ぶんの行HTML（フラット・チームグループで共用）
+    const personRow=(name)=>{
       const pd=wl[name]||{};
-      html+=`<tr>
-        <td class="info-td s0 sticky-bg" style="left:0;font-weight:700;color:${name?'#1a3a5c':'#e65100'}">${esc(dispName(name))}</td>
+      return `<tr>
+        <td class="info-td s0 sticky-bg" style="left:0;font-weight:700;color:${name?'#1a3a5c':'#e65100'}${groupTeam?';padding-left:22px':''}">${esc(dispName(name))}</td>
         ${vcols.map(c=>{
           const h=r2(pd[c.col]||0);
           const rem=r2(CAPACITY-h);
@@ -2939,12 +3062,31 @@ function renderWorkload(){
           </td>`;
         }).join('')}
       </tr>`;
-    });
-    if(people.length>1){
-      html+=`<tr style="border-top:2px solid #1a3a5c">
-        <td class="info-td s0 sticky-bg" style="left:0;font-weight:700;color:#607d8b">チーム合計</td>
-        ${vcols.map(c=>{ const total=r2(people.reduce((s,p)=>s+(wl[p]?.[c.col]||0),0)); return total>0?`<td class="wl-cell" style="background:#e3f2fd;color:#1a3a5c;font-weight:700;font-size:11px">${total.toFixed(2)}</td>`:`<td class="wl-cell" style="background:#f5f5f5"></td>`; }).join('')}
+    };
+    const grandTotalRow=(label,mem,color,bg,brd,cellColor)=>`<tr style="border-top:2px solid ${brd}">
+        <td class="info-td s0 sticky-bg" style="left:0;font-weight:700;color:${color}${label!=='チーム合計'?';padding-left:22px':''}">${esc(label)}</td>
+        ${vcols.map(c=>{ const total=r2(mem.reduce((s,p)=>s+(wl[p]?.[c.col]||0),0)); return total>0?`<td class="wl-cell" style="background:${bg};color:${cellColor||color};font-weight:700;font-size:11px">${total.toFixed(2)}</td>`:`<td class="wl-cell" style="background:#f5f5f5"></td>`; }).join('')}
       </tr>`;
+    const teamBanner=(label,mem,isNone)=>`<tr class="team-row"><td colspan="${fullSpan}" class="sticky-bg" style="position:sticky;left:0;text-align:left;padding:7px 10px;background:${isNone?'#fff3e0':'#e0f2f1'};border-top:2px solid ${isNone?'#ffb74d':'#4db6ac'};font-weight:800;color:${isNone?'#e65100':'#00695c'};font-size:13px">🏢 ${esc(label)} <span style="font-weight:600;font-size:11px;margin-left:8px;color:${isNone?'#bf6000':'#00796b'}">${mem.length}人</span></td></tr>`;
+    if(groupTeam){
+      let teamOrder;
+      if(fTeam&&fTeam!=='__none__') teamOrder=[fTeam];
+      else if(fTeam==='__none__') teamOrder=[];
+      else teamOrder=allTeams().filter(tm=>people.some(n=>personTeams(n).includes(tm)));
+      teamOrder.forEach(tm=>{
+        const mem=people.filter(n=>personTeams(n).includes(tm));
+        if(!mem.length) return;
+        html+=teamBanner(tm,mem,false);
+        mem.forEach(n=>{ html+=personRow(n); }); // 複数所属者は各チームに重複表示
+        if(mem.length>1) html+=grandTotalRow(tm+' 小計',mem,'#00695c','#e0f2f1','#4db6ac');
+      });
+      if(fTeam===''||fTeam==='__none__'){
+        const none=people.filter(n=>personTeams(n).length===0);
+        if(none.length){ html+=teamBanner('未所属',none,true); none.forEach(n=>{ html+=personRow(n); }); if(none.length>1) html+=grandTotalRow('未所属 小計',none,'#e65100','#fff3e0','#ffb74d'); }
+      }
+    } else {
+      people.forEach(name=>{ html+=personRow(name); });
+      if(people.length>1) html+=grandTotalRow('チーム合計',people,'#607d8b','#e3f2fd','#1a3a5c','#1a3a5c');
     }
   }
   document.getElementById('wl-body').innerHTML=html;
@@ -3183,6 +3325,8 @@ function renderEstimate(){
   const fj=document.getElementById('est-fJ')?.value||'';
   const fClient=document.getElementById('est-fClient')?.value||'';
   const fMonth=document.getElementById('est-fMonth')?.value||'';
+  const fTeam=document.getElementById('est-team')?.value||'';
+  const groupTeam=!!document.getElementById('est-group-team')?.checked;
   // 月選択時はその月、未選択時はダッシュボード表示期間（getViewCols）で按分集計＝期間連動
   const ecols=fMonth?allCols.filter(c=>c.mo===fMonth):getViewCols();
   // 表示期間バッジ（選択月 or 表示期間の実日付を明示）
@@ -3191,14 +3335,16 @@ function renderEstimate(){
   const baseRows=allRows.filter(r=>{
     if(!rowBillableOK(r)) return false;          // 計上区分(billableFilter)反映
     if(fa&&r.assignee!==fa) return false;
+    if(!personInTeam(r.assignee,fTeam)) return false;
     if(fj&&r.jobNo!==fj) return false;
     return true;
   });
   let totalBudget=0, totalActual=0, totalEst=0, totalAct=0;
-  const rowsHtml=baseRows.map(r=>{
+  // 1タスク行を構築（合計へ加算しつつ {r,budget,actual,html} を返す。estH<=0は表に出さずnull）
+  const rowFor=(r)=>{
     // 対象期間内の按分時間。この期間に稼働がない課題は表に出さない（期間連動）
     const estH=r2(ecols.reduce((s,c)=>s+(r.daily[c.col]||0),0));
-    if(estH<=0) return '';
+    if(estH<=0) return null;
     const ri=getRateInfo(r.assignee, fClient||'社内基準');
     const {rate, client:usedClient, role:usedRole}=ri;
     const actH=r.distHours>0?r2(r.actHours*estH/r.distHours):0;
@@ -3217,7 +3363,7 @@ function renderEstimate(){
     }
     // 実績hの文字色：予定hより多い=赤(負荷大) / 少ない=緑(スムーズ) / 同値・0.0h(未入力)=黒
     const actCls = !actEntered?'':(actH>estH+0.05?'val-bad':actH<estH-0.05?'val-good':'');
-    return `<tr>
+    const html=`<tr>
       <td>${esc(dispName(r.assignee))}</td>
       <td><div style="display:flex;align-items:center;justify-content:space-between;gap:4px"><code style="font-size:10px;color:#607d8b">${esc(r.jobNo||'')}</code>${nbBadge(r)}</div></td>
       <td style="white-space:normal;min-width:140px" title="${esc(r.title)}">${esc(r.title)}</td>
@@ -3230,8 +3376,25 @@ function renderEstimate(){
       <td style="text-align:right">${rate>0?fmtYen(actual):'-'}</td>
       <td style="text-align:right;font-weight:700" class="${diffCls}">${diffStr}</td>
     </tr>`;
-  }).join('');
-  document.getElementById('estimate-body').innerHTML=rowsHtml||`<tr><td colspan="11" class="empty-state">データなし</td></tr>`;
+    return {r, budget, actual, html};
+  };
+  const built=baseRows.map(rowFor).filter(Boolean);
+  let bodyHtml;
+  if(groupTeam){
+    // タスク行を担当者の所属チームごとに束ねる（複数所属者のタスクは各チームに重複表示・未所属は末尾）
+    const teamBanner=(label,items,isNone)=>{ const b=r2(items.reduce((s,x)=>s+x.budget,0)); const a=r2(items.reduce((s,x)=>s+x.actual,0)); const d=r2(b-a); return `<tr class="team-row"><td colspan="11" style="text-align:left;padding:7px 10px;background:${isNone?'#fff3e0':'#e0f2f1'};border-top:2px solid ${isNone?'#ffb74d':'#4db6ac'};font-weight:800;color:${isNone?'#e65100':'#00695c'};font-size:13px">🏢 ${esc(label)} <span style="font-weight:600;font-size:11px;margin-left:8px;color:${isNone?'#bf6000':'#00796b'}">${items.length}件 ／ 予算 ${fmtYen(b)}・実費 ${fmtYen(a)}・差異 ${fmtYenSigned(d)}</span></td></tr>`; };
+    let out='';
+    let teamOrder;
+    if(fTeam&&fTeam!=='__none__') teamOrder=[fTeam];
+    else if(fTeam==='__none__') teamOrder=[];
+    else teamOrder=allTeams().filter(tm=>built.some(x=>personTeams(x.r.assignee).includes(tm)));
+    teamOrder.forEach(tm=>{ const items=built.filter(x=>personTeams(x.r.assignee).includes(tm)); if(!items.length) return; out+=teamBanner(tm,items,false)+items.map(x=>x.html).join(''); });
+    if(fTeam===''||fTeam==='__none__'){ const none=built.filter(x=>personTeams(x.r.assignee).length===0); if(none.length) out+=teamBanner('未所属',none,true)+none.map(x=>x.html).join(''); }
+    bodyHtml=out;
+  } else {
+    bodyHtml=built.map(x=>x.html).join('');
+  }
+  document.getElementById('estimate-body').innerHTML=bodyHtml||`<tr><td colspan="11" class="empty-state">データなし</td></tr>`;
   const filterLabel=fMonth?fMonth.replace('/','年')+'月':'表示期間';
   document.getElementById('estimate-summary').innerHTML=`
     <div class="es-group">
@@ -3383,7 +3546,9 @@ function renderReport(){
   const mCols=allCols.filter(c=>c.mo===mo);
   const wl=filteredWorkload();    // 計上区分(billableFilter)反映
   const fr=filteredRows();
-  const people=filterPeople(Object.keys(wl)).sort();  // 管理者・営業フィルタ(showMgmtPeople)を反映
+  const fTeam=document.getElementById('report-team')?.value||'';
+  const groupTeam=!!document.getElementById('report-group-team')?.checked;
+  const people=filterPeople(Object.keys(wl)).sort().filter(p=>personInTeam(p,fTeam));  // 管理者・営業フィルタ＋チーム絞り込み
   const rows=people.map(name=>{
     const pd=wl[name]||{};
     const h=r2(mCols.reduce((s,c)=>s+(pd[c.col]||0),0));
@@ -3394,23 +3559,38 @@ function renderReport(){
     return {name,h,cap,util,overD,tasks:pRows.length};
   }).filter(r=>r.h>0);
   const totalH=r2(rows.reduce((s,r)=>s+r.h,0));
+  const rowHtml=(r,indent)=>{
+    const col=r.util>100?'color:#c62828':r.util>80?'color:#e65100':'';
+    return `<tr>
+      <td style="font-weight:700${indent?';padding-left:22px':''}">${esc(dispName(r.name))}</td>
+      <td style="text-align:right;font-weight:700">${r.h.toFixed(1)}h</td>
+      <td style="text-align:right">${Math.round(r.h/CAPACITY)}日相当</td>
+      <td style="text-align:right;font-weight:700;${col}">${r.util}%</td>
+      <td style="text-align:right;${r.overD>0?'color:#c62828;font-weight:700':''}">${r.overD}日</td>
+      <td style="text-align:right">${r.tasks}</td>
+    </tr>`;
+  };
+  const teamBanner=(label,items,isNone)=>{ const th=r2(items.reduce((s,x)=>s+x.h,0)); return `<tr><td colspan="6" style="text-align:left;padding:7px 10px;background:${isNone?'#fff3e0':'#e0f2f1'};border-top:2px solid ${isNone?'#ffb74d':'#4db6ac'};font-weight:800;color:${isNone?'#e65100':'#00695c'}">🏢 ${esc(label)} <span style="font-weight:600;font-size:11px;margin-left:8px;color:${isNone?'#bf6000':'#00796b'}">${items.length}人 ／ 計 ${th.toFixed(1)}h</span></td></tr>`; };
+  let bodyRows;
+  if(groupTeam){
+    let out='';
+    let teamOrder;
+    if(fTeam&&fTeam!=='__none__') teamOrder=[fTeam];
+    else if(fTeam==='__none__') teamOrder=[];
+    else teamOrder=allTeams().filter(tm=>rows.some(x=>personTeams(x.name).includes(tm)));
+    teamOrder.forEach(tm=>{ const items=rows.filter(x=>personTeams(x.name).includes(tm)); if(!items.length) return; out+=teamBanner(tm,items,false)+items.map(x=>rowHtml(x,true)).join(''); });
+    if(fTeam===''||fTeam==='__none__'){ const none=rows.filter(x=>personTeams(x.name).length===0); if(none.length) out+=teamBanner('未所属',none,true)+none.map(x=>rowHtml(x,true)).join(''); }
+    bodyRows=out;
+  } else {
+    bodyRows=rows.map(x=>rowHtml(x,false)).join('');
+  }
   document.getElementById('report-content').innerHTML=`
     <h2 style="font-size:16px;font-weight:700;color:#1a3a5c;margin-bottom:16px">${mo.replace('/','年')}月 稼働レポート</h2>
     <div style="font-size:12px;color:#90a4ae;margin-bottom:20px">出力日: ${TODAY} ／ 所定労働時間: ${CAPACITY}h/日</div>
     <table class="report-table" style="margin-bottom:20px">
       <thead><tr><th>担当者</th><th style="text-align:right">按分時間</th><th style="text-align:right">稼働日数</th><th style="text-align:right">稼働率</th><th style="text-align:right">過負荷日</th><th style="text-align:right">担当タスク</th></tr></thead>
       <tbody>
-        ${rows.map(r=>{
-          const col=r.util>100?'color:#c62828':r.util>80?'color:#e65100':'';
-          return `<tr>
-            <td style="font-weight:700">${esc(dispName(r.name))}</td>
-            <td style="text-align:right;font-weight:700">${r.h.toFixed(1)}h</td>
-            <td style="text-align:right">${Math.round(r.h/CAPACITY)}日相当</td>
-            <td style="text-align:right;font-weight:700;${col}">${r.util}%</td>
-            <td style="text-align:right;${r.overD>0?'color:#c62828;font-weight:700':''}">${r.overD}日</td>
-            <td style="text-align:right">${r.tasks}</td>
-          </tr>`;
-        }).join('')}
+        ${bodyRows}
         <tr style="border-top:2px solid #1a3a5c;font-weight:700">
           <td>合計</td><td style="text-align:right">${totalH.toFixed(1)}h</td><td colspan="4"></td>
         </tr>
