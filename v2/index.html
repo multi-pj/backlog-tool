@@ -104,11 +104,14 @@ nav{background:#fff;border-bottom:2px solid #e3e9f0;padding:0 20px;display:flex;
 /* ===== Toast ===== */
 .toast{position:fixed;bottom:20px;right:20px;padding:11px 18px;border-radius:8px;font-size:13px;color:#fff;display:none;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.2);max-width:320px}
 
-/* ===== Loading ===== */
-#loading-overlay{position:fixed;inset:0;background:rgba(255,255,255,.7);display:none;align-items:center;justify-content:center;z-index:8888;flex-direction:column;gap:12px}
-.spin{width:36px;height:36px;border:4px solid #d0dae6;border-top-color:#1a3a5c;border-radius:50%;animation:sp .8s linear infinite}
+/* ===== Loading（全アプリ共通ルール7.7：待ち時間はローディングモーダル＋進捗ゲージを必ず表示）===== */
+#loading-overlay{position:fixed;inset:0;background:rgba(26,58,92,.35);display:none;align-items:center;justify-content:center;z-index:10200}
+#loading-card{background:#fff;border-radius:14px;box-shadow:0 12px 44px rgba(0,0,0,.32);padding:26px 34px;display:flex;flex-direction:column;align-items:center;gap:14px;min-width:250px;max-width:82vw}
+.spin{width:40px;height:40px;border:4px solid #d0dae6;border-top-color:#1a3a5c;border-radius:50%;animation:sp .8s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
-#loading-msg{font-size:14px;color:#1a3a5c;font-weight:600}
+#loading-msg{font-size:14px;color:#1a3a5c;font-weight:700;text-align:center;line-height:1.5}
+#loading-bar-wrap{width:230px;height:9px;background:#e3e9f0;border-radius:5px;overflow:hidden;display:none}
+#loading-bar{height:100%;width:0;background:linear-gradient(90deg,#1a3a5c,#4db6ac);border-radius:5px;transition:width .35s ease}
 
 /* ===== Tooltip ===== */
 #gl-tip{position:fixed;background:#1a3a5c;color:#fff;padding:8px 12px;border-radius:8px;font-size:12px;line-height:1.6;max-width:320px;pointer-events:none;display:none;z-index:9990;box-shadow:0 4px 16px rgba(0,0,0,.3);word-break:break-all;white-space:pre-line}
@@ -1079,7 +1082,7 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 
 <!-- ===================== UTILITIES ===================== -->
 <div class="toast" id="toast"></div>
-<div id="loading-overlay"><div class="spin"></div><div id="loading-msg">処理中...</div></div>
+<div id="loading-overlay"><div id="loading-card"><div class="spin"></div><div id="loading-msg">処理中...</div><div id="loading-bar-wrap"><div id="loading-bar"></div></div></div></div>
 <div id="gl-tip"></div>
 
 <script>
@@ -1158,10 +1161,16 @@ function toast(msg,isErr){
   t.textContent=msg; t.style.background=isErr?'#c0392b':'#27ae60';
   t.style.display='block'; setTimeout(()=>t.style.display='none',3500);
 }
-function setLoad(on,msg){
+// on=表示ON/OFF, msg=メッセージ, pct=進捗%（数値なら決定的ゲージ表示・省略なら不定スピナーのみ）
+function setLoad(on,msg,pct){
   const el=document.getElementById('loading-overlay');
   el.style.display=on?'flex':'none';
-  if(msg) document.getElementById('loading-msg').textContent=msg;
+  if(msg!=null) document.getElementById('loading-msg').textContent=msg;
+  const bw=document.getElementById('loading-bar-wrap'), b=document.getElementById('loading-bar');
+  if(bw&&b){
+    if(on&&typeof pct==='number'){ bw.style.display='block'; b.style.width=Math.max(0,Math.min(100,pct))+'%'; }
+    if(!on){ bw.style.display='none'; b.style.width='0'; }
+  }
 }
 function fmtYen(v){ return v>=1?'¥'+Math.round(v).toLocaleString():'¥0'; }
 // 符号付き円表示（負数にも対応。fmtYenは v<1 をすべて¥0にしてしまうため差異表示には使えない）
@@ -1287,8 +1296,15 @@ async function saveCompanyHolidays(list){
   if(saved){
     currentUser=JSON.parse(saved);
     document.getElementById('login-overlay').style.display='none';
-    applyRole(currentUser.role);
-    loadDisplayNames().then(()=>tryRestoreFromSession());
+    // セッション復元時も待ち時間をローディング表示（共通ルール7.7）。applyRoleが表示名/タレント等を読み込むので完了後にキャッシュ復元
+    (async()=>{
+      setLoad(true,'データを読み込み中…',40);
+      try{
+        await applyRole(currentUser.role);
+        setLoad(true,'表示を復元中…',85);
+        tryRestoreFromSession();
+      } finally { setLoad(false); }
+    })();
   }
   // ログイン情報の記憶（localStorage）を復元してプリフィル
   try{
@@ -1310,6 +1326,7 @@ async function login(){
   const btn=document.getElementById('login-btn');
   const passEl=document.getElementById('login-pass');
   errEl.textContent=''; btn.disabled=true; btn.textContent='確認中...';
+  setLoad(true,'認証中…',15);   // 待ち時間はローディングモーダル＋進捗ゲージで明示（共通ルール7.7）
   try{
     const res=await fetch(`${WORKER_URL}/auth/v2`,{
       method:'POST',headers:{'Content-Type':'application/json'},
@@ -1327,7 +1344,9 @@ async function login(){
       document.getElementById('login-overlay').style.display='none';
       errEl.textContent='';
       if(data.needsSetup) setTimeout(()=>toast('アカウント未設定です。設定タブからCSVをインポートしてください。',false),600);
-      applyRole(data.role);
+      setLoad(true,'ユーザーデータを読み込み中…',55);
+      await applyRole(data.role);   // 初期データ（タレント/レート/休日/会社設定）の読込完了まで待つ
+      setLoad(true,'表示を準備中…',100);
       if(data.needsPwChange) setTimeout(()=>document.getElementById('pw-force-overlay').classList.add('open'),300);
     } else {
       passEl.value=''; passEl.classList.add('error');
@@ -1338,6 +1357,7 @@ async function login(){
     errEl.textContent='接続エラー: '+e.message;
   } finally{
     btn.disabled=false; btn.textContent='ログイン';
+    setLoad(false);
   }
 }
 
@@ -1369,7 +1389,7 @@ function logout(){
   }, 'ログアウト', false);
 }
 
-function applyRole(role){
+async function applyRole(role){
   const r=role||'staff';
   const nameEl=document.getElementById('hdr-name');
   const badgeEl=document.getElementById('hdr-role-badge');
@@ -1384,11 +1404,15 @@ function applyRole(role){
   document.getElementById('nav-estimate').hidden=!canFinance;
   document.getElementById('nav-reassign').hidden=!canFinance;
   document.getElementById('nav-settings').hidden=!isAdmin;
-  // 初期データ読み込み
-  Promise.all([loadNationalHolidays(), loadCompanyHolidays()]).catch(()=>{});
-  // 会社共通の1日労働時間（CAPACITY）をロード。確定後にデータがあれば再描画。
-  loadCompanySettings().then(()=>{ if(allRows.length) renderAllViews(); }).catch(()=>{});
-  loadSupportData(r);
+  renderDashboard(); // まず空状態を即描画（体感の固まり防止）。以降の初期ロードはローディング表示で待つ
+  // 初期データ読み込み（タレント/レート/休日/会社設定）。呼び出し元がローディングを表示したまま完了を待てるよう await する
+  await Promise.all([
+    loadSupportData(r).catch(()=>{}),
+    loadCompanySettings().catch(()=>{}),
+    loadNationalHolidays().catch(()=>{}),
+    loadCompanyHolidays().catch(()=>{}),
+  ]);
+  if(allRows.length) renderAllViews();
   renderDashboard();
 }
 
@@ -1581,18 +1605,20 @@ async function loadSupportData(role){
 
 async function loadData(){
   if(!currentUser){ toast('ログインしてください',true); return; }
-  setLoad(true,'Backlog APIへ接続中...');
+  setLoad(true,'Backlog APIへ接続中…',20);
   try{
     const res=await fetch(`${WORKER_URL}/issues`);
     if(!res.ok){ const e=await res.json().catch(()=>({})); throw new Error(e.error||res.status); }
     const issues=await res.json();
-    setLoad(true,`${issues.length}件取得。分析中...`);
+    setLoad(true,`${issues.length}件を取得。分析・按分計算中…`,65);
     await new Promise(r=>setTimeout(r,30));
     const rawRows=mapApiToRawRows(issues);
     const result=buildFromRawRows(rawRows);
     const zeroTasks=result.zeroWorkdayTasks||[];
+    setLoad(true,'画面を描画中…',90);
     applyLoadedData(result.rows, result.cols, result.months, buildWorkload(result.rows,result.cols), zeroTasks);
     saveDataToSession(zeroTasks);
+    setLoad(true,'完了',100);
     toast(`取得完了: ${allRows.length}件`,false);
     const cb=document.getElementById('connect-btn');
     if(cb){ cb.className='btn btn-connected btn-sm'; cb.textContent='✅ 連携済み'; }
