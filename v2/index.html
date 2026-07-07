@@ -2359,6 +2359,7 @@ function renderTalentsList(){
   el.innerHTML=teamDatalist+demoNote+'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px;margin-top:4px">'+
     displayList.map((t,idx)=>{
       const isEditing=isReal&&editingTalentName===t.name;
+      const tms=Array.isArray(t.teams)?t.teams:(t.team?String(t.team).split('/').map(s=>s.trim()).filter(Boolean):[]);
       const editForm=isEditing?`
         <div style="margin-top:8px;padding-top:8px;border-top:1px solid #d0dae6">
           <div style="margin-bottom:6px"><label style="font-size:11px;color:#607d8b;display:block;margin-bottom:2px">Backlog担当者名</label>
@@ -2376,7 +2377,6 @@ function renderTalentsList(){
           </div>
         </div>`:'' ;
       const dispN=dispName(t.name);
-      const tms=Array.isArray(t.teams)?t.teams:(t.team?String(t.team).split('/').map(s=>s.trim()).filter(Boolean):[]);
       const teamTags=tms.length
         ? tms.map(tm=>`<span style="background:#e0f2f1;color:#00695c;padding:2px 7px;border-radius:8px;font-size:10px;font-weight:700;margin:0 3px 3px 0;display:inline-block">🏢 ${esc(tm)}</span>`).join('')
         : `<span style="color:#e65100;font-size:10px;font-weight:600">未所属</span>`;
