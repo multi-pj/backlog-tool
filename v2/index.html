@@ -355,6 +355,44 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 .rc-match{font-size:10px;padding:2px 6px;border-radius:8px;background:#e8eaf6;color:#3949ab;margin-top:2px;display:inline-block}
 .no-candidates{text-align:center;padding:20px;color:#90a4ae;font-size:13px}
 
+/* ===== What-if シミュレーション（Session15） ===== */
+.sim-toggle{font-size:11px;font-weight:700;padding:4px 12px;border-radius:12px;border:1.5px solid #7e57c2;background:#fff;color:#7e57c2;cursor:pointer;white-space:nowrap}
+.sim-toggle:hover{background:#f3edfa}
+.sim-toggle.on{background:#7e57c2;color:#fff}
+#wl-sim-panel{border-top:2px solid #7e57c2;background:#faf7ff;padding:12px 14px}
+.sim-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.sim-title{font-size:13px;font-weight:800;color:#5e35b1;white-space:nowrap}
+.sim-note{font-size:11px;color:#7e57c2;text-wrap:pretty}
+.sim-btns .btn{white-space:nowrap}
+.sim-foot{font-size:10px;color:#90a4ae;margin-top:6px;text-wrap:pretty}
+@media(max-width:768px){ .sim-kpi{min-width:130px} .sim-move .sm-task{min-width:140px} }
+.sim-kpis{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.sim-kpi{flex:1;min-width:150px;background:#fff;border:1px solid #e0d6f2;border-radius:8px;padding:8px 12px}
+.sim-kpi .k-lbl{font-size:10px;color:#7e57c2;font-weight:700;white-space:nowrap}
+.sim-kpi .k-val{display:flex;align-items:baseline;gap:6px;margin-top:2px;white-space:nowrap}
+.sim-before{font-size:15px;font-weight:700;color:#90a4ae;text-decoration:line-through}
+.sim-arrow{font-size:12px;color:#7e57c2}
+.sim-after{font-size:20px;font-weight:800}
+.sim-after.better{color:#2e8b57}
+.sim-after.worse{color:#d9534f}
+.sim-after.same{color:#546e7a}
+.sim-delta{font-size:11px;font-weight:700;padding:1px 7px;border-radius:8px}
+.sim-delta.better{background:#e8f5e9;color:#2e7d32}
+.sim-delta.worse{background:#fdecea;color:#c62828}
+.sim-delta.same{background:#eceff1;color:#607d8b}
+.sim-move{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#fff;border:1px solid #e0d6f2;border-left:3px solid #7e57c2;border-radius:6px;padding:6px 10px;margin-bottom:5px;font-size:12px}
+.sim-move .sm-task{flex:1;min-width:180px;color:#1a3a5c}
+.sim-move .sm-flow{font-weight:700;color:#5e35b1;white-space:nowrap}
+.sim-empty{font-size:12px;color:#90a4ae;background:#fff;border:1px dashed #d1c4e9;border-radius:6px;padding:14px;text-align:center}
+.sim-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.btn-sim{background:#7e57c2;color:#fff;border:none}
+.btn-sim:hover{opacity:.88}
+/* シミュレーションで値が変わったセル */
+.wl-cell.sim-changed{outline:2px solid #7e57c2;outline-offset:-2px}
+.wl-diff{font-size:9px;font-weight:700;line-height:1.1;white-space:nowrap}
+.wl-diff.dn{color:#2e7d32}
+.wl-diff.up{color:#c62828}
+
 /* ===== Report ===== */
 .report-controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
 .report-table{width:100%;border-collapse:collapse;font-size:12px}
@@ -686,6 +724,8 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
         <div class="filter-sep"></div>
         <span class="cap-badge" id="wl-cap-badge" title="1日労働時間（管理者設定で変更）">稼働上限 7h/日</span>
         <span id="wl-period-badge" style="font-size:11px;background:#f0f4f8;color:#78909c;border-radius:10px;padding:2px 10px;white-space:nowrap"></span>
+        <div class="filter-sep"></div>
+        <button id="wl-sim-btn" class="sim-toggle" onclick="toggleSimMode()" title="タスクを仮に移したときの負荷を、確定前に試算します（Backlogにも記録にも書き込みません）">🧪 シミュレーション</button>
       </div>
       <div class="month-nav" id="wl-month-nav"></div>
     </div>
@@ -698,8 +738,9 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
       <div class="legend-item"><div class="legend-dot" style="background:#fff9c4"></div>〜75%</div>
       <div class="legend-item"><div class="legend-dot" style="background:#ffe082"></div>〜100%</div>
       <div class="legend-item"><div class="legend-dot" style="background:#ef9a9a"></div>超過</div>
-      <span style="margin-left:8px;color:#90a4ae;font-size:11px">※ セルをクリックするとレコメンドスタッフを表示</span>
+      <span style="margin-left:8px;color:#90a4ae;font-size:11px;text-wrap:pretty">※ セルをクリックするとレコメンドスタッフを表示。<b style="color:#7e57c2">🧪 シミュレーション</b>で「移したらどうなるか」を確定前に試算できます</span>
     </div>
+    <div id="wl-sim-panel" hidden></div>
     <div class="table-panel">
       <div class="tw" id="wl-wrap">
         <table><thead id="wl-head"></thead><tbody id="wl-body"></tbody></table>
@@ -1013,9 +1054,11 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
       <input type="text" id="rec-memo" placeholder="理由・メモ（任意）" style="width:100%;box-sizing:border-box;padding:7px 10px;border:1.5px solid #d0dae6;border-radius:6px;font-size:12px;outline:none">
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button id="rec-reassign-btn" class="btn btn-primary btn-sm" onclick="saveReassignmentFromModal()" disabled>再アサインする</button>
+      <button id="rec-sim-btn" class="btn btn-sim btn-sm" onclick="addSimMoveFromModal()" disabled title="まだ記録しません。仮に移した場合の負荷だけを試算します">🧪 仮に移す（試算）</button>
+      <button id="rec-reassign-btn" class="btn btn-primary btn-sm" onclick="saveReassignmentFromModal()" disabled>再アサインする（記録）</button>
       <button class="btn btn-secondary btn-sm" onclick="closeRecommendModal()">閉じる</button>
     </div>
+    <div style="font-size:10px;color:#90a4ae;margin-top:6px">「🧪 仮に移す」＝下書き（何も保存されません）／「再アサインする」＝記録に保存（Backlogの担当者は変更しません）</div>
   </div>
 </div>
 
@@ -1107,6 +1150,11 @@ let unlinkedAssignees=[]; // Backlog担当者のうちアカウント未登録�
 let companyHolidaysCache = [];
 let useDemoTalents = false;
 let useDemoRates   = false;
+// ==== What-if シミュレーション（Session15）====
+// simMoves は「まだ確定していない仮の担当変更」。ワークロード画面だけに適用され、
+// Backlogにも再アサイン記録にも一切書き込まない（確定ボタンを押して初めて記録される）。
+let simMode  = false;
+let simMoves = [];  // [{taskKey, from, to, jobNo, title, reason}]
 
 // ==================== DEMO / FALLBACK DATA ====================
 const DEMO_TALENTS = [
@@ -1365,6 +1413,8 @@ function logout(){
   showConfirm('ログアウトしますか？', ()=>{
     sessionStorage.removeItem('bl_v2_user');
     sessionStorage.removeItem('bl_v2_data');
+    sessionStorage.removeItem('bl_v2_sim');
+    simMode=false; simMoves=[];
     currentUser=null;
     allRows=[]; allCols=[]; allMonths=[]; allWorkload={};
     talents=[]; rates=[]; reassignments=[];
@@ -1509,6 +1559,52 @@ function rowBillableOK(r){
 function filteredRows(){ return billableFilter ? allRows.filter(rowBillableOK) : allRows; }
 function filteredWorkload(){ return billableFilter ? buildWorkload(filteredRows(), allCols) : allWorkload; }
 function nbBadge(r){ return r&&r.nonBillable?'<span class="nb-flag" title="Non-billable（非請求）">NB</span>':''; }
+
+// ==================== WHAT-IF シミュレーション（Session15） ====================
+// 「仮に移したら負荷はどうなるか」を確定前に見るための機能。
+// simMoves に積んだ仮移動を allRows のコピーに適用し、ワークロード表を再計算する。
+// ※ 実データ（allRows）は書き換えない・Backlogにも書き戻さない。
+function simMoveMap(){ const m={}; simMoves.forEach(mv=>{ m[mv.taskKey]=mv.to; }); return m; }
+function simIsOn(){ return simMode && simMoves.length>0; }
+// 仮移動を反映した行配列を返す（担当者だけ差し替えたシャローコピー）
+function simApplyRows(rows){
+  if(!simMoves.length) return rows;
+  const m=simMoveMap();
+  return rows.map(r=> (m[r.key]!==undefined && m[r.key]!==r.assignee) ? {...r, assignee:m[r.key], simMoved:true} : r);
+}
+// 画面が今参照すべき行（計上区分フィルタ済み＋シミュレーション反映）
+function curRows(){ const rs=filteredRows(); return simIsOn()?simApplyRows(rs):rs; }
+function simWorkload(){ return buildWorkload(simApplyRows(filteredRows()), allCols); }
+// 過負荷の集計（対象人数・過負荷セル数・のべ超過h・最大超過h）
+function calcOverloadStats(wl, vcols, people){
+  let cells=0, totalOver=0, maxOver=0; const ppl=new Set();
+  people.forEach(p=>{
+    vcols.forEach(c=>{
+      const h=r2(wl[p]?.[c.col]||0);
+      if(h>CAPACITY){ cells++; const ov=h-CAPACITY; totalOver+=ov; if(ov>maxOver) maxOver=ov; ppl.add(p); }
+    });
+  });
+  return {cells, totalOver:r2(totalOver), maxOver:r2(maxOver), people:ppl.size};
+}
+function saveSimToSession(){
+  try{ sessionStorage.setItem('bl_v2_sim', JSON.stringify({simMode, simMoves})); }catch(e){}
+}
+function restoreSimFromSession(){
+  try{
+    const raw=sessionStorage.getItem('bl_v2_sim'); if(!raw) return;
+    const o=JSON.parse(raw);
+    if(o&&Array.isArray(o.simMoves)){ simMoves=o.simMoves; simMode=!!o.simMode; }
+  }catch(e){}
+}
+// データ再取得時、すでに存在しない課題キーの仮移動は捨てる（幽霊移動の防止）
+function pruneSimMoves(){
+  if(!simMoves.length) return;
+  const keys=new Set(allRows.map(r=>r.key));
+  const before=simMoves.length;
+  simMoves=simMoves.filter(mv=>keys.has(mv.taskKey));
+  if(simMoves.length!==before) saveSimToSession();
+  if(!simMoves.length) simMode=false;
+}
 function toggleBillableFilter(el){
   billableFilter=el.value;
   ['gantt-billable','wl-billable','db-billable','person-billable','est-billable'].forEach(id=>{
@@ -1657,6 +1753,7 @@ function applyLoadedData(rows, cols, months, workload, zeroTasks, fetchedAt){
   }
   fillSel('ra-from',people,dispName); fillSel('ra-to',people,dispName);
   fillTeamSels();
+  pruneSimMoves();   // 再取得で消えた課題の仮移動を破棄（Session15）
   showZeroWarnBanner(zeroTasks||[]);
   if(currentUser?.role==='staff' && currentUser.talentName){
     const tn=currentUser.talentName;
@@ -1691,6 +1788,7 @@ function tryRestoreFromSession(){
     if(!raw) return false;
     const d=JSON.parse(raw);
     if(!d.rows||!d.rows.length) return false;
+    restoreSimFromSession();  // 作りかけのシミュレーション下書きを復元（Session15）
     applyLoadedData(d.rows, d.cols, d.months, d.workload, d.zeroTasks||[], d.savedAt||null);
     const cb=document.getElementById('connect-btn');
     if(cb){ cb.className='btn btn-connected btn-sm'; cb.textContent='✅ 連携済み（キャッシュ）'; }
@@ -3046,14 +3144,17 @@ function toggleJobSort(){ ganttSortDir=ganttSortDir===0?1:ganttSortDir===1?-1:0;
 // ==================== WORKLOAD ====================
 function renderWorkload(){
   updatePeriodBadges();
-  if(!allRows.length){ document.getElementById('wl-body').innerHTML=`<tr><td colspan="10" class="empty-state">Backlog APIに接続してデータを取得してください</td></tr>`; return; }
+  if(!allRows.length){ document.getElementById('wl-body').innerHTML=`<tr><td colspan="10" class="empty-state">Backlog APIに接続してデータを取得してください</td></tr>`; renderSimPanel({},{},[]); return; }
   const fa=document.getElementById('wl-fA')?.value||'';
   const fTeam=document.getElementById('wl-team')?.value||'';
   const groupTeam=!!document.getElementById('wl-group-team')?.checked;
   const todayMode=activeMonth===''&&!periodFrom;
   const vcols=getViewCols();
   updateMonthNavActive('wl-month-nav');
-  const wl=filteredWorkload();   // 計上区分(billableFilter)反映済み
+  const baseWl=filteredWorkload();          // 計上区分(billableFilter)反映済み＝実データ
+  const simOn=simIsOn();
+  const wl=simOn?simWorkload():baseWl;      // シミュレーション中は仮移動を適用した値で描画
+  renderSimPanel(baseWl, wl, vcols);
   const mGroups=buildMonthGroups(vcols);
   const people=filterPeople(Object.keys(wl)).sort((a,b)=>{
     if(!a&&b) return 1; if(a&&!b) return -1; return a.localeCompare(b);
@@ -3080,11 +3181,19 @@ function renderWorkload(){
           const overCap=h>CAPACITY;
           const tc=c.ds===TODAY?' today-cell':'';
           const recClass=h>0?' rec-cell':'';
-          if(h===0) return `<td class="wl-cell${tc}${recClass}" style="background:#f5f5f5" data-person="${esc(name)}" data-ds="${c.ds}" data-col="${c.col}"></td>`;
+          // シミュレーション中：実データとの差分を算出（変化したセルだけ枠と増減を表示）
+          const bh=simOn?r2(baseWl[name]?.[c.col]||0):h;
+          const dv=simOn?r2(h-bh):0;
+          const changed=simOn&&Math.abs(dv)>=0.005;
+          const simCls=changed?' sim-changed':'';
+          const diffHtml=changed?`<div class="wl-diff ${dv>0?'up':'dn'}" title="実データ ${bh.toFixed(2)}h → 仮 ${h.toFixed(2)}h">${dv>0?'▲+':'▼'}${dv.toFixed(2)}</div>`:'';
+          if(h===0&&!changed) return `<td class="wl-cell${tc}${recClass}" style="background:#f5f5f5" data-person="${esc(name)}" data-ds="${c.ds}" data-col="${c.col}"></td>`;
+          if(h===0) return `<td class="wl-cell${tc}${simCls}" style="background:#f5f5f5" data-person="${esc(name)}" data-ds="${c.ds}" data-col="${c.col}" title="実データ ${bh.toFixed(2)}h → 仮 0.00h">${diffHtml}</td>`;
           const remStr=rem>=0?`残${rem.toFixed(1)}`:`<span style="color:#c62828;font-weight:700">超${Math.abs(rem).toFixed(1)}</span>`;
-          return `<td class="wl-cell${tc}${recClass}" style="background:${bg}" data-person="${esc(name)}" data-ds="${c.ds}" data-col="${c.col}" title="${c.ds}  ${h}h稼働 / 残${rem}h">
+          return `<td class="wl-cell${tc}${recClass}${simCls}" style="background:${bg}" data-person="${esc(name)}" data-ds="${c.ds}" data-col="${c.col}" title="${c.ds}  ${h}h稼働 / 残${rem}h${changed?`（実データ ${bh.toFixed(2)}h）`:''}">
             <div class="wl-hours ${overCap?'wl-over':''}">${h.toFixed(2)}</div>
             <div class="wl-remain">${remStr}</div>
+            ${diffHtml}
           </td>`;
         }).join('')}
       </tr>`;
@@ -3118,6 +3227,133 @@ function renderWorkload(){
   document.getElementById('wl-body').innerHTML=html;
   if(activeMonth==='') scrollToToday('wl-wrap');
 }
+
+// ==================== WHAT-IF シミュレーション UI（Session15） ====================
+function updateSimToggleBtn(){
+  const b=document.getElementById('wl-sim-btn'); if(!b) return;
+  b.classList.toggle('on', simMode);
+  b.textContent=simMode?`🧪 シミュレーション中${simMoves.length?`（${simMoves.length}件）`:''}`:'🧪 シミュレーション';
+}
+function toggleSimMode(){
+  simMode=!simMode;
+  saveSimToSession();
+  updateSimToggleBtn();
+  renderWorkload();
+  if(simMode&&!simMoves.length) toast('シミュレーションON：過負荷セルをクリックし「仮に移す」で試算できます',false);
+}
+// パネル描画：Before→After のKPIと仮移動リスト
+function renderSimPanel(baseWl, simWl, vcols){
+  const panel=document.getElementById('wl-sim-panel'); if(!panel) return;
+  updateSimToggleBtn();
+  if(!simMode){ panel.hidden=true; panel.innerHTML=''; return; }
+  panel.hidden=false;
+  // KPIは「担当者フィルタや所属で絞らない全員」で算出＝チーム全体の改善が見たいため
+  const allPeople=filterPeople(Object.keys(simWl));
+  const before=calcOverloadStats(baseWl, vcols, filterPeople(Object.keys(baseWl)));
+  const after =calcOverloadStats(simWl , vcols, allPeople);
+  const kpi=(lbl,b,a,unit,tip)=>{
+    const d=r2(a-b);
+    const cls=Math.abs(d)<0.005?'same':(d<0?'better':'worse');
+    const dTxt=Math.abs(d)<0.005?'±0':(d>0?'+'+r2(d):String(r2(d)));
+    return `<div class="sim-kpi" title="${esc(tip)}">
+      <div class="k-lbl">${esc(lbl)}</div>
+      <div class="k-val">
+        <span class="sim-before">${b}${unit}</span><span class="sim-arrow">→</span>
+        <span class="sim-after ${cls}">${a}${unit}</span>
+        <span class="sim-delta ${cls}">${dTxt}${unit}</span>
+      </div></div>`;
+  };
+  const moves=simMoves.length?simMoves.map((mv,i)=>`
+    <div class="sim-move">
+      <span class="sm-task">${mv.jobNo?`<b style="color:#7e57c2">[${esc(mv.jobNo)}]</b> `:''}<b style="font-family:monospace;font-size:11px">${esc(mv.taskKey)}</b> ${esc(trunc(mv.title,34))}</span>
+      <span class="sm-flow">${esc(dispName(mv.from))} → ${esc(dispName(mv.to))}</span>
+      <button class="btn btn-secondary btn-sm sim-undo" data-simidx="${i}">取消</button>
+    </div>`).join('')
+    :`<div class="sim-empty">仮移動はまだありません。<br>ワークロード表の<b>赤いセル（超過）をクリック</b>→タスクと移管先を選び<b>「🧪 仮に移す」</b>を押すと、ここに積み上がります</div>`;
+  panel.innerHTML=`
+    <div class="sim-head">
+      <span class="sim-title">🧪 What-if シミュレーション</span>
+      <span class="sim-note">仮に担当を移した場合の負荷を試算中です。<b>Backlogにも再アサイン記録にも書き込まれていません</b>（確定するまで下書きです）</span>
+    </div>
+    <div class="sim-kpis">
+      ${kpi('過負荷セル数（表示期間）',before.cells,after.cells,'',`1日${CAPACITY}hを超えた「人×日」の数。減るほど良い`)}
+      ${kpi('のべ超過時間',before.totalOver,after.totalOver,'h','超過分の合計時間。減るほど良い')}
+      ${kpi('過負荷スタッフ数',before.people,after.people,'人','期間内に1日でも超過した人数')}
+      ${kpi('最大超過',before.maxOver,after.maxOver,'h','いちばん厳しい日の超過幅')}
+    </div>
+    <div>${moves}</div>
+    <div class="sim-btns">
+      <button class="btn btn-sim btn-sm" id="sim-commit" ${simMoves.length?'':'disabled'} title="仮移動をすべて再アサイン記録に保存します（Backlogの担当者は変更しません）">✓ この案で確定</button>
+      <button class="btn btn-secondary btn-sm" id="sim-clear" ${simMoves.length?'':'disabled'}>すべて破棄</button>
+      <button class="btn btn-secondary btn-sm" onclick="toggleSimMode()">終了</button>
+    </div>
+    <div class="sim-foot">「確定」を押すと再アサイン記録タブに保存されます。<br>Backlog側の担当者は変更されません（このツール上の記録のみ）</div>`;
+}
+// モーダルから仮移動を積む
+function addSimMoveFromModal(){
+  if(!modalSelectedTask||!modalSelectedCandidate){ toast('タスクと移管先スタッフを選択してください',true); return; }
+  if(modalFromPerson===modalSelectedCandidate){ toast('移管元と移管先が同じです',true); return; }
+  const dup=simMoves.findIndex(mv=>mv.taskKey===modalSelectedTask.key);
+  const mv={ taskKey:modalSelectedTask.key, from:modalFromPerson, to:modalSelectedCandidate,
+             jobNo:modalSelectedTask.jobNo||'', title:modalSelectedTask.title||'',
+             reason:document.getElementById('rec-memo')?.value.trim()||'' };
+  if(dup>=0) simMoves[dup]=mv; else simMoves.push(mv);   // 同じタスクの再指定は上書き
+  simMode=true;
+  saveSimToSession();
+  closeRecommendModal();
+  renderWorkload();
+  toast(dup>=0?'仮移動を更新しました（未確定）':'仮に移しました（未確定）',false);
+}
+function removeSimMove(idx){
+  if(idx<0||idx>=simMoves.length) return;
+  simMoves.splice(idx,1);
+  saveSimToSession();
+  renderWorkload();
+}
+function clearSimMoves(){
+  if(!simMoves.length) return;
+  showConfirm(`仮移動 ${simMoves.length}件をすべて破棄します。よろしいですか？`,()=>{
+    simMoves=[]; saveSimToSession(); renderWorkload(); toast('仮移動を破棄しました',false);
+  },'破棄する');
+}
+// 確定：仮移動を既存の再アサイン記録として1件ずつ保存する（Backlogの担当者は変更しない）
+async function commitSimMoves(){
+  if(!simMoves.length) return;
+  showConfirm(`仮移動 ${simMoves.length}件を再アサイン記録に保存します。<br>※ Backlog側の担当者は変更されません（記録のみ）`,async()=>{
+    const btn=document.getElementById('sim-commit'); if(btn) btn.disabled=true;
+    let ok=0, ng=0;
+    for(const mv of simMoves){
+      const body={ fromAssignee:mv.from, toAssignee:mv.to, jobNo:mv.jobNo||'', taskKey:mv.taskKey,
+                   taskTitle:mv.title||'', reason:mv.reason||'シミュレーションから確定',
+                   recordedBy:currentUser?.displayName||'' };
+      try{
+        const res=await fetch(`${WORKER_URL}/reassignments`,{
+          method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${currentUser?.token||''}`},
+          body:JSON.stringify(body),
+        });
+        if(!res.ok) throw new Error('保存失敗');
+        reassignments.unshift({...body, recordedAt:new Date().toISOString()});
+        ok++;
+      }catch(e){ ng++; }
+    }
+    if(ok){ simMoves=[]; simMode=false; saveSimToSession(); }
+    renderReassignLog(1);
+    renderDbRecentReassign();
+    renderWorkload();
+    if(ng) toast(`${ok}件を保存しました（${ng}件は失敗）`,true);
+    else   toast(`${ok}件を再アサイン記録に保存しました`,false);
+  },'確定する',false);
+}
+// パネル内ボタンのイベント委譲（パネルは再描画されるが親#wl-sim-panelは不変）
+(function(){
+  const p=document.getElementById('wl-sim-panel'); if(!p) return;
+  p.addEventListener('click',e=>{
+    const u=e.target.closest('.sim-undo');
+    if(u){ removeSimMove(+u.dataset.simidx); return; }
+    if(e.target.closest('#sim-commit')){ commitSimMoves(); return; }
+    if(e.target.closest('#sim-clear')){ clearSimMoves(); return; }
+  });
+})();
 
 // ワークロードセルクリック → レコメンドモーダル
 document.getElementById('wl-body').addEventListener('click',e=>{
@@ -3644,12 +3880,15 @@ function openRecommendModal(person, ds, h, colIdx){
   if(prev) prev.classList.remove('visible');
   const btn=document.getElementById('rec-reassign-btn');
   if(btn) btn.disabled=true;
+  const sbtn=document.getElementById('rec-sim-btn');
+  if(sbtn) sbtn.disabled=true;
   const memo=document.getElementById('rec-memo');
   if(memo) memo.value='';
 
   const overH=r2(h-CAPACITY);
-  const wl=filteredWorkload();
-  const tasks=filteredRows().filter(r=>r.assignee===person&&(r.daily[colIdx]||0)>0);
+  // シミュレーション中は「仮移動を反映した状態」を土台に候補を出す（連続で仮移動を積めるように）
+  const wl=simIsOn()?simWorkload():filteredWorkload();
+  const tasks=curRows().filter(r=>r.assignee===person&&(r.daily[colIdx]||0)>0);
   const cats=[...new Set(tasks.flatMap(r=>r.categories||[]))];
   // 担当者ごとの「過去・現在に担当したカテゴリー（種類）」集合を事前構築（同種担当の判定用）
   const asgCats={};
@@ -3733,6 +3972,8 @@ function updateRecModalBtn(){
   const bothSelected=!!modalSelectedTask&&!!modalSelectedCandidate;
   if(prev){ if(modalSelectedTask||modalSelectedCandidate) prev.classList.add('visible'); }
   if(btn) btn.disabled=!bothSelected;
+  const sbtn=document.getElementById('rec-sim-btn');
+  if(sbtn) sbtn.disabled=!bothSelected;
 }
 
 async function saveReassignmentFromModal(){
