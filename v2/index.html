@@ -874,7 +874,8 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
         📈 <b>「この先、人手は足りるのか」を月単位・チーム単位で見るページです。</b><br>
         <b>需要</b>＝その月に割り当てられている按分工数の合計。<b>供給</b>＝<b>その月の稼働日数 × 1日労働時間 × 人数</b>。<br>
         月は<b>まるごと1ヶ月ぶん</b>で集計します（表示期間の途中で切りません）。表示する月だけが上部の「表示期間」に連動します。<br>
-        複数チームに所属する方は<b>先頭のチーム</b>で集計します（合計が二重計上にならないようにするため）。
+        <b>全チーム表示</b>のときは、複数チームに所属する方を<b>先頭のチーム</b>で集計します（合計が二重計上にならないようにするため）。<br>
+        <b>チームを選んだとき</b>は、<b>そのチームに所属していれば必ず含めます</b>（2つめ以降の所属でも数えます）。
       </div>
       <div class="cap-filters">
         <label>チーム:</label>
@@ -3836,6 +3837,18 @@ document.addEventListener('click',e=>{ document.querySelectorAll('.csel2.open').
 //  ・複数所属の人は「先頭のチーム」だけで数える（合計が二重計上にならないように）
 const CAP_COLORS=['#1a3a5c','#2e8b57','#7e57c2','#00838f','#ef6c00','#c2185b','#5d4037','#455a64','#827717','#0277bd'];
 function capPrimaryTeam(name){ const t=personTeams(name); return t.length?t[0]:'__none__'; }
+// この人を、いまの絞り込みでどのチームとして数えるか。数えないなら null。
+// ・全チーム表示  → 先頭のチーム1つだけ（複数所属の人を二重計上しないため）
+// ・特定チーム選択 → そのチームに所属していれば含める（2番目以降の所属でも拾う）
+//   ⚠️ ここを「先頭チームのみ」で判定すると、そのチームを先頭に持つ人がいない場合に
+//      「対象0人」になってしまう（Session21で報告された不具合）
+function capScopeTeam(name, fTeam){
+  if(fTeam){
+    if(fTeam==='__none__') return personTeams(name).length===0?'__none__':null;
+    return personTeams(name).includes(fTeam)?fTeam:null;
+  }
+  return capPrimaryTeam(name);
+}
 function capTeamLabel(t){ return t==='__none__'?'未所属':t; }
 // 表示する月＝表示期間に含まれる月。各月の集計はその月の全営業日で行う
 function capMonths(){ return getNavMonths(); }
@@ -3866,12 +3879,11 @@ function buildCapacity(){
   const months=capMonths();
   const wl=filteredWorkload();                 // 計上区分(billableFilter)反映済み
   const people=capAllPeople();
-  const inScope=t=>!fTeam||t===fTeam;          // チーム絞り込み（先頭チームで判定）
-  // チームごとの人数（重複所属は先頭チームのみ）
+  // チームごとの人数。絞り込み中はそのチームに所属していれば拾う（先頭チームに限定しない）
   const members={};
-  people.forEach(p=>{ const t=capPrimaryTeam(p); (members[t]=members[t]||[]).push(p); });
+  people.forEach(p=>{ const t=capScopeTeam(p,fTeam); if(t) (members[t]=members[t]||[]).push(p); });
   // 需要の担当者→チーム対応。担当者未設定('')の工数は「未所属」の需要に入れる（供給人数には数えない）
-  const demandTeamOf=n=>n?capPrimaryTeam(n):'__none__';
+  const demandTeamOf=n=>capScopeTeam(n||'',fTeam);
   const teamsUsed=new Set();
   const rows=months.map(mo=>{
     const cols=capColsOf(mo);           // 需要の集計用（この月に存在する営業日）
@@ -3880,13 +3892,13 @@ function buildCapacity(){
     Object.keys(wl).forEach(n=>{
       if(n&&!filterPeople([n]).length) return;              // 管理者・営業フィルタ
       const t=demandTeamOf(n);
-      if(!inScope(t)) return;
+      if(!t) return;
       const h=cols.reduce((s,c)=>s+(wl[n]?.[c.col]||0),0);
       if(h>0){ byTeam[t]=r2((byTeam[t]||0)+h); teamsUsed.add(t); }
     });
     let supply=0;
-    Object.keys(members).forEach(t=>{ if(inScope(t)) supply+=wdays*CAPACITY*members[t].length; });
-    Object.keys(members).forEach(t=>{ if(inScope(t)&&members[t].length) teamsUsed.add(t); });
+    Object.keys(members).forEach(t=>{ supply+=wdays*CAPACITY*members[t].length; });
+    Object.keys(members).forEach(t=>{ if(members[t].length) teamsUsed.add(t); });
     const demand=r2(Object.values(byTeam).reduce((s,v)=>s+v,0));
     return { mo, workdays:wdays, byTeam, demand, supply:r2(supply),
              gap:r2(r2(supply)-demand), rate:supply>0?demand/supply:0 };
@@ -3910,10 +3922,9 @@ function capTrend(){
   const fTeam=document.getElementById('cap-team')?.value||'';
   const wl=filteredWorkload();
   const people=capAllPeople();
-  const inScope=t=>!fTeam||t===fTeam;
   const members={};
-  people.forEach(p=>{ const t=capPrimaryTeam(p); (members[t]=members[t]||[]).push(p); });
-  let headcount=0; Object.keys(members).forEach(t=>{ if(inScope(t)) headcount+=members[t].length; });
+  people.forEach(p=>{ const t=capScopeTeam(p,fTeam); if(t) (members[t]=members[t]||[]).push(p); });
+  let headcount=0; Object.keys(members).forEach(t=>{ headcount+=members[t].length; });
   const rowsAll=filteredRows();
   return months.map(mo=>{
     const cols=capColsOf(mo);
@@ -3921,16 +3932,14 @@ function capTrend(){
     let plan=0;
     Object.keys(wl).forEach(n=>{
       if(n&&!filterPeople([n]).length) return;
-      const t=n?capPrimaryTeam(n):'__none__';
-      if(!inScope(t)) return;
+      if(!capScopeTeam(n||'',fTeam)) return;
       plan+=cols.reduce((s,c)=>s+(wl[n]?.[c.col]||0),0);
     });
     // 実績ベース：実績hを、その月に配分された按分比率で割り振った推計（ダッシュボードの実稼働と同方式）
     let act=0;
     rowsAll.forEach(r=>{
       if(r.assignee&&!filterPeople([r.assignee]).length) return;
-      const t=r.assignee?capPrimaryTeam(r.assignee):'__none__';
-      if(!inScope(t)) return;
+      if(!capScopeTeam(r.assignee||'',fTeam)) return;
       if(!(r.distHours>0)||!(r.actHours>0)) return;
       const share=cols.reduce((s,c)=>s+(r.daily[c.col]||0),0);
       if(share>0) act+=r.actHours*share/r.distHours;
@@ -3978,8 +3987,7 @@ function renderCapacity(){
   const worst=short.length?short.reduce((a,b)=>a.gap<b.gap?a:b):null;
   const totD=r2(rows.reduce((s,r)=>s+r.demand,0)), totS=r2(rows.reduce((s,r)=>s+r.supply,0));
   const avgRate=totS>0?totD/totS:0;
-  const headcount=Object.keys(cap.members).filter(t=>!cap.fTeam||t===cap.fTeam)
-    .reduce((s,t)=>s+cap.members[t].length,0);
+  const headcount=Object.values(cap.members).reduce((s,a)=>s+a.length,0);
   const stat=(l,v,cls,tip)=>`<div class="cap-stat" title="${esc(tip||'')}"><div class="s-l">${esc(l)}</div><div class="s-v ${cls||''}">${v}</div></div>`;
   st.innerHTML=
     stat('対象人数',headcount+'人','','タレント登録者＋Backlogに稼働がある人（管理者・営業チェックの影響を受けます）')+
