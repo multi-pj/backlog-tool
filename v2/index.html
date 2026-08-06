@@ -409,6 +409,55 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 .wl-diff{font-size:9px;font-weight:700;line-height:1.1;white-space:nowrap}
 .wl-diff.dn{color:#2e7d32}
 .wl-diff.up{color:#c62828}
+/* ===== 案件（Job No.）ポートフォリオ（Session17） ===== */
+.pf-note{background:#eef4fb;border:1px solid #c5d8ec;border-left:4px solid #1a3a5c;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#37474f;line-height:1.7;text-wrap:pretty}
+.pf-filters{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.pf-filters label{font-size:12px;color:#607d8b;font-weight:600;white-space:nowrap}
+.pf-filters select,.pf-filters input{padding:6px 10px;border:1px solid #d0dae6;border-radius:6px;font-size:12px}
+.pf-filters select{min-width:120px}
+.pf-filters input{min-width:180px}
+.pf-stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.pf-stat{flex:1;min-width:120px;background:#f7f9fc;border:1px solid #e0e6f0;border-radius:8px;padding:8px 12px}
+.pf-stat .s-l{font-size:10px;color:#78909c;font-weight:700;white-space:nowrap}
+.pf-stat .s-v{font-size:19px;font-weight:800;color:#1a3a5c;white-space:nowrap;margin-top:2px}
+.pf-stat .s-v.bad{color:#d9534f}
+.pf-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px}
+.pf-card{background:#fff;border:1px solid #e0e6f0;border-radius:10px;padding:12px 14px;border-left:5px solid #90a4ae}
+.pf-card.red{border-left-color:#d9534f}
+.pf-card.yellow{border-left-color:#f0ad4e}
+.pf-card.green{border-left-color:#2e8b57}
+.pf-head{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:2px}
+.pf-job{font-size:16px;font-weight:800;color:#1a3a5c;white-space:nowrap}
+.pf-sig{font-size:10px;font-weight:800;padding:2px 9px;border-radius:10px;white-space:nowrap}
+.pf-sig.red{background:#fdecea;color:#c62828}
+.pf-sig.yellow{background:#fff8e1;color:#8d6e00}
+.pf-sig.green{background:#e8f5e9;color:#2e7d32}
+.pf-sub{font-size:11px;color:#78909c;margin-bottom:8px;text-wrap:pretty}
+.pf-name{font-size:12px;color:#37474f;font-weight:600;margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-wrap:pretty}
+.pf-gauge-l{display:flex;justify-content:space-between;align-items:baseline;font-size:10px;color:#78909c;font-weight:700;white-space:nowrap;gap:8px}
+.pf-gauge{height:9px;background:#eceff1;border-radius:5px;overflow:hidden;margin:3px 0 2px;position:relative}
+.pf-gauge i{display:block;height:100%;border-radius:5px}
+.pf-gauge i.ok{background:#2e8b57}
+.pf-gauge i.warn{background:#f0ad4e}
+.pf-gauge i.over{background:#d9534f}
+.pf-gauge-n{font-size:10px;color:#90a4ae;text-wrap:pretty}
+.pf-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:9px 0}
+.pf-g{background:#f7f9fc;border-radius:6px;padding:5px 7px}
+.pf-g .g-l{font-size:9px;color:#78909c;font-weight:700;white-space:nowrap}
+.pf-g .g-v{font-size:13px;font-weight:800;color:#1a3a5c;white-space:nowrap}
+.pf-g .g-v.good{color:#2e8b57}.pf-g .g-v.bad{color:#d9534f}
+.pf-bar-w{margin:8px 0 4px}
+.pf-bar{height:7px;background:#eceff1;border-radius:4px;position:relative;overflow:hidden}
+.pf-bar i{position:absolute;top:0;height:100%;background:#b0bec5;border-radius:4px}
+.pf-bar u{position:absolute;top:-2px;width:2px;height:11px;background:#c62828}
+.pf-bar-l{display:flex;justify-content:space-between;font-size:9px;color:#90a4ae;margin-top:2px;white-space:nowrap;gap:6px}
+.pf-chips{display:flex;gap:4px;flex-wrap:wrap;margin:6px 0}
+.pf-chip{font-size:10px;background:#eef2f7;color:#455a64;border-radius:9px;padding:1px 8px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pf-chip.warn{background:#fff8e1;color:#8d6e00}
+.pf-chip.risk{background:#fdecea;color:#c62828}
+.pf-acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+.pf-empty{grid-column:1/-1;text-align:center;color:#90a4ae;font-size:12px;padding:26px;background:#f7f9fc;border:1px dashed #cfd8dc;border-radius:8px}
+@media(max-width:768px){ .pf-cards{grid-template-columns:1fr} .pf-filters input{min-width:140px} }
 
 /* ===== Report ===== */
 .report-controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
@@ -580,6 +629,7 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
   <button class="nav-btn active" data-tab="dashboard" onclick="switchMainTab('dashboard',this)">🏠 ダッシュボード</button>
   <button class="nav-btn" data-tab="workload" onclick="switchMainTab('workload',this)">📊 ワークロード</button>
   <button class="nav-btn" data-tab="gantt" onclick="switchMainTab('gantt',this)">📅 ガント</button>
+  <button class="nav-btn" data-tab="portfolio" onclick="switchMainTab('portfolio',this)">📁 案件ポートフォリオ</button>
   <button class="nav-btn" data-tab="personal" onclick="switchMainTab('personal',this)">👤 個人サマリー</button>
   <button class="nav-btn" data-tab="estimate" id="nav-estimate" onclick="switchMainTab('estimate',this)" hidden>💴 見積・単価</button>
   <button class="nav-btn" data-tab="reassign" id="nav-reassign" onclick="switchMainTab('reassign',this)" hidden>🔄 再アサイン</button>
@@ -715,6 +765,48 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
       <button class="nav-btn-scroll" onclick="document.getElementById('gantt-wrap').scrollLeft-=44*5">◀ 前週</button>
       <button class="nav-btn-scroll" onclick="document.getElementById('gantt-wrap').scrollLeft+=44*5">後週 ▶</button>
       <span style="font-size:11px;color:#90a4ae">💡 Shift + マウスホイールでも横スクロール可</span>
+    </div>
+  </div>
+
+  <!-- ========== PORTFOLIO（案件ポートフォリオ・Session17） ========== -->
+  <div id="sec-portfolio" hidden>
+    <div class="card">
+      <div class="card-title">案件（Job No.）ポートフォリオ</div>
+      <div class="pf-note">
+        📁 <b>タスク単位・人単位ではなく「案件単位」で状況を見るページです。</b><br>
+        1案件＝<b>Job No. の親番号</b>（<code>-</code> より前）でまとめています。集計は<b>その案件の全期間</b>で、上部の「表示期間」の影響は受けません。<br>
+        担当者・チームの絞り込みは<b>表示する案件を選ぶだけ</b>で、案件の合計工数は常に参加者全員ぶんです（数字が合わなくなるのを防ぐため）。
+      </div>
+      <div class="pf-filters">
+        <label>担当者:</label>
+        <select id="pf-fA" onchange="renderPortfolio()"><option value="">全員</option></select>
+        <label>チーム:</label>
+        <select id="pf-team" onchange="renderPortfolio()"><option value="">全チーム</option></select>
+        <label>計上区分:</label>
+        <select id="pf-billable" onchange="toggleBillableFilter(this)">
+          <option value="">全て</option>
+          <option value="billable">Billableのみ</option>
+          <option value="nonbillable">Non-billableのみ</option>
+        </select>
+        <label>リスク:</label>
+        <select id="pf-risk" onchange="renderPortfolio()">
+          <option value="">全て</option>
+          <option value="red">🔴 危険のみ</option>
+          <option value="yellow">🟡 注意以上（🔴＋🟡）</option>
+          <option value="green">🟢 順調のみ</option>
+        </select>
+        <label>並べ替え:</label>
+        <select id="pf-sort" onchange="renderPortfolio()">
+          <option value="risk">リスクが高い順</option>
+          <option value="rate">消化率が高い順</option>
+          <option value="due">期限が近い順</option>
+          <option value="over">超過が大きい順</option>
+          <option value="job">Job No. 順</option>
+        </select>
+        <input id="pf-q" type="search" placeholder="Job No.・件名で検索" oninput="renderPortfolio()">
+      </div>
+      <div id="pf-stats" class="pf-stats"></div>
+      <div id="pf-cards" class="pf-cards"></div>
     </div>
   </div>
 
@@ -1536,7 +1628,7 @@ function personInTeam(name,team){
 // 各画面のチーム絞り込みドロップダウンを全チームで充填（選択値は保持）。datalist(#team-suggest)も更新
 function fillTeamSels(){
   const teams=allTeams();
-  ['gantt-team','wl-team','db-team','est-team','report-team'].forEach(id=>{
+  ['gantt-team','wl-team','db-team','est-team','report-team','pf-team'].forEach(id=>{
     const el=document.getElementById(id); if(!el) return;
     const cur=el.value;
     el.innerHTML='<option value="">全チーム</option>'+
@@ -1555,14 +1647,16 @@ function toggleMgmtPeople(el){
   const people=filterPeople([...new Set(allRows.map(r=>r.assignee).filter(Boolean))].sort());
   fillSel('fA',people,dispName); fillSel('wl-fA',people,dispName);
   fillSel('est-fA',people,dispName);
+  fillSel('pf-fA',people,dispName);
   fillSel('ra-from',people,dispName); fillSel('ra-to',people,dispName);
   fillPersonSelect();
   renderCurrent();
   renderDashboard();
-  // 表示中のタブ（個人/見積/月次レポート）も管理者・営業フィルタを反映して再描画
-  if(activeMainTab==='personal') renderPersonal();
-  if(activeMainTab==='estimate') renderEstimate();
-  if(activeMainTab==='report')   renderReport();
+  // 表示中のタブ（個人/見積/月次レポート/案件）も管理者・営業フィルタを反映して再描画
+  if(activeMainTab==='personal')  renderPersonal();
+  if(activeMainTab==='estimate')  renderEstimate();
+  if(activeMainTab==='report')    renderReport();
+  if(activeMainTab==='portfolio') renderPortfolio();   // 担当者ドロップダウンの選択肢が変わるため
 }
 
 // ==================== BILLABLE / NON-BILLABLE ====================
@@ -1643,15 +1737,16 @@ function pruneSimMoves(){
 }
 function toggleBillableFilter(el){
   billableFilter=el.value;
-  ['gantt-billable','wl-billable','db-billable','person-billable','est-billable'].forEach(id=>{
+  ['gantt-billable','wl-billable','db-billable','person-billable','est-billable','pf-billable'].forEach(id=>{
     const s=document.getElementById(id); if(s&&s.value!==billableFilter) s.value=billableFilter;
   });
   renderDashboard();
-  if(activeMainTab==='gantt')    renderGantt();
-  if(activeMainTab==='workload') renderWorkload();
-  if(activeMainTab==='personal') renderPersonal();
-  if(activeMainTab==='estimate') renderEstimate();
-  if(activeMainTab==='report')   renderReport();
+  if(activeMainTab==='gantt')     renderGantt();
+  if(activeMainTab==='workload')  renderWorkload();
+  if(activeMainTab==='portfolio') renderPortfolio();
+  if(activeMainTab==='personal')  renderPersonal();
+  if(activeMainTab==='estimate')  renderEstimate();
+  if(activeMainTab==='report')    renderReport();
 }
 
 async function checkUnlinkedAssignees(){
@@ -1767,6 +1862,7 @@ function applyLoadedData(rows, cols, months, workload, zeroTasks, fetchedAt){
   fillSel('fC',[...new Set(allRows.map(r=>r.cat))].sort());
   fillSel('fS',[...new Set(allRows.map(r=>r.status))].sort());
   fillSel('est-fA',people,dispName);
+  fillSel('pf-fA',people,dispName);   // 案件ポートフォリオの担当者絞り込み（Session17）
   fillSel('est-fJ',[...new Set(allRows.map(r=>r.jobNo).filter(Boolean))].sort());
   buildCsel('est-fJ'); // Job No.を下方向カスタムドロップダウン化
   fillPersonSelect();
@@ -1800,9 +1896,10 @@ function applyLoadedData(rows, cols, months, workload, zeroTasks, fetchedAt){
   }
   renderDashboard();
   // 現在表示中のタブを必ず再描画（データ取得/キャッシュ復元時に見積・個人・レポートを開いていても反映されるように）
-  if(activeMainTab==='gantt')         renderGantt();
-  else if(activeMainTab==='workload') renderWorkload();
-  else if(activeMainTab==='personal') renderPersonal();
+  if(activeMainTab==='gantt')          renderGantt();
+  else if(activeMainTab==='workload')  renderWorkload();
+  else if(activeMainTab==='portfolio') renderPortfolio();
+  else if(activeMainTab==='personal')  renderPersonal();
   else if(activeMainTab==='estimate') renderEstimate();
   else if(activeMainTab==='report')   renderReport();
   else if(activeMainTab==='reassign') renderReassignLog();
@@ -1960,7 +2057,7 @@ function buildMonthGroups(vcols){
 function switchMainTab(name,btn){
   activeMainTab=name;
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
-  ['dashboard','gantt','workload','personal','estimate','reassign','report','settings'].forEach(s=>{
+  ['dashboard','gantt','workload','portfolio','personal','estimate','reassign','report','settings'].forEach(s=>{
     const el=document.getElementById('sec-'+s);
     if(el) el.hidden=(s!==name);
   });
@@ -1968,6 +2065,7 @@ function switchMainTab(name,btn){
   if(name==='dashboard'&&allRows.length) renderDashboard();  // 月ナビ/フィルタ変更後の復帰でも最新化
   if(name==='gantt'&&allRows.length)     renderGantt();
   if(name==='workload'&&allRows.length)  renderWorkload();
+  if(name==='portfolio')                 renderPortfolio();
   if(name==='personal')                  renderPersonal();
   if(name==='estimate')                  renderEstimate();
   if(name==='reassign')                  renderReassignLog();
@@ -2103,11 +2201,12 @@ async function loadCompanySettings(){
 function renderAllViews(){
   updateCapBadges();
   renderDashboard();
-  if(activeMainTab==='gantt')    renderGantt();
-  if(activeMainTab==='workload') renderWorkload();
-  if(activeMainTab==='personal') renderPersonal();
-  if(activeMainTab==='estimate') renderEstimate();
-  if(activeMainTab==='report')   renderReport();
+  if(activeMainTab==='gantt')     renderGantt();
+  if(activeMainTab==='workload')  renderWorkload();
+  if(activeMainTab==='portfolio') renderPortfolio();
+  if(activeMainTab==='personal')  renderPersonal();
+  if(activeMainTab==='estimate')  renderEstimate();
+  if(activeMainTab==='report')    renderReport();
 }
 async function saveCompanyCapacity(){
   const inp=document.getElementById('company-cap-input');
@@ -3614,6 +3713,198 @@ function refreshCsel(selectId){
   wrap.querySelector('.csel2-list').innerHTML=[...sel.options].map((o,i)=>`<div class="csel2-item${i===idx?' sel':''}" data-i="${i}">${esc(o.textContent)}</div>`).join('');
 }
 document.addEventListener('click',e=>{ document.querySelectorAll('.csel2.open').forEach(w=>{ if(!w.contains(e.target)) w.classList.remove('open'); }); });
+
+// ==================== PORTFOLIO（案件ポートフォリオ・Session17） ====================
+// 「案件（Job No.）単位」で見るための画面。タスク単位・人単位しか無かった穴を埋める。
+// ⚠️ 集計は案件の全期間。ここは表示期間(getViewCols)に連動させない：
+//    案件の消化率・予算は全期間で見ないと意味が壊れるため、r.estHours/r.actHours をそのまま使う
+//    （日次按分 r.daily を vcols で合計するのは「期間連動表示」用。用途が違う点に注意）
+const PF_DONE_STATUSES=['完了','承認済み'];   // 完了とみなす状態（「処理済み」は未完了扱い）
+function pfIsDone(st){ return PF_DONE_STATUSES.includes(st); }
+function pfCanFinance(){ return ['admin','sales','leader'].includes(currentUser?.role||''); }
+function pfDaysBetween(a,b){ return Math.round((new Date(b+'T12:00:00')-new Date(a+'T12:00:00'))/86400000); }
+
+// 行を親Job No.単位に畳んで案件オブジェクトの配列にする
+function buildPortfolio(){
+  const fin=pfCanFinance();
+  const map={};
+  filteredRows().forEach(r=>{           // 計上区分(billableFilter)のみ適用＝案件の合計を壊さない
+    const job=(r.jobNo||'').split('-')[0]||'__none__';
+    const g=map[job]||(map[job]={ job, jobNos:new Set(), tasks:[], members:new Set(), statusCounts:{},
+      estH:0, actH:0, budget:0, actual:0, done:0, open:0, unassigned:0, noDate:0,
+      overdueOpen:0, overdueMax:0, startDs:null, endDs:null });
+    g.tasks.push(r);
+    if(r.jobNo) g.jobNos.add(r.jobNo);
+    if(r.assignee) g.members.add(r.assignee); else g.unassigned++;
+    g.statusCounts[r.status]=(g.statusCounts[r.status]||0)+1;
+    g.estH+=r.estHours||0; g.actH+=r.actHours||0;
+    if(pfIsDone(r.status)) g.done++; else g.open++;
+    // 案件の期限は「全タスクの最も遅い期限」なので、案件全体だけ見ると
+    // 進行中の案件に紛れた期限超過タスクを取りこぼす。タスク単位でも必ず数える
+    if(!pfIsDone(r.status)&&r.endDs&&r.endDs<TODAY){
+      g.overdueOpen++;
+      const d=-pfDaysBetween(TODAY,r.endDs);
+      if(d>g.overdueMax) g.overdueMax=d;
+    }
+    if(r.noDate||(r.estHours>0&&r.weekdayCount===0)) g.noDate++;
+    if(r.startDs&&(!g.startDs||r.startDs<g.startDs)) g.startDs=r.startDs;
+    if(r.endDs  &&(!g.endDs  ||r.endDs  >g.endDs  )) g.endDs  =r.endDs;
+    if(fin){                            // 単価は見積タブと同じ getRateInfo（既定＝社内基準）
+      const rate=getRateInfo(r.assignee,'社内基準').rate||0;
+      g.budget+=(r.estHours||0)*rate; g.actual+=(r.actHours||0)*rate;
+    }
+  });
+  return Object.values(map).map(g=>{
+    g.estH=r2(g.estH); g.actH=r2(g.actH); g.budget=r2(g.budget); g.actual=r2(g.actual);
+    g.diff=r2(g.budget-g.actual);                       // 差異＝予算−実費（見積タブと符号を統一）
+    g.hRate=g.estH>0?g.actH/g.estH:0;                   // 工数消化率
+    g.bRate=g.budget>0?g.actual/g.budget:0;             // 予算消化率
+    g.useBudget=fin&&g.budget>0;                        // ゲージの基準
+    g.rate=g.useBudget?g.bRate:g.hRate;
+    g.daysTo=g.endDs?pfDaysBetween(TODAY,g.endDs):null; // ＋＝あと何日 / −＝何日超過
+    g.overH=r2(Math.max(0,g.actH-g.estH));
+    g.overYen=fin?r2(Math.max(0,g.actual-g.budget)):0;
+    // リスク信号：赤＝手を打つ必要あり / 黄＝要注意 / 緑＝順調
+    const why=[]; let risk='green';
+    if(g.overdueOpen>0){ risk='red'; why.push({t:`期限超過の未完了タスク ${g.overdueOpen}件（最長 ${g.overdueMax}日超過）`,c:'risk'}); }
+    if(g.estH>0&&g.hRate>1.1){ risk='red'; why.push({t:`実績が予定の${Math.round(g.hRate*100)}%`,c:'risk'}); }
+    if(fin&&g.budget>0&&g.actH>0&&g.diff<-0.5){ risk='red'; why.push({t:`予算超過 ${fmtYen(-g.diff)}`,c:'risk'}); }
+    if(risk!=='red'){
+      if(g.daysTo!==null&&g.daysTo>=0&&g.daysTo<=14&&g.open>0){ risk='yellow'; why.push({t:`期限まで${g.daysTo}日（未完了${g.open}件）`,c:'warn'}); }
+      if(g.estH>0&&g.hRate>0.9){ risk='yellow'; why.push({t:`実績が予定の${Math.round(g.hRate*100)}%`,c:'warn'}); }
+      if(g.unassigned>0){ risk='yellow'; why.push({t:`担当者未設定 ${g.unassigned}件`,c:'warn'}); }
+      if(g.noDate>0){ risk='yellow'; why.push({t:`日付未設定で按分できない ${g.noDate}件`,c:'warn'}); }
+    }
+    if(!why.length) why.push({t:g.open===0?'全タスク完了':'順調',c:''});
+    g.risk=risk; g.why=why;
+    return g;
+  });
+}
+
+function renderPortfolio(){
+  const cardsEl=document.getElementById('pf-cards'), statsEl=document.getElementById('pf-stats');
+  if(!cardsEl) return;
+  if(!allRows.length){
+    statsEl.innerHTML='';
+    cardsEl.innerHTML='<div class="pf-empty">Backlog APIに接続してデータを取得してください</div>';
+    return;
+  }
+  const fin=pfCanFinance();
+  const fa=document.getElementById('pf-fA')?.value||'';
+  const fTeam=document.getElementById('pf-team')?.value||'';
+  const fRisk=document.getElementById('pf-risk')?.value||'';
+  const sort=document.getElementById('pf-sort')?.value||'risk';
+  const q=(document.getElementById('pf-q')?.value||'').trim().toLowerCase();
+  let list=buildPortfolio().filter(g=>{
+    if(fa&&!g.members.has(fa)) return false;
+    if(fTeam){
+      const mem=[...g.members];
+      if(fTeam==='__none__'){ if(!(g.unassigned>0||mem.some(m=>personTeams(m).length===0))) return false; }
+      else if(!mem.some(m=>personTeams(m).includes(fTeam))) return false;
+    }
+    if(fRisk==='red'   &&g.risk!=='red') return false;
+    if(fRisk==='yellow'&&g.risk==='green') return false;
+    if(fRisk==='green' &&g.risk!=='green') return false;
+    if(q){
+      const hay=(g.job+' '+[...g.jobNos].join(' ')+' '+g.tasks.map(t=>t.title).join(' ')).toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+  const rankRisk={red:0,yellow:1,green:2};
+  const jobNum=j=>{ const n=parseFloat(j); return isNaN(n)?Number.MAX_SAFE_INTEGER:n; };
+  list.sort((a,b)=>{
+    if(sort==='rate') return b.rate-a.rate;
+    if(sort==='due')  return (a.endDs||'9999-99-99').localeCompare(b.endDs||'9999-99-99');
+    if(sort==='over') return (fin?b.overYen-a.overYen:b.overH-a.overH)||b.rate-a.rate;
+    if(sort==='job')  return jobNum(a.job)-jobNum(b.job)||a.job.localeCompare(b.job);
+    return rankRisk[a.risk]-rankRisk[b.risk]||b.rate-a.rate;   // 既定＝リスクが高い順
+  });
+  // 上部サマリー（絞り込み後の案件が対象）
+  const sum=list.reduce((s,g)=>{ s.est+=g.estH; s.act+=g.actH; s.budget+=g.budget; s.actual+=g.actual; if(g.risk==='red') s.red++; return s; },
+                        {est:0,act:0,budget:0,actual:0,red:0});
+  const stat=(l,v,cls,tip)=>`<div class="pf-stat" title="${esc(tip||'')}"><div class="s-l">${esc(l)}</div><div class="s-v ${cls||''}">${v}</div></div>`;
+  statsEl.innerHTML=
+    stat('案件数',list.length,'','絞り込み後の案件数')+
+    stat('予定h 合計',r2(sum.est).toFixed(1)+'h','','各案件の全期間の予定工数の合計')+
+    stat('実績h 合計',r2(sum.act).toFixed(1)+'h',sum.act>sum.est?'bad':'','各案件の全期間の実績工数の合計')+
+    stat('🔴 危険な案件',sum.red,sum.red>0?'bad':'','期限超過・工数超過・予算超過のいずれかに該当')+
+    (fin?stat('予算 合計',fmtYen(sum.budget),'','社内基準レート × 予定h')+
+         stat('差異 合計',fmtYenSigned(r2(sum.budget-sum.actual)),sum.budget-sum.actual<-0.5?'bad':'','予算 − 実費（＋＝予算内／−＝超過）'):'');
+  if(!list.length){ cardsEl.innerHTML='<div class="pf-empty">条件に合う案件がありません</div>'; return; }
+
+  const today=TODAY;
+  cardsEl.innerHTML=list.map(g=>{
+    const jobLbl=g.job==='__none__'?'Job No. 未設定':g.job;
+    const pct=Math.round(g.rate*100);
+    const gCls=pct>110?'over':pct>90?'warn':'ok';
+    const gBase=g.useBudget?'予算消化率（実費 ÷ 予算）':'工数消化率（実績h ÷ 予定h）';
+    // 期間バー：案件の開始〜終了のうち、本日がどこかを縦線で示す
+    let bar='';
+    if(g.startDs&&g.endDs){
+      const span=Math.max(1,pfDaysBetween(g.startDs,g.endDs));
+      const el=Math.min(span,Math.max(0,pfDaysBetween(g.startDs,today)));
+      const pos=Math.max(0,Math.min(100,el/span*100));
+      const inRange=today>=g.startDs&&today<=g.endDs;
+      bar=`<div class="pf-bar-w">
+        <div class="pf-bar" title="案件期間 ${g.startDs} 〜 ${g.endDs}"><i style="left:0;width:100%"></i>${inRange?`<u style="left:${pos.toFixed(1)}%" title="本日 ${today}"></u>`:''}</div>
+        <div class="pf-bar-l"><span>${g.startDs}</span><span>${g.endDs}${g.daysTo!==null?`（${g.daysTo<0?`${-g.daysTo}日超過`:`あと${g.daysTo}日`}）`:''}</span></div>
+      </div>`;
+    } else {
+      bar=`<div class="pf-bar-l" style="margin-top:6px"><span>開始・期限が未設定のタスクのみです</span></div>`;
+    }
+    const mem=[...g.members].sort((a,b)=>a.localeCompare(b,'ja'));
+    const memShown=mem.slice(0,6);
+    const memHtml=memShown.map(m=>`<span class="pf-chip" title="${esc(dispName(m))}">${esc(dispName(m))}</span>`).join('')
+      +(mem.length>memShown.length?`<span class="pf-chip">他 ${mem.length-memShown.length}人</span>`:'')
+      +(g.unassigned>0?`<span class="pf-chip warn">担当者未設定 ${g.unassigned}件</span>`:'')
+      +(!mem.length&&!g.unassigned?'<span class="pf-chip">参加者なし</span>':'');
+    const stHtml=Object.entries(g.statusCounts).sort((a,b)=>b[1]-a[1])
+      .map(([s,n])=>`${badge(s)}<span style="font-size:10px;color:#78909c;margin:0 6px 0 2px">${n}</span>`).join('');
+    const titles=g.tasks.slice(0,3).map(t=>t.title).join(' ／ ');
+    const diffCls=!fin?'':(g.actH<=0?'':g.diff>0.5?'good':g.diff<-0.5?'bad':'');
+    const diffStr=!fin?'':(g.actH<=0?'—':fmtYenSigned(g.diff));
+    return `<div class="pf-card ${g.risk}">
+      <div class="pf-head">
+        <span class="pf-job">${esc(jobLbl)}</span>
+        <span class="pf-sig ${g.risk}">${g.risk==='red'?'🔴 危険':g.risk==='yellow'?'🟡 注意':'🟢 順調'}</span>
+      </div>
+      <div class="pf-sub">タスク ${g.tasks.length}件（完了 ${g.done} / 未完了 ${g.open}）${g.jobNos.size>1?` ・ 枝番 ${g.jobNos.size}種`:''}</div>
+      <div class="pf-name" title="${esc(titles)}">${esc(titles||'（件名なし）')}</div>
+      <div class="pf-gauge-l"><span>${esc(gBase)}</span><span>${pct}%</span></div>
+      <div class="pf-gauge"><i class="${gCls}" style="width:${Math.min(100,Math.max(0,pct))}%"></i></div>
+      <div class="pf-gauge-n">${g.useBudget?`実費 ${fmtYen(g.actual)} ／ 予算 ${fmtYen(g.budget)}`:`実績 ${g.actH.toFixed(1)}h ／ 予定 ${g.estH.toFixed(1)}h`}</div>
+      <div class="pf-grid">
+        <div class="pf-g"><div class="g-l">予定h</div><div class="g-v">${g.estH.toFixed(1)}</div></div>
+        <div class="pf-g"><div class="g-l">実績h</div><div class="g-v ${g.actH>g.estH+0.05?'bad':g.actH>0&&g.actH<g.estH-0.05?'good':''}">${g.actH.toFixed(1)}</div></div>
+        ${fin?`<div class="pf-g" title="予算 − 実費（＋＝予算内／−＝超過／実績h未入力は—）"><div class="g-l">差異</div><div class="g-v ${diffCls}">${diffStr}</div></div>`
+             :`<div class="pf-g"><div class="g-l">参加者</div><div class="g-v">${mem.length}人</div></div>`}
+      </div>
+      ${bar}
+      <div class="pf-chips">${memHtml}</div>
+      <div style="margin:6px 0 0">${stHtml}</div>
+      <div class="pf-chips">${g.why.map(w=>`<span class="pf-chip ${w.c}">${esc(w.t)}</span>`).join('')}</div>
+      <div class="pf-acts">
+        <button class="btn btn-secondary btn-sm" onclick="pfGoGantt('${esc(g.job)}')">📅 ガントで見る</button>
+        ${fin?`<button class="btn btn-secondary btn-sm" onclick="pfGoEstimate('${esc(g.job)}')">💴 見積で見る</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+// 案件カード → 既存タブへのドリルダウン
+function pfGoGantt(job){
+  if(job==='__none__'){ selectJobNo('__blank__','（空白）'); }
+  else { selectJobNo(job,job); }
+  switchMainTab('gantt', document.querySelector('[data-tab="gantt"]'));
+}
+function pfGoEstimate(job){
+  const sel=document.getElementById('est-fJ');
+  // est-fJ は「枝番まで含む完全なJob No.」が選択肢。親番号と一致する選択肢がある時だけ絞り込む
+  const hit=sel&&[...sel.options].some(o=>o.value===job);
+  if(sel){ sel.value=hit?job:''; refreshCsel('est-fJ'); }
+  switchMainTab('estimate', document.querySelector('[data-tab="estimate"]'));
+  if(!hit) toast('この案件は枝番が複数あるため、見積では絞り込めません（全件表示にしました）',false);
+}
 
 function renderEstimate(){
   if(!['admin','sales','leader'].includes(currentUser?.role||'')){
