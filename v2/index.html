@@ -470,6 +470,36 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 .pf-sec{font-size:9px;font-weight:800;color:#90a4ae;letter-spacing:.3px;margin-top:9px;white-space:nowrap}
 .pf-acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto;padding-top:11px}
 .pf-empty{grid-column:1/-1;text-align:center;color:#90a4ae;font-size:12px;padding:26px;background:#f7f9fc;border:1px dashed #cfd8dc;border-radius:8px}
+/* ===== キャパシティ・プランニング（Session20） ===== */
+.cap-note{background:#eef4fb;border:1px solid #c5d8ec;border-left:4px solid #1a3a5c;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#37474f;line-height:1.7;text-wrap:pretty}
+.cap-filters{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.cap-filters label{font-size:12px;color:#607d8b;font-weight:600;white-space:nowrap}
+.cap-filters select{padding:6px 10px;border:1px solid #d0dae6;border-radius:6px;font-size:12px;min-width:120px}
+.cap-stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.cap-stat{flex:1;min-width:130px;background:#f7f9fc;border:1px solid #e0e6f0;border-radius:8px;padding:8px 12px}
+.cap-stat .s-l{font-size:10px;color:#78909c;font-weight:700;white-space:nowrap}
+.cap-stat .s-v{font-size:19px;font-weight:800;color:#1a3a5c;white-space:nowrap;margin-top:2px}
+.cap-stat .s-v.bad{color:#d9534f}.cap-stat .s-v.good{color:#2e8b57}
+/* グラフは縮めず、入りきらないときは横スクロールさせる（詰め込んで潰さない） */
+.cap-chart{overflow-x:auto;background:#fff;border:1px solid #e0e6f0;border-radius:8px;padding:10px 4px 4px}
+.cap-chart svg{display:block}
+.cap-cap{font-size:12px;font-weight:800;color:#1a3a5c;margin:16px 0 6px;text-wrap:pretty}
+.cap-sub{font-size:11px;color:#78909c;margin-bottom:8px;text-wrap:pretty;line-height:1.6}
+.cap-legend{display:flex;gap:12px;flex-wrap:wrap;margin:8px 2px 0;font-size:11px;color:#546e7a}
+.cap-legend span{display:flex;align-items:center;gap:5px;white-space:nowrap}
+.cap-legend i{width:11px;height:11px;border-radius:3px;flex:none}
+.cap-legend i.line{height:0;border-top:2px dashed #37474f;border-radius:0;width:16px}
+.cap-legend i.solid{height:0;border-top:2px solid #1a3a5c;border-radius:0;width:16px}
+.cap-tbl-w{overflow-x:auto;margin-top:8px}
+.cap-tbl{width:100%;border-collapse:collapse;font-size:12px;min-width:520px}
+.cap-tbl th{font-size:10px;font-weight:700;color:#78909c;text-align:right;padding:4px 10px 5px;white-space:nowrap;border-bottom:1px solid #eceff1;background:#f7f9fc}
+.cap-tbl th:first-child,.cap-tbl td:first-child{text-align:left}
+.cap-tbl td{padding:5px 10px;white-space:nowrap;text-align:right;border-bottom:1px solid #f5f5f5}
+.cap-tbl tr:last-child td{border-bottom:none}
+.cap-tbl td.short{color:#d9534f;font-weight:800}
+.cap-tbl td.room{color:#2e8b57;font-weight:700}
+.cap-empty{text-align:center;color:#90a4ae;font-size:12px;padding:26px;background:#f7f9fc;border:1px dashed #cfd8dc;border-radius:8px}
+@media(max-width:768px){ .cap-stat{min-width:110px} }
 /* 案件カードから飛んだ先に出す「戻る」フローティング。探し直さずに一覧へ帰れるようにする */
 /* ⚠️ display:flex は UA の [hidden]{display:none} を上書きしてしまう。
    hidden属性で消えるように、必ずこの打ち消しを先に置く（Session19で発覚：常時表示＆×が効かない不具合） */
@@ -655,6 +685,7 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
   <button class="nav-btn" data-tab="workload" onclick="switchMainTab('workload',this)">📊 ワークロード</button>
   <button class="nav-btn" data-tab="gantt" onclick="switchMainTab('gantt',this)">📅 ガント</button>
   <button class="nav-btn" data-tab="portfolio" onclick="switchMainTab('portfolio',this)">📁 案件ポートフォリオ</button>
+  <button class="nav-btn" data-tab="capacity" onclick="switchMainTab('capacity',this)">📈 キャパシティ計画</button>
   <button class="nav-btn" data-tab="personal" onclick="switchMainTab('personal',this)">👤 個人サマリー</button>
   <button class="nav-btn" data-tab="estimate" id="nav-estimate" onclick="switchMainTab('estimate',this)" hidden>💴 見積・単価</button>
   <button class="nav-btn" data-tab="reassign" id="nav-reassign" onclick="switchMainTab('reassign',this)" hidden>🔄 再アサイン</button>
@@ -832,6 +863,47 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
       </div>
       <div id="pf-stats" class="pf-stats"></div>
       <div id="pf-cards" class="pf-cards"></div>
+    </div>
+  </div>
+
+  <!-- ========== CAPACITY PLANNING（キャパシティ計画・Session20） ========== -->
+  <div id="sec-capacity" hidden>
+    <div class="card">
+      <div class="card-title">キャパシティ計画（需要 vs 供給）</div>
+      <div class="cap-note">
+        📈 <b>「この先、人手は足りるのか」を月単位・チーム単位で見るページです。</b><br>
+        <b>需要</b>＝その月に割り当てられている按分工数の合計。<b>供給</b>＝<b>その月の稼働日数 × 1日労働時間 × 人数</b>。<br>
+        月は<b>まるごと1ヶ月ぶん</b>で集計します（表示期間の途中で切りません）。表示する月だけが上部の「表示期間」に連動します。<br>
+        複数チームに所属する方は<b>先頭のチーム</b>で集計します（合計が二重計上にならないようにするため）。
+      </div>
+      <div class="cap-filters">
+        <label>チーム:</label>
+        <select id="cap-team" onchange="renderCapacity()"><option value="">全チーム</option></select>
+        <label>計上区分:</label>
+        <select id="cap-billable" onchange="toggleBillableFilter(this)">
+          <option value="">全て</option>
+          <option value="billable">Billableのみ</option>
+          <option value="nonbillable">Non-billableのみ</option>
+        </select>
+        <label style="font-size:11px;color:#607d8b;display:flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap"><input type="checkbox" id="cap-mgmt-cb" checked onchange="toggleMgmtPeople(this)">管理者・営業を含む</label>
+        <span class="cap-badge" id="cap-cap-badge" title="1日労働時間（管理者設定で変更）">稼働上限 7h/日</span>
+        <span id="cap-period-badge" style="font-size:11px;font-weight:600;color:#1a3a5c;background:#e8eef5;padding:3px 10px;border-radius:10px;white-space:nowrap"></span>
+      </div>
+      <div id="cap-stats" class="cap-stats"></div>
+
+      <div class="cap-cap">月別 需要 vs 供給</div>
+      <div class="cap-sub" id="cap-sub1"></div>
+      <div class="cap-chart" id="cap-chart1"></div>
+      <div class="cap-legend" id="cap-legend1"></div>
+      <div class="cap-tbl-w"><table class="cap-tbl" id="cap-tbl1"></table></div>
+
+      <div class="cap-cap">稼働率の推移（過去の実績 → この先の見通し）</div>
+      <div class="cap-sub" id="cap-sub2"></div>
+      <div class="cap-chart" id="cap-chart2"></div>
+      <div class="cap-legend" id="cap-legend2"></div>
+
+      <div class="cap-cap">チーム別のまとめ（表示中の月の合計）</div>
+      <div class="cap-tbl-w"><table class="cap-tbl" id="cap-tbl2"></table></div>
     </div>
   </div>
 
@@ -1560,7 +1632,7 @@ function logout(){
     allRows=[]; allCols=[]; allMonths=[]; allWorkload={};
     talents=[]; rates=[]; reassignments=[];
     displayNameMap={}; talentRoleMap={}; showMgmtPeople=true; unlinkedAssignees=[];
-    ['show-mgmt-cb','gantt-mgmt-cb','wl-mgmt-cb','report-mgmt-cb'].forEach(id=>{ const cb=document.getElementById(id); if(cb) cb.checked=true; });
+    ['show-mgmt-cb','gantt-mgmt-cb','wl-mgmt-cb','report-mgmt-cb','cap-mgmt-cb'].forEach(id=>{ const cb=document.getElementById(id); if(cb) cb.checked=true; });
     useDemoTalents=false; useDemoRates=false;
     document.getElementById('login-overlay').style.display='flex';
     document.getElementById('login-err').textContent='';
@@ -1660,7 +1732,7 @@ function personInTeam(name,team){
 // 各画面のチーム絞り込みドロップダウンを全チームで充填（選択値は保持）。datalist(#team-suggest)も更新
 function fillTeamSels(){
   const teams=allTeams();
-  ['gantt-team','wl-team','db-team','est-team','report-team','pf-team'].forEach(id=>{
+  ['gantt-team','wl-team','db-team','est-team','report-team','pf-team','cap-team'].forEach(id=>{
     const el=document.getElementById(id); if(!el) return;
     const cur=el.value;
     el.innerHTML='<option value="">全チーム</option>'+
@@ -1689,6 +1761,7 @@ function toggleMgmtPeople(el){
   if(activeMainTab==='estimate')  renderEstimate();
   if(activeMainTab==='report')    renderReport();
   if(activeMainTab==='portfolio') renderPortfolio();   // 担当者ドロップダウンの選択肢が変わるため
+  if(activeMainTab==='capacity')  renderCapacity();    // 供給人数が変わるため
 }
 
 // ==================== BILLABLE / NON-BILLABLE ====================
@@ -1769,13 +1842,14 @@ function pruneSimMoves(){
 }
 function toggleBillableFilter(el){
   billableFilter=el.value;
-  ['gantt-billable','wl-billable','db-billable','person-billable','est-billable','pf-billable'].forEach(id=>{
+  ['gantt-billable','wl-billable','db-billable','person-billable','est-billable','pf-billable','cap-billable'].forEach(id=>{
     const s=document.getElementById(id); if(s&&s.value!==billableFilter) s.value=billableFilter;
   });
   renderDashboard();
   if(activeMainTab==='gantt')     renderGantt();
   if(activeMainTab==='workload')  renderWorkload();
   if(activeMainTab==='portfolio') renderPortfolio();
+  if(activeMainTab==='capacity')  renderCapacity();
   if(activeMainTab==='personal')  renderPersonal();
   if(activeMainTab==='estimate')  renderEstimate();
   if(activeMainTab==='report')    renderReport();
@@ -1931,6 +2005,7 @@ function applyLoadedData(rows, cols, months, workload, zeroTasks, fetchedAt){
   if(activeMainTab==='gantt')          renderGantt();
   else if(activeMainTab==='workload')  renderWorkload();
   else if(activeMainTab==='portfolio') renderPortfolio();
+  else if(activeMainTab==='capacity')  renderCapacity();
   else if(activeMainTab==='personal')  renderPersonal();
   else if(activeMainTab==='estimate') renderEstimate();
   else if(activeMainTab==='report')   renderReport();
@@ -2089,7 +2164,7 @@ function buildMonthGroups(vcols){
 function switchMainTab(name,btn){
   activeMainTab=name;
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
-  ['dashboard','gantt','workload','portfolio','personal','estimate','reassign','report','settings'].forEach(s=>{
+  ['dashboard','gantt','workload','portfolio','capacity','personal','estimate','reassign','report','settings'].forEach(s=>{
     const el=document.getElementById('sec-'+s);
     if(el) el.hidden=(s!==name);
   });
@@ -2098,6 +2173,7 @@ function switchMainTab(name,btn){
   if(name==='gantt'&&allRows.length)     renderGantt();
   if(name==='workload'&&allRows.length)  renderWorkload();
   if(name==='portfolio')                 renderPortfolio();
+  if(name==='capacity')                  renderCapacity();
   updatePfBackBtn();   // 案件PFへの「戻る」フローティングの出し分け（Session18）
   if(name==='personal')                  renderPersonal();
   if(name==='estimate')                  renderEstimate();
@@ -2127,6 +2203,8 @@ function onPeriodChange(){
   renderWorkload();
   if(activeMainTab==='personal') renderPersonal();
   if(activeMainTab==='estimate') renderEstimate();
+  if(activeMainTab==='portfolio') renderPortfolio();
+  if(activeMainTab==='capacity')  renderCapacity();   // 表示する月が変わるため
 }
 
 function applyPeriodBtn(){
@@ -2222,7 +2300,7 @@ function autoPopulateTalents(){
 
 // ==================== 会社共通設定（1日労働時間=CAPACITY） ====================
 function updateCapBadges(){
-  ['gantt-cap-badge','wl-cap-badge'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent=`稼働上限 ${CAPACITY}h/日`; });
+  ['gantt-cap-badge','wl-cap-badge','cap-cap-badge'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent=`稼働上限 ${CAPACITY}h/日`; });
 }
 async function loadCompanySettings(){
   try{
@@ -2237,6 +2315,7 @@ function renderAllViews(){
   if(activeMainTab==='gantt')     renderGantt();
   if(activeMainTab==='workload')  renderWorkload();
   if(activeMainTab==='portfolio') renderPortfolio();
+  if(activeMainTab==='capacity')  renderCapacity();
   if(activeMainTab==='personal')  renderPersonal();
   if(activeMainTab==='estimate')  renderEstimate();
   if(activeMainTab==='report')    renderReport();
@@ -3746,6 +3825,287 @@ function refreshCsel(selectId){
   wrap.querySelector('.csel2-list').innerHTML=[...sel.options].map((o,i)=>`<div class="csel2-item${i===idx?' sel':''}" data-i="${i}">${esc(o.textContent)}</div>`).join('');
 }
 document.addEventListener('click',e=>{ document.querySelectorAll('.csel2.open').forEach(w=>{ if(!w.contains(e.target)) w.classList.remove('open'); }); });
+
+// ==================== CAPACITY PLANNING（キャパシティ計画・Session20） ====================
+// 「この先、人手は足りるのか」を月×チームで見る画面。外部グラフライブラリは使わずインラインSVGで描く
+// （単一HTMLファイル方針のため）。
+// 【集計の約束】
+//  ・需要＝その月の按分工数の合計（r.daily を「その月の全営業日」で合計）。月は必ずまるごと集計し、
+//    表示期間の途中で切らない（半端な月と供給を比べると意味が壊れるため）
+//  ・供給＝その月の稼働日数 × CAPACITY × 人数
+//  ・複数所属の人は「先頭のチーム」だけで数える（合計が二重計上にならないように）
+const CAP_COLORS=['#1a3a5c','#2e8b57','#7e57c2','#00838f','#ef6c00','#c2185b','#5d4037','#455a64','#827717','#0277bd'];
+function capPrimaryTeam(name){ const t=personTeams(name); return t.length?t[0]:'__none__'; }
+function capTeamLabel(t){ return t==='__none__'?'未所属':t; }
+// 表示する月＝表示期間に含まれる月。各月の集計はその月の全営業日で行う
+function capMonths(){ return getNavMonths(); }
+function capColsOf(mo){ return allCols.filter(c=>c.mo===mo); }
+// その月の本当の稼働日数（土日・祝日・会社休日を除く）。
+// ⚠️ allCols は「課題が存在する期間」しか持たないため、データ範囲の端の月では日数が欠ける。
+//    供給（＝稼働日数×CAPACITY×人数）をそこから数えると供給が過小に出るので、必ず実カレンダーから数える。
+function capMonthWorkdays(mo){
+  const [y,m]=mo.split('/').map(Number);
+  if(!y||!m) return 0;
+  const last=new Date(y,m,0).getDate();
+  let n=0;
+  for(let d=1;d<=last;d++){
+    if(!isGray(`${y}-${pad(m)}-${pad(d)}`)) n++;
+  }
+  return n;
+}
+// 供給を担う人＝タレント登録者（稼働が無くても余力として数える）＋Backlogに稼働がある人
+function capAllPeople(){
+  const s=new Set();
+  talents.forEach(t=>{ if(t&&t.name) s.add(t.name); });
+  Object.keys(allWorkload).forEach(n=>{ if(n) s.add(n); });
+  return filterPeople([...s]);
+}
+// 月×チームの需要・供給をまとめて算出する
+function buildCapacity(){
+  const fTeam=document.getElementById('cap-team')?.value||'';
+  const months=capMonths();
+  const wl=filteredWorkload();                 // 計上区分(billableFilter)反映済み
+  const people=capAllPeople();
+  const inScope=t=>!fTeam||t===fTeam;          // チーム絞り込み（先頭チームで判定）
+  // チームごとの人数（重複所属は先頭チームのみ）
+  const members={};
+  people.forEach(p=>{ const t=capPrimaryTeam(p); (members[t]=members[t]||[]).push(p); });
+  // 需要の担当者→チーム対応。担当者未設定('')の工数は「未所属」の需要に入れる（供給人数には数えない）
+  const demandTeamOf=n=>n?capPrimaryTeam(n):'__none__';
+  const teamsUsed=new Set();
+  const rows=months.map(mo=>{
+    const cols=capColsOf(mo);           // 需要の集計用（この月に存在する営業日）
+    const wdays=capMonthWorkdays(mo);   // 供給の計算用（実カレンダーの稼働日数）
+    const byTeam={};
+    Object.keys(wl).forEach(n=>{
+      if(n&&!filterPeople([n]).length) return;              // 管理者・営業フィルタ
+      const t=demandTeamOf(n);
+      if(!inScope(t)) return;
+      const h=cols.reduce((s,c)=>s+(wl[n]?.[c.col]||0),0);
+      if(h>0){ byTeam[t]=r2((byTeam[t]||0)+h); teamsUsed.add(t); }
+    });
+    let supply=0;
+    Object.keys(members).forEach(t=>{ if(inScope(t)) supply+=wdays*CAPACITY*members[t].length; });
+    Object.keys(members).forEach(t=>{ if(inScope(t)&&members[t].length) teamsUsed.add(t); });
+    const demand=r2(Object.values(byTeam).reduce((s,v)=>s+v,0));
+    return { mo, workdays:wdays, byTeam, demand, supply:r2(supply),
+             gap:r2(r2(supply)-demand), rate:supply>0?demand/supply:0 };
+  });
+  // チーム別の合計（表示中の月ぶん）
+  const teamRows=[...teamsUsed].sort((a,b)=>a==='__none__'?1:b==='__none__'?-1:a.localeCompare(b,'ja')).map(t=>{
+    const demand=r2(rows.reduce((s,r)=>s+(r.byTeam[t]||0),0));
+    const days=rows.reduce((s,r)=>s+r.workdays,0);
+    const n=(members[t]||[]).length;
+    const supply=r2(days*CAPACITY*n);
+    return { team:t, people:n, demand, supply, gap:r2(supply-demand), rate:supply>0?demand/supply:0 };
+  });
+  return { months, rows, teamRows, members, fTeam };
+}
+// 稼働率トレンド用：過去6ヶ月（当月まで）＋この先の表示月
+function capTrend(){
+  const cur=TODAY.slice(0,7).replace('-','/');
+  const past=allMonths.filter(m=>m<=cur).slice(-6);
+  const fut=capMonths().filter(m=>m>cur);
+  const months=[...new Set([...past,...fut])].sort();
+  const fTeam=document.getElementById('cap-team')?.value||'';
+  const wl=filteredWorkload();
+  const people=capAllPeople();
+  const inScope=t=>!fTeam||t===fTeam;
+  const members={};
+  people.forEach(p=>{ const t=capPrimaryTeam(p); (members[t]=members[t]||[]).push(p); });
+  let headcount=0; Object.keys(members).forEach(t=>{ if(inScope(t)) headcount+=members[t].length; });
+  const rowsAll=filteredRows();
+  return months.map(mo=>{
+    const cols=capColsOf(mo);
+    const wdays=capMonthWorkdays(mo);
+    let plan=0;
+    Object.keys(wl).forEach(n=>{
+      if(n&&!filterPeople([n]).length) return;
+      const t=n?capPrimaryTeam(n):'__none__';
+      if(!inScope(t)) return;
+      plan+=cols.reduce((s,c)=>s+(wl[n]?.[c.col]||0),0);
+    });
+    // 実績ベース：実績hを、その月に配分された按分比率で割り振った推計（ダッシュボードの実稼働と同方式）
+    let act=0;
+    rowsAll.forEach(r=>{
+      if(r.assignee&&!filterPeople([r.assignee]).length) return;
+      const t=r.assignee?capPrimaryTeam(r.assignee):'__none__';
+      if(!inScope(t)) return;
+      if(!(r.distHours>0)||!(r.actHours>0)) return;
+      const share=cols.reduce((s,c)=>s+(r.daily[c.col]||0),0);
+      if(share>0) act+=r.actHours*share/r.distHours;
+    });
+    const supply=wdays*CAPACITY*headcount;
+    return { mo, workdays:wdays, supply:r2(supply),
+             plan:r2(plan), act:r2(act),
+             planRate:supply>0?plan/supply:0,
+             actRate:supply>0?act/supply:0,
+             isPast:mo<=cur };
+  });
+}
+// --- インラインSVG描画ヘルパー（外部ライブラリを使わない方針） ---
+function svgTxt(x,y,t,o){ o=o||{};
+  return `<text x="${x}" y="${y}" font-size="${o.size||11}" fill="${o.fill||'#78909c'}" text-anchor="${o.anchor||'middle'}" ${o.weight?`font-weight="${o.weight}"`:''} font-family="inherit">${esc(String(t))}</text>`;
+}
+function niceMax(v){
+  if(!(v>0)) return 10;
+  const p=Math.pow(10,Math.floor(Math.log10(v)));
+  return Math.ceil(v/p*2)/2*p;   // 0.5刻みの切り上げで軸を読みやすくする
+}
+function renderCapacity(){
+  const st=document.getElementById('cap-stats'); if(!st) return;
+  const c1=document.getElementById('cap-chart1'), c2=document.getElementById('cap-chart2');
+  const badge=document.getElementById('cap-period-badge');
+  if(badge) badge.textContent='📅 '+viewPeriodLabel();
+  const cb=document.getElementById('cap-cap-badge'); if(cb) cb.textContent=`稼働上限 ${CAPACITY}h/日`;
+  if(!allRows.length){
+    st.innerHTML='';
+    c1.innerHTML='<div class="cap-empty">Backlog APIに接続してデータを取得してください</div>';
+    c2.innerHTML=''; document.getElementById('cap-tbl1').innerHTML=''; document.getElementById('cap-tbl2').innerHTML='';
+    document.getElementById('cap-legend1').innerHTML=''; document.getElementById('cap-legend2').innerHTML='';
+    document.getElementById('cap-sub1').textContent=''; document.getElementById('cap-sub2').textContent='';
+    return;
+  }
+  const cap=buildCapacity();
+  const {months, rows, teamRows}=cap;
+  if(!months.length){
+    st.innerHTML='';
+    c1.innerHTML='<div class="cap-empty">表示期間に月がありません。上部の表示期間を広げてください</div>';
+    c2.innerHTML=''; return;
+  }
+  // ---- KPI ----
+  const short=rows.filter(r=>r.gap<-0.05);
+  const worst=short.length?short.reduce((a,b)=>a.gap<b.gap?a:b):null;
+  const totD=r2(rows.reduce((s,r)=>s+r.demand,0)), totS=r2(rows.reduce((s,r)=>s+r.supply,0));
+  const avgRate=totS>0?totD/totS:0;
+  const headcount=Object.keys(cap.members).filter(t=>!cap.fTeam||t===cap.fTeam)
+    .reduce((s,t)=>s+cap.members[t].length,0);
+  const stat=(l,v,cls,tip)=>`<div class="cap-stat" title="${esc(tip||'')}"><div class="s-l">${esc(l)}</div><div class="s-v ${cls||''}">${v}</div></div>`;
+  st.innerHTML=
+    stat('対象人数',headcount+'人','','タレント登録者＋Backlogに稼働がある人（管理者・営業チェックの影響を受けます）')+
+    stat('人手が足りない月',short.length+' / '+months.length+'ヶ月',short.length?'bad':'good','需要が供給を超えた月の数')+
+    stat('最大の不足',worst?`${Math.abs(worst.gap).toFixed(1)}h（${worst.mo.replace('/','年')}月）`:'なし',worst?'bad':'good','いちばん足りない月と、その不足時間')+
+    stat('平均稼働率',(avgRate*100).toFixed(0)+'%',avgRate>1?'bad':avgRate>0.9?'':'good','表示中の月ぜんぶの 需要合計 ÷ 供給合計')+
+    stat('需要 / 供給',`${totD.toFixed(0)}h / ${totS.toFixed(0)}h`,'','表示中の月の合計');
+
+  // ---- グラフ1：月別 需要 vs 供給（チーム別の積み上げ棒＋供給ライン） ----
+  const teamsInChart=[...new Set(rows.flatMap(r=>Object.keys(r.byTeam)))]
+    .sort((a,b)=>a==='__none__'?1:b==='__none__'?-1:a.localeCompare(b,'ja'));
+  const colorOf={}; teamsInChart.forEach((t,i)=>{ colorOf[t]=t==='__none__'?'#b0bec5':CAP_COLORS[i%CAP_COLORS.length]; });
+  const slot=Math.max(78,Math.min(120,Math.floor(900/months.length)));
+  const PL=62, PR=22, PT=22, PB=48, H1=300;
+  const W1=Math.max(700, PL+PR+slot*months.length);
+  const plotH=H1-PT-PB, plotW=W1-PL-PR;
+  const yMax=niceMax(Math.max(...rows.map(r=>Math.max(r.demand,r.supply)),1)*1.12);
+  const Y=v=>PT+plotH-(v/yMax)*plotH;
+  let g='';
+  for(let i=0;i<=4;i++){ const v=yMax*i/4, y=Y(v);
+    g+=`<line x1="${PL}" y1="${y}" x2="${W1-PR}" y2="${y}" stroke="#eceff1" stroke-width="1"/>`
+     + svgTxt(PL-8,y+4,Math.round(v)+'h',{anchor:'end',size:10});
+  }
+  rows.forEach((r,i)=>{
+    const cx=PL+slot*i+slot/2, bw=Math.min(42,slot*0.46);
+    let acc=0;
+    teamsInChart.forEach(t=>{
+      const v=r.byTeam[t]||0; if(v<=0) return;
+      const y0=Y(acc+v), y1=Y(acc);
+      g+=`<rect x="${cx-bw/2}" y="${y0}" width="${bw}" height="${Math.max(0,y1-y0)}" fill="${colorOf[t]}"><title>${esc(r.mo.replace('/','年'))}月 ${esc(capTeamLabel(t))}: ${v.toFixed(1)}h</title></rect>`;
+      acc=r2(acc+v);
+    });
+    // 供給ライン（その月ぶん）
+    const sy=Y(r.supply);
+    g+=`<line x1="${cx-slot*0.42}" y1="${sy}" x2="${cx+slot*0.42}" y2="${sy}" stroke="#37474f" stroke-width="2" stroke-dasharray="6 4"><title>供給 ${r.supply.toFixed(1)}h（稼働日${r.workdays}日 × ${CAPACITY}h × ${headcount}人）</title></line>`;
+    // 供給を超えた分を赤く飛び出させる
+    if(r.demand>r.supply+0.05){
+      const yTop=Y(r.demand);
+      g+=`<rect x="${cx-bw/2-3}" y="${yTop}" width="${bw+6}" height="${Math.max(0,sy-yTop)}" fill="#d9534f" fill-opacity=".28" stroke="#d9534f" stroke-width="1.5"><title>不足 ${(r.demand-r.supply).toFixed(1)}h</title></rect>`
+       + svgTxt(cx,yTop-6,'+'+(r.demand-r.supply).toFixed(0)+'h',{fill:'#c62828',size:11,weight:700});
+    } else {
+      g+=svgTxt(cx,Y(r.demand)-6,r.demand.toFixed(0)+'h',{fill:'#607d8b',size:10});
+    }
+    g+=svgTxt(cx,H1-PB+18,r.mo.replace('/','/'),{size:11,fill:'#546e7a',weight:700})
+     + svgTxt(cx,H1-PB+32,`稼働${r.workdays}日`,{size:9,fill:'#b0bec5'});
+  });
+  g+=`<line x1="${PL}" y1="${PT+plotH}" x2="${W1-PR}" y2="${PT+plotH}" stroke="#cfd8dc" stroke-width="1"/>`;
+  c1.innerHTML=`<svg width="${W1}" height="${H1}" viewBox="0 0 ${W1} ${H1}" role="img" aria-label="月別の需要と供給">${g}</svg>`;
+  document.getElementById('cap-legend1').innerHTML=
+    teamsInChart.map(t=>`<span><i style="background:${colorOf[t]}"></i>${esc(capTeamLabel(t))}</span>`).join('')+
+    `<span><i class="line"></i>供給（稼働日数 × ${CAPACITY}h × 人数）</span>`+
+    `<span><i style="background:#d9534f;opacity:.35;border:1px solid #d9534f"></i>供給を超えた分（不足）</span>`;
+  document.getElementById('cap-sub1').innerHTML=
+    `棒＝その月に必要な工数（チーム別の積み上げ）。破線＝その月に出せる工数。<b>破線を超えた赤い部分が人手不足</b>です。`;
+
+  // 月別テーブル（グラフの数字をそのまま確認できるように）
+  document.getElementById('cap-tbl1').innerHTML=
+    `<tr><th>月</th><th>稼働日</th><th>需要h</th><th>供給h</th><th>過不足h</th><th>稼働率</th></tr>`+
+    rows.map(r=>`<tr>
+      <td>${esc(r.mo.replace('/','年'))}月</td>
+      <td>${r.workdays}</td>
+      <td>${r.demand.toFixed(1)}</td>
+      <td>${r.supply.toFixed(1)}</td>
+      <td class="${r.gap<-0.05?'short':r.gap>0.05?'room':''}">${r.gap<-0.05?'不足 '+Math.abs(r.gap).toFixed(1):r.gap>0.05?'余力 '+r.gap.toFixed(1):'±0'}</td>
+      <td class="${r.rate>1?'short':''}">${(r.rate*100).toFixed(0)}%</td>
+    </tr>`).join('');
+
+  // ---- グラフ2：稼働率の推移 ----
+  const tr=capTrend();
+  const slot2=Math.max(64,Math.min(110,Math.floor(900/Math.max(1,tr.length))));
+  const H2=230, PB2=44, W2=Math.max(700, PL+PR+slot2*tr.length);
+  const plotH2=H2-PT-PB2;
+  const maxRate=Math.max(1.2,...tr.map(t=>Math.max(t.planRate,t.actRate)))*1.08;
+  const Y2=v=>PT+plotH2-(v/maxRate)*plotH2;
+  const X2=i=>PL+slot2*i+slot2/2;
+  let g2='';
+  [0,.25,.5,.75,1].forEach(v=>{
+    if(v>maxRate) return;
+    const y=Y2(v);
+    g2+=`<line x1="${PL}" y1="${y}" x2="${W2-PR}" y2="${y}" stroke="${v===1?'#ef9a9a':'#eceff1'}" stroke-width="${v===1?1.5:1}" ${v===1?'stroke-dasharray="6 4"':''}/>`
+      + svgTxt(PL-8,y+4,(v*100)+'%',{anchor:'end',size:10,fill:v===1?'#c62828':'#78909c'});
+  });
+  const mkPath=(key)=>tr.map((t,i)=>`${i?'L':'M'}${X2(i)},${Y2(t[key])}`).join(' ');
+  const pastPts=tr.filter(t=>t.isPast);
+  if(pastPts.length>1){
+    const idx=tr.findIndex(t=>!t.isPast);
+    const cut=idx<0?tr.length:idx;
+    g2+=`<path d="${tr.slice(0,cut).map((t,i)=>`${i?'L':'M'}${X2(i)},${Y2(t.actRate)}`).join(' ')}" fill="none" stroke="#2e8b57" stroke-width="2" stroke-dasharray="5 4"/>`;
+  }
+  g2+=`<path d="${mkPath('planRate')}" fill="none" stroke="#1a3a5c" stroke-width="2.5"/>`;
+  tr.forEach((t,i)=>{
+    const x=X2(i);
+    g2+=`<circle cx="${x}" cy="${Y2(t.planRate)}" r="3.5" fill="${t.planRate>1?'#d9534f':'#1a3a5c'}"><title>${esc(t.mo)} 予定ベース ${(t.planRate*100).toFixed(0)}%（需要${t.plan.toFixed(1)}h / 供給${t.supply.toFixed(1)}h）</title></circle>`;
+    if(t.isPast&&t.act>0) g2+=`<circle cx="${x}" cy="${Y2(t.actRate)}" r="3" fill="#2e8b57"><title>${esc(t.mo)} 実績ベース ${(t.actRate*100).toFixed(0)}%（実績${t.act.toFixed(1)}h）</title></circle>`;
+    g2+=svgTxt(x,Y2(t.planRate)-9,(t.planRate*100).toFixed(0)+'%',{size:10,fill:t.planRate>1?'#c62828':'#546e7a',weight:700})
+      + svgTxt(x,H2-PB2+18,t.mo.slice(5)+'月',{size:10,fill:'#546e7a'})
+      + svgTxt(x,H2-PB2+31,t.mo.slice(0,4),{size:8,fill:'#cfd8dc'});
+  });
+  const curIdx=tr.findIndex(t=>!t.isPast);
+  if(curIdx>0){
+    const bx=(X2(curIdx-1)+X2(curIdx))/2;
+    g2+=`<line x1="${bx}" y1="${PT}" x2="${bx}" y2="${PT+plotH2}" stroke="#90a4ae" stroke-width="1" stroke-dasharray="3 3"/>`
+      + svgTxt(bx,PT-6,'← 実績 ／ 見通し →',{size:9,fill:'#90a4ae'});
+  }
+  g2+=`<line x1="${PL}" y1="${PT+plotH2}" x2="${W2-PR}" y2="${PT+plotH2}" stroke="#cfd8dc" stroke-width="1"/>`;
+  c2.innerHTML=`<svg width="${W2}" height="${H2}" viewBox="0 0 ${W2} ${H2}" role="img" aria-label="稼働率の推移">${g2}</svg>`;
+  document.getElementById('cap-legend2').innerHTML=
+    `<span><i class="solid"></i>予定ベースの稼働率（按分工数 ÷ 供給）</span>`+
+    `<span><i style="border-top:2px dashed #2e8b57;height:0;width:16px;border-radius:0"></i>実績ベースの稼働率（実績hを按分配分した推計）</span>`+
+    `<span><i style="background:#ef9a9a"></i>100%ライン（これを超えると人手不足）</span>`;
+  document.getElementById('cap-sub2').innerHTML=
+    `直近6ヶ月の実績と、この先の見通しを並べています。<b>実績ベースは、実績hをタスクの按分比率で月に割り振った推計値</b>です（Backlogに月別の実績がないため）。`;
+
+  // ---- チーム別まとめ ----
+  document.getElementById('cap-tbl2').innerHTML=
+    `<tr><th>チーム</th><th>人数</th><th>需要h</th><th>供給h</th><th>過不足h</th><th>稼働率</th></tr>`+
+    (teamRows.length?teamRows.map(t=>`<tr>
+      <td>${esc(capTeamLabel(t.team))}</td>
+      <td>${t.people}</td>
+      <td>${t.demand.toFixed(1)}</td>
+      <td>${t.supply.toFixed(1)}</td>
+      <td class="${t.gap<-0.05?'short':t.gap>0.05?'room':''}">${t.gap<-0.05?'不足 '+Math.abs(t.gap).toFixed(1):t.gap>0.05?'余力 '+t.gap.toFixed(1):'±0'}</td>
+      <td class="${t.rate>1?'short':''}">${t.supply>0?(t.rate*100).toFixed(0)+'%':'—'}</td>
+    </tr>`).join('')
+    :`<tr><td colspan="6" style="text-align:center;color:#90a4ae;padding:16px">データがありません</td></tr>`);
+}
 
 // ==================== PORTFOLIO（案件ポートフォリオ・Session17） ====================
 // 「案件（Job No.）単位」で見るための画面。タスク単位・人単位しか無かった穴を埋める。
