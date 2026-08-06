@@ -421,6 +421,15 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 .pf-stat .s-l{font-size:10px;color:#78909c;font-weight:700;white-space:nowrap}
 .pf-stat .s-v{font-size:19px;font-weight:800;color:#1a3a5c;white-space:nowrap;margin-top:2px}
 .pf-stat .s-v.bad{color:#d9534f}
+/* リスク内訳：絵文字は行内で高さがばらつくのでCSSの丸を使い、flexで確実に中央揃えする */
+.pf-riskv{display:flex;align-items:center;gap:10px}
+.pf-riskv .rk{display:flex;align-items:center;gap:5px}
+.pf-riskv .dot{width:11px;height:11px;border-radius:50%;flex:none}
+.pf-riskv .dot.red{background:#d9534f}
+.pf-riskv .dot.yel{background:#f0ad4e}
+.pf-riskv .n{font-size:19px;font-weight:800;line-height:1}
+.pf-riskv .u{font-size:11px;font-weight:700;line-height:1;margin-left:-1px}
+.pf-riskv .sep{color:#cfd8dc;font-weight:400;font-size:14px}
 .pf-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px}
 /* カードは縦フレックス。ボタン(.pf-acts)を margin-top:auto で必ず最下部に揃える＝枠ごとに高さがずれない */
 .pf-card{background:#fff;border:1px solid #e0e6f0;border-radius:10px;padding:12px 14px;border-left:5px solid #90a4ae;display:flex;flex-direction:column}
@@ -462,6 +471,9 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 .pf-acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto;padding-top:11px}
 .pf-empty{grid-column:1/-1;text-align:center;color:#90a4ae;font-size:12px;padding:26px;background:#f7f9fc;border:1px dashed #cfd8dc;border-radius:8px}
 /* 案件カードから飛んだ先に出す「戻る」フローティング。探し直さずに一覧へ帰れるようにする */
+/* ⚠️ display:flex は UA の [hidden]{display:none} を上書きしてしまう。
+   hidden属性で消えるように、必ずこの打ち消しを先に置く（Session19で発覚：常時表示＆×が効かない不具合） */
+#pf-back[hidden]{display:none!important}
 #pf-back{position:fixed;right:20px;bottom:20px;z-index:9000;display:flex;align-items:center;gap:8px;
   background:#1a3a5c;color:#fff;border:none;border-radius:24px;padding:11px 18px;cursor:pointer;
   font-size:13px;font-weight:700;box-shadow:0 4px 14px rgba(26,58,92,.35);white-space:nowrap;font-family:inherit}
@@ -3849,11 +3861,13 @@ function renderPortfolio(){
                         {est:0,act:0,budget:0,actual:0,red:0,yellow:0,green:0});
   const stat=(l,v,cls,tip)=>`<div class="pf-stat" title="${esc(tip||'')}"><div class="s-l">${esc(l)}</div><div class="s-v ${cls||''}">${v}</div></div>`;
   // 「危険＋注意」で絞ったときに内訳が分かるよう、1枚のパネルに🔴と🟡の件数を並べる
-  const riskStat=`<div class="pf-stat" title="🔴＝期限超過・工数110%超・予算超過のいずれか／🟡＝期限14日以内・工数90%超・担当者未設定・按分不能のいずれか">
+  const riskStat=`<div class="pf-stat" title="危険＝期限超過・工数110%超・予算超過のいずれか／注意＝期限14日以内・工数90%超・担当者未設定・按分不能のいずれか">
       <div class="s-l">リスク内訳（危険 / 注意）</div>
-      <div class="s-v"><span class="${sum.red>0?'bad':''}">🔴 ${sum.red}件</span>
-        <span style="color:#cfd8dc;margin:0 6px">/</span>
-        <span style="color:${sum.yellow>0?'#8d6e00':'#1a3a5c'}">🟡 ${sum.yellow}件</span></div>
+      <div class="s-v pf-riskv">
+        <span class="rk" style="color:${sum.red>0?'#d9534f':'#90a4ae'}"><i class="dot red"></i><span class="n">${sum.red}</span><span class="u">件</span></span>
+        <span class="sep">/</span>
+        <span class="rk" style="color:${sum.yellow>0?'#8d6e00':'#90a4ae'}"><i class="dot yel"></i><span class="n">${sum.yellow}</span><span class="u">件</span></span>
+      </div>
     </div>`;
   statsEl.innerHTML=
     stat('案件数',list.length,'','絞り込み後の案件数')+
@@ -3893,23 +3907,34 @@ function renderPortfolio(){
     const stHtml=Object.entries(g.statusCounts).sort((a,b)=>b[1]-a[1])
       .map(([s,n])=>`${badge(s)}<span style="font-size:10px;color:#78909c;margin:0 6px 0 2px">${n}</span>`).join('');
     const titles=g.tasks.slice(0,3).map(t=>t.title).join(' ／ ');
-    const diffCls=!fin?'':(g.actH<=0?'':g.diff>0.5?'good':g.diff<-0.5?'bad':'');
-    const diffStr=!fin?'':(g.actH<=0?'—':fmtYenSigned(g.diff));
+    // 単価が1件も引けない案件は予算=実費=0 になる。ここで「¥0」と出すと
+    // 「差異なし＝順調」と誤読されるため、必ず「—」＋理由を出す（Session19・実データで発覚）
+    const noBudget=fin&&g.budget<=0;
+    const diffCls=(!fin||noBudget||g.actH<=0)?'':(g.diff>0.5?'good':g.diff<-0.5?'bad':'');
+    const diffStr=!fin?'':((noBudget||g.actH<=0)?'—':fmtYenSigned(g.diff));
+    const diffTip=noBudget?'担当者の役職が未登録のため単価が0で、金額を算出できません（設定タブでタレントの役職を登録すると反映されます）'
+                          :'予算 − 実費（＋＝予算内／−＝超過／実績h未入力は—）';
+    // 単価未設定の注意書き：金額が「一部欠けている」のか「そもそも出せない」のかを区別して伝える
+    const rateWarn=(fin&&g.noRate>0)
+      ? (g.budget>0 ? `⚠ 単価未設定 ${g.noRate}件は金額に含まれていません`
+                    : `⚠ 単価未設定のため金額を算出できません（${g.noRate}件）`)
+      : '';
     return `<div class="pf-card ${g.risk}">
       <div class="pf-head">
         <span class="pf-job">${esc(jobLbl)}</span>
         <span class="pf-sig ${g.risk}">${g.risk==='red'?'🔴 危険':g.risk==='yellow'?'🟡 注意':'🟢 順調'}</span>
       </div>
       <div class="pf-sub">タスク ${g.tasks.length}件（完了 ${g.done} / 未完了 ${g.open}）${g.jobNos.size>1?` ・ 枝番 ${g.jobNos.size}種`:''}</div>
+      <div class="pf-sec" style="margin-top:2px">主なタスク${g.tasks.length>3?`（${g.tasks.length}件中3件）`:''}</div>
       <div class="pf-name" title="${esc(titles)}">${esc(titles||'（件名なし）')}</div>
       <div class="pf-gauge-l"><span>${esc(gBase)}</span><span>${pct}%</span></div>
       <div class="pf-gauge"><i class="${gCls}" style="width:${Math.min(100,Math.max(0,pct))}%"></i></div>
       <div class="pf-gauge-n">${g.useBudget?`実費 ${fmtYen(g.actual)} ／ 予算 ${fmtYen(g.budget)}`:`実績 ${g.actH.toFixed(1)}h ／ 予定 ${g.estH.toFixed(1)}h`}
-        ${g.useBudget&&g.noRate>0?`<br><span style="color:#e65100" title="担当者の役職が未登録、または担当者未設定のタスクは単価0のため金額に含まれません。設定タブでタレントの役職を登録すると反映されます">⚠ 単価未設定 ${g.noRate}件は金額に含まれていません</span>`:''}</div>
+        ${rateWarn?`<br><span style="color:#e65100" title="担当者の役職が未登録、または担当者未設定のタスクは単価0として扱われます。設定タブでタレントの役職を登録すると金額に反映されます">${esc(rateWarn)}</span>`:''}</div>
       <div class="pf-grid">
         <div class="pf-g"><div class="g-l">予定h</div><div class="g-v">${g.estH.toFixed(1)}</div></div>
         <div class="pf-g"><div class="g-l">実績h</div><div class="g-v ${g.actH>g.estH+0.05?'bad':g.actH>0&&g.actH<g.estH-0.05?'good':''}">${g.actH.toFixed(1)}</div></div>
-        ${fin?`<div class="pf-g" title="予算 − 実費（＋＝予算内／−＝超過／実績h未入力は—）"><div class="g-l">差異</div><div class="g-v ${diffCls}">${diffStr}</div></div>`
+        ${fin?`<div class="pf-g" title="${esc(diffTip)}"><div class="g-l">差異</div><div class="g-v ${diffCls}">${diffStr}</div></div>`
              :`<div class="pf-g"><div class="g-l">参加者</div><div class="g-v">${mem.length}人</div></div>`}
       </div>
       ${bar}
