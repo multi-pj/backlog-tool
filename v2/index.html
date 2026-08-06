@@ -380,9 +380,26 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 .sim-delta.better{background:#e8f5e9;color:#2e7d32}
 .sim-delta.worse{background:#fdecea;color:#c62828}
 .sim-delta.same{background:#eceff1;color:#607d8b}
-.sim-move{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#fff;border:1px solid #e0d6f2;border-left:3px solid #7e57c2;border-radius:6px;padding:6px 10px;margin-bottom:5px;font-size:12px}
-.sim-move .sm-task{flex:1;min-width:180px;color:#1a3a5c}
+.sim-move{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid #e0d6f2;border-left:3px solid #7e57c2;border-radius:6px;padding:6px 10px;margin-bottom:5px;font-size:12px}
+.sim-move .sm-job{font-weight:800;color:#7e57c2;white-space:nowrap;min-width:88px}
+.sim-move .sm-task{flex:1;min-width:200px;color:#1a3a5c;word-break:break-word;text-wrap:pretty}
 .sim-move .sm-flow{font-weight:700;color:#5e35b1;white-space:nowrap}
+.sim-sec{font-size:11px;font-weight:800;color:#5e35b1;margin:12px 0 5px;white-space:nowrap}
+.sim-hint{font-size:11px;color:#8d6e00;background:#fff8e1;border:1px solid #ffe082;border-radius:6px;padding:8px 10px;margin-bottom:10px;text-wrap:pretty;line-height:1.6}
+.sim-imp{background:#fff;border:1px solid #e0d6f2;border-radius:8px;padding:8px 10px;margin-bottom:4px;overflow-x:auto}
+.sim-imp .si-h{font-size:10px;font-weight:700;color:#7e57c2;margin-bottom:6px;text-wrap:pretty}
+.si-t{width:100%;border-collapse:collapse;font-size:12px}
+.si-t th{font-size:10px;font-weight:700;color:#78909c;text-align:left;padding:2px 8px 4px 0;white-space:nowrap;border-bottom:1px solid #eceff1}
+.si-t td{padding:5px 8px 5px 0;white-space:nowrap;border-bottom:1px solid #f5f5f5}
+.si-t tr:last-child td{border-bottom:none}
+.si-t .si-n{font-weight:700;color:#1a3a5c;max-width:150px;overflow:hidden;text-overflow:ellipsis}
+.si-b{color:#90a4ae;text-decoration:line-through}
+.si-ar{color:#7e57c2;margin:0 5px}
+.si-a{font-weight:800}
+.si-a.better{color:#2e8b57}.si-a.worse{color:#d9534f}.si-a.same{color:#546e7a}
+.si-d{font-size:10px;font-weight:700;padding:1px 6px;border-radius:8px;margin-left:6px}
+.si-d.better{background:#e8f5e9;color:#2e7d32}.si-d.worse{background:#fdecea;color:#c62828}.si-d.same{background:#eceff1;color:#607d8b}
+@media(max-width:768px){ .si-t th:nth-child(3),.si-t td:nth-child(3){display:none} .sim-move .sm-task{min-width:140px} }
 .sim-empty{font-size:12px;color:#90a4ae;background:#fff;border:1px dashed #d1c4e9;border-radius:6px;padding:14px;text-align:center}
 .sim-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .btn-sim{background:#7e57c2;color:#fff;border:none}
@@ -1585,6 +1602,25 @@ function calcOverloadStats(wl, vcols, people){
     });
   });
   return {cells, totalOver:r2(totalOver), maxOver:r2(maxOver), people:ppl.size};
+}
+// 担当者1人ぶんの期間内サマリー（合計h・最も重い日・超過した日数）
+function calcPersonLoad(wl, p, vcols){
+  let total=0, peak=0, overDays=0;
+  vcols.forEach(c=>{
+    const h=r2(wl[p]?.[c.col]||0);
+    total+=h; if(h>peak) peak=h; if(h>CAPACITY) overDays++;
+  });
+  return {total:r2(total), peak:r2(peak), overDays};
+}
+// 仮移動で「実際に数値が変わる担当者」だけを before→after で返す。
+// ※チーム全体のKPIは、過負荷の人→過負荷の人へ移すと超過量が保存されて±0になり得る（数学的に正しい）。
+//   1件の移動が必ず現れるのはこの担当者単位の指標なので、パネルには必ずこれを出す。
+function calcSimImpact(baseWl, simWl, vcols){
+  const names=new Set();
+  simMoves.forEach(mv=>{ names.add(mv.from); names.add(mv.to); });
+  return [...names].map(p=>({ name:p, b:calcPersonLoad(baseWl,p,vcols), a:calcPersonLoad(simWl,p,vcols) }))
+    .filter(x=> Math.abs(x.a.total-x.b.total)>=0.005 || Math.abs(x.a.peak-x.b.peak)>=0.005 || x.a.overDays!==x.b.overDays)
+    .sort((x,y)=> (x.a.total-x.b.total)-(y.a.total-y.b.total));   // 減った人（移管元）を上に
 }
 function saveSimToSession(){
   try{ sessionStorage.setItem('bl_v2_sim', JSON.stringify({simMode, simMoves})); }catch(e){}
@@ -3263,24 +3299,68 @@ function renderSimPanel(baseWl, simWl, vcols){
         <span class="sim-delta ${cls}">${dTxt}${unit}</span>
       </div></div>`;
   };
+  // 仮移動リスト：Job No. ／ 案件名（全文）／ 移管元→移管先 ／ 取消
   const moves=simMoves.length?simMoves.map((mv,i)=>`
-    <div class="sim-move">
-      <span class="sm-task">${mv.jobNo?`<b style="color:#7e57c2">[${esc(mv.jobNo)}]</b> `:''}<b style="font-family:monospace;font-size:11px">${esc(mv.taskKey)}</b> ${esc(trunc(mv.title,34))}</span>
+    <div class="sim-move" title="課題キー: ${esc(mv.taskKey)}">
+      <span class="sm-job">${mv.jobNo?esc(mv.jobNo):'—'}</span>
+      <span class="sm-task">${esc(mv.title||'（件名なし）')}</span>
       <span class="sm-flow">${esc(dispName(mv.from))} → ${esc(dispName(mv.to))}</span>
       <button class="btn btn-secondary btn-sm sim-undo" data-simidx="${i}">取消</button>
     </div>`).join('')
     :`<div class="sim-empty">仮移動はまだありません。<br>ワークロード表の<b>赤いセル（超過）をクリック</b>→タスクと移管先を選び<b>「🧪 仮に移す」</b>を押すと、ここに積み上がります</div>`;
+  // 担当者ごとの影響（1件の移動でも必ず数値が動く指標）
+  const imp=simMoves.length?calcSimImpact(baseWl, simWl, vcols):[];
+  const impCell=(b,a,unit)=>{
+    const d=r2(a-b);
+    const cls=Math.abs(d)<0.005?'same':(d<0?'better':'worse');
+    return `<span class="si-b">${b}${unit}</span><span class="si-ar">→</span><span class="si-a ${cls}">${a}${unit}</span><span class="si-d ${cls}">${Math.abs(d)<0.005?'±0':(d>0?'+'+r2(d):String(r2(d)))}</span>`;
+  };
+  const impHtml=imp.length?`
+    <div class="sim-imp">
+      <div class="si-h">担当者ごとの影響 — 仮移動で数値が変わる人だけを表示しています</div>
+      <table class="si-t">
+        <tr><th>担当者</th><th>表示期間の合計</th><th>いちばん重い日</th><th>超過した日数</th></tr>
+        ${imp.map(x=>`<tr>
+          <td class="si-n" title="${esc(dispName(x.name))}">${esc(dispName(x.name))}</td>
+          <td>${impCell(x.b.total,x.a.total,'h')}</td>
+          <td>${impCell(x.b.peak,x.a.peak,'h')}</td>
+          <td>${impCell(x.b.overDays,x.a.overDays,'日')}</td>
+        </tr>`).join('')}
+      </table>
+    </div>`:'';
+  // チーム全体のKPIが全て±0のときは「なぜ動かないのか」を明示する（故障との誤認を防ぐ）
+  const allSame=simMoves.length && before.cells===after.cells && before.people===after.people
+    && Math.abs(before.totalOver-after.totalOver)<0.005 && Math.abs(before.maxOver-after.maxOver)<0.005;
+  let sameHint='';
+  if(simMoves.length && !imp.length){
+    // 「動かない」理由は2種類ある。混同すると案内が嘘になるので実データで切り分ける
+    const inView=simMoves.some(mv=>{
+      const row=allRows.find(r=>r.key===mv.taskKey);
+      return row && vcols.some(c=>(row.daily[c.col]||0)>0);
+    });
+    sameHint=inView
+      ? `<div class="sim-hint">⚠ 数値が動きません。<b>複数の仮移動が互いに打ち消し合って差し引きゼロ</b>になっています。<br>下の一覧から不要な仮移動を「取消」してください</div>`
+      : `<div class="sim-hint">⚠ 数値が動きません。仮に移したタスクは<b>現在の表示期間に稼働がありません</b>。<br>期間を広げるか、月ナビで対象の月を選ぶと反映されます</div>`;
+  } else if(allSame && before.cells===0 && after.cells===0){
+    sameHint=`<div class="sim-hint">ℹ️ 表示期間内に<b>過負荷（1日${CAPACITY}h超）の人がいない</b>ため、チーム全体の指標はすべて0のままです。<br>個々の負荷は動いています。下の「担当者ごとの影響」と、表の紫枠セルの▲▼をご確認ください</div>`;
+  } else if(allSame){
+    sameHint=`<div class="sim-hint">⚠ チーム全体の指標は変わりません。<b>過負荷の人から過負荷の人へ移した</b>ため、チーム全体の超過量は減っていないためです（超過が別の人へ移っただけ）。<br>個々の負荷は動いています。下の「担当者ごとの影響」と、表の紫枠セルの▲▼をご確認ください</div>`;
+  }
   panel.innerHTML=`
     <div class="sim-head">
       <span class="sim-title">🧪 What-if シミュレーション</span>
       <span class="sim-note">仮に担当を移した場合の負荷を試算中です。<b>Backlogにも再アサイン記録にも書き込まれていません</b>（確定するまで下書きです）</span>
     </div>
+    <div class="sim-sec">チーム全体（表示期間・担当者フィルターの影響を受けません）</div>
     <div class="sim-kpis">
       ${kpi('過負荷セル数（表示期間）',before.cells,after.cells,'',`1日${CAPACITY}hを超えた「人×日」の数。減るほど良い`)}
-      ${kpi('のべ超過時間',before.totalOver,after.totalOver,'h','超過分の合計時間。減るほど良い')}
+      ${kpi('のべ超過時間',before.totalOver,after.totalOver,'h',`超過分の合計時間。減るほど良い。※過負荷の人から過負荷の人へ移した場合、合計は変わりません（超過が別の人に移るだけのため）`)}
       ${kpi('過負荷スタッフ数',before.people,after.people,'人','期間内に1日でも超過した人数')}
       ${kpi('最大超過',before.maxOver,after.maxOver,'h','いちばん厳しい日の超過幅')}
     </div>
+    ${sameHint}
+    ${impHtml}
+    <div class="sim-sec">仮移動の一覧（未確定）</div>
     <div>${moves}</div>
     <div class="sim-btns">
       <button class="btn btn-sim btn-sm" id="sim-commit" ${simMoves.length?'':'disabled'} title="仮移動をすべて再アサイン記録に保存します（Backlogの担当者は変更しません）">✓ この案で確定</button>
@@ -3894,7 +3974,9 @@ function openRecommendModal(person, ds, h, colIdx){
   const asgCats={};
   allRows.forEach(r=>{ if(!r.assignee) return; (asgCats[r.assignee]=asgCats[r.assignee]||new Set()); (r.categories||[]).forEach(c=>asgCats[r.assignee].add(c)); });
   let candidates=Object.keys(wl)
-    .filter(name=>name!==person&&!isMgmtPerson(name))
+    // name!=='' ＝「未設定（担当者なし）」は移管先にできないので候補から除く。
+    // （出してしまうと選択しても保存/試算ボタンが有効化されず「押しても無反応」に見える・Session16）
+    .filter(name=>name!==''&&name!==person&&!isMgmtPerson(name))
     .map(name=>{
       const dayH=r2(wl[name]?.[colIdx]||0);
       const avail=r2(CAPACITY-dayH);
