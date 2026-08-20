@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Backlog WFM v2</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -572,6 +572,20 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 .flatpickr-input.flatpickr-alt-input{width:190px!important;padding:6px 8px;border:1px solid #d0dae6;border-radius:6px;font-size:12px;color:#333;background:#fff;cursor:pointer}
 .file-label{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border:2px dashed #b0bec5;border-radius:8px;cursor:pointer;font-size:13px;color:#607d8b;transition:all .2s}
 .file-label:hover{border-color:#1a3a5c;background:#f0f5ff;color:#1a3a5c}
+/* ===== Safe area（共通ルール 7.14 とセットの必須対応・2026-08-20） =====
+   viewport-fit=cover を入れると描画が切り欠き／ホームバーの領域まで広がるため、
+   env(safe-area-inset-*) で必ず打ち消す。入れないと横向きで左右端が切り欠きに隠れ、
+   下部の固定要素（トースト・案件PFに戻る）がホームバーに潜って押しにくくなる。
+   ⚠️ 打ち消しは元の指定より後ろに置くこと（同じ詳細度なので後勝ち）。 */
+header{padding-left:calc(20px + env(safe-area-inset-left));padding-right:calc(20px + env(safe-area-inset-right))}
+nav{padding-left:calc(20px + env(safe-area-inset-left));padding-right:calc(20px + env(safe-area-inset-right))}
+.container{padding-left:calc(20px + env(safe-area-inset-left));padding-right:calc(20px + env(safe-area-inset-right))}
+.toast{bottom:calc(20px + env(safe-area-inset-bottom));right:calc(20px + env(safe-area-inset-right))}
+#pf-back{bottom:calc(20px + env(safe-area-inset-bottom));right:calc(20px + env(safe-area-inset-right))}
+@media(max-width:768px){
+  #pf-back{bottom:calc(12px + env(safe-area-inset-bottom));right:calc(12px + env(safe-area-inset-right))}
+  .toast{bottom:calc(12px + env(safe-area-inset-bottom));right:calc(12px + env(safe-area-inset-right))}
+}
 @media print{
   header,nav,#loading-overlay,.toast,.btn{display:none!important}
   .no-print{display:none!important}

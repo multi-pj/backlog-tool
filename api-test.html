@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Backlog 稼働分析</title>
 <!-- xlsx-js-style = SheetJS フォーク（スタイル書き込み対応）、window.XLSX として公開 -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.min.js"></script>
@@ -225,6 +225,12 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 #pw-btn{margin-top:14px;width:100%;padding:10px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .15s}
 #pw-btn:hover{opacity:.85}
 #pw-err{font-size:11px;color:#e53935;margin-top:8px;min-height:16px}
+/* ===== Safe area（共通ルール 7.14 とセットの必須対応・2026-08-20） =====
+   viewport-fit=cover を入れると描画が切り欠き／ホームバーの領域まで広がるため、
+   env(safe-area-inset-*) で必ず打ち消す。打ち消しは元の指定より後ろに置くこと（後勝ち）。 */
+header{padding-left:calc(24px + env(safe-area-inset-left));padding-right:calc(24px + env(safe-area-inset-right))}
+.container{padding-left:calc(20px + env(safe-area-inset-left));padding-right:calc(20px + env(safe-area-inset-right))}
+.toast{bottom:calc(22px + env(safe-area-inset-bottom));right:calc(22px + env(safe-area-inset-right))}
 </style>
 </head>
 <body>
