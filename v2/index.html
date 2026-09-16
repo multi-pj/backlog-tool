@@ -410,16 +410,18 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 .wl-diff.dn{color:#2e7d32}
 .wl-diff.up{color:#c62828}
 /* ===== 案件（Job No.）ポートフォリオ（Session17） ===== */
-.pf-note{background:#eef4fb;border:1px solid #c5d8ec;border-left:4px solid #1a3a5c;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#37474f;line-height:1.7;text-wrap:pretty}
-.pf-filters{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.pf-note{background:#eef4fb;border:1px solid #c5d8ec;border-left:4px solid #1a3a5c;border-radius:8px;padding:12px 16px;margin-bottom:18px;font-size:12px;color:#37474f;line-height:1.85;text-wrap:pretty}
+.pf-filters{display:flex;align-items:center;gap:8px 10px;flex-wrap:wrap;margin-bottom:18px}
 .pf-filters label{font-size:12px;color:#607d8b;font-weight:600;white-space:nowrap}
+/* ラベルと入力欄は1組で折り返す（「チーム:」だけが行末に残って選択欄が次の行へ落ちるのを防ぐ） */
+.pf-fg{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .pf-filters select,.pf-filters input{padding:6px 10px;border:1px solid #d0dae6;border-radius:6px;font-size:12px}
 .pf-filters select{min-width:120px}
 .pf-filters input{min-width:180px}
-.pf-stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
-.pf-stat{flex:1;min-width:120px;background:#f7f9fc;border:1px solid #e0e6f0;border-radius:8px;padding:8px 12px}
-.pf-stat .s-l{font-size:10px;color:#78909c;font-weight:700;white-space:nowrap}
-.pf-stat .s-v{font-size:19px;font-weight:800;color:#1a3a5c;white-space:nowrap;margin-top:2px}
+.pf-stats{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:26px}
+.pf-stat{flex:1;min-width:140px;background:#f7f9fc;border:1px solid #e6ebf2;border-radius:10px;padding:12px 16px}
+.pf-stat .s-l{font-size:11px;color:#78909c;font-weight:600;white-space:nowrap}
+.pf-stat .s-v{font-size:20px;font-weight:800;color:#1a3a5c;white-space:nowrap;margin-top:4px}
 .pf-stat .s-v.bad{color:#d9534f}
 /* リスク内訳：絵文字は行内で高さがばらつくのでCSSの丸を使い、flexで確実に中央揃えする */
 .pf-riskv{display:flex;align-items:center;gap:10px}
@@ -427,48 +429,68 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 .pf-riskv .dot{width:11px;height:11px;border-radius:50%;flex:none}
 .pf-riskv .dot.red{background:#d9534f}
 .pf-riskv .dot.yel{background:#f0ad4e}
-.pf-riskv .n{font-size:19px;font-weight:800;line-height:1}
+.pf-riskv .n{font-size:20px;font-weight:800;line-height:1}
 .pf-riskv .u{font-size:11px;font-weight:700;line-height:1;margin-left:-1px}
 .pf-riskv .sep{color:#cfd8dc;font-weight:400;font-size:14px}
-.pf-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px}
+/* 【Session23】「密集して重く見える」という依頼主FBで余白を全面的に見直し。
+   カード幅を広げ（1280pxで2列）、カード内は「概要 / 主なタスク / 進捗と数字 / 担当・状況・理由 / 操作」の
+   ブロックに分けて区切り線と余白で呼吸させる。文字は最小11pxに揃える（9〜10pxは詰まって見える原因） */
+.pf-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(400px,1fr));gap:20px}
 /* カードは縦フレックス。ボタン(.pf-acts)を margin-top:auto で必ず最下部に揃える＝枠ごとに高さがずれない */
-.pf-card{background:#fff;border:1px solid #e0e6f0;border-radius:10px;padding:12px 14px;border-left:5px solid #90a4ae;display:flex;flex-direction:column}
+.pf-card{background:#fff;border:1px solid #e3e8ef;border-radius:12px;padding:20px 22px 18px;border-left:4px solid #90a4ae;display:flex;flex-direction:column;box-shadow:0 1px 3px rgba(26,58,92,.05);min-width:0}
 .pf-card.red{border-left-color:#d9534f}
 .pf-card.yellow{border-left-color:#f0ad4e}
 .pf-card.green{border-left-color:#2e8b57}
-.pf-head{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:2px}
-.pf-job{font-size:16px;font-weight:800;color:#1a3a5c;white-space:nowrap}
-.pf-sig{font-size:10px;font-weight:800;padding:2px 9px;border-radius:10px;white-space:nowrap}
+.pf-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.pf-job{font-size:18px;font-weight:800;color:#1a3a5c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.pf-sig{font-size:11px;font-weight:700;padding:3px 11px;border-radius:12px;white-space:nowrap;flex:none}
 .pf-sig.red{background:#fdecea;color:#c62828}
 .pf-sig.yellow{background:#fff8e1;color:#8d6e00}
 .pf-sig.green{background:#e8f5e9;color:#2e7d32}
-.pf-sub{font-size:11px;color:#78909c;margin-bottom:8px;text-wrap:pretty}
-.pf-name{font-size:12px;color:#37474f;font-weight:600;margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-wrap:pretty}
-.pf-gauge-l{display:flex;justify-content:space-between;align-items:baseline;font-size:10px;color:#78909c;font-weight:700;white-space:nowrap;gap:8px}
-.pf-gauge{height:9px;background:#eceff1;border-radius:5px;overflow:hidden;margin:3px 0 2px;position:relative}
-.pf-gauge i{display:block;height:100%;border-radius:5px}
+.pf-sub{font-size:12px;color:#78909c;margin-top:4px;line-height:1.6}
+.pf-blk{border-top:1px solid #eef2f6;margin-top:16px;padding-top:16px}
+.pf-blk.last{padding-bottom:18px}
+.pf-sec{font-size:11px;font-weight:700;color:#90a4ae;letter-spacing:.3px;margin-bottom:8px;white-space:nowrap}
+.pf-tasks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.pf-tasks li{font-size:13px;color:#37474f;line-height:1.6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-left:13px;position:relative}
+.pf-tasks li::before{content:'';position:absolute;left:3px;top:.75em;width:4px;height:4px;border-radius:50%;background:#b0bec5}
+.pf-tasks li.none{color:#b0bec5;padding-left:0}
+.pf-tasks li.none::before{display:none}
+.pf-gauge-l{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:#607d8b;font-weight:600;gap:12px}
+.pf-gauge-l .pct{font-size:18px;font-weight:800;color:#1a3a5c;white-space:nowrap}
+.pf-gauge{height:8px;background:#eceff1;border-radius:4px;overflow:hidden;margin:8px 0 6px;position:relative}
+.pf-gauge i{display:block;height:100%;border-radius:4px}
 .pf-gauge i.ok{background:#2e8b57}
 .pf-gauge i.warn{background:#f0ad4e}
 .pf-gauge i.over{background:#d9534f}
-.pf-gauge-n{font-size:10px;color:#90a4ae;text-wrap:pretty}
-.pf-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:9px 0}
-.pf-g{background:#f7f9fc;border-radius:6px;padding:5px 7px}
-.pf-g .g-l{font-size:9px;color:#78909c;font-weight:700;white-space:nowrap}
-.pf-g .g-v{font-size:13px;font-weight:800;color:#1a3a5c;white-space:nowrap}
+.pf-gauge-n{font-size:12px;color:#78909c;line-height:1.7}
+.pf-gauge-n .pf-rw{display:block;color:#e65100;margin-top:2px}
+.pf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:10px;margin-top:14px}
+.pf-g{background:#f7f9fc;border-radius:8px;padding:10px 12px;min-width:0}
+.pf-g .g-l{font-size:11px;color:#78909c;font-weight:600;white-space:nowrap}
+.pf-g .g-v{font-size:16px;font-weight:800;color:#1a3a5c;white-space:nowrap;margin-top:2px;overflow:hidden;text-overflow:ellipsis}
 .pf-g .g-v.good{color:#2e8b57}.pf-g .g-v.bad{color:#d9534f}
-.pf-bar-w{margin:8px 0 4px}
-.pf-bar{height:7px;background:#eceff1;border-radius:4px;position:relative;overflow:hidden}
-.pf-bar i{position:absolute;top:0;height:100%;background:#b0bec5;border-radius:4px}
-.pf-bar u{position:absolute;top:-2px;width:2px;height:11px;background:#c62828}
-.pf-bar-l{display:flex;justify-content:space-between;font-size:9px;color:#90a4ae;margin-top:2px;white-space:nowrap;gap:6px}
-.pf-chips{display:flex;gap:4px;flex-wrap:wrap;margin:2px 0 6px}
-.pf-chip{font-size:10px;background:#eef2f7;color:#455a64;border-radius:9px;padding:1px 8px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-/* 注意・危険の理由は切れると意味を失うので省略しない。長ければ折り返して次の行へ送る */
-.pf-chip.warn,.pf-chip.risk{max-width:100%;white-space:normal;overflow:visible;text-overflow:clip;line-height:1.6;padding:2px 9px;text-wrap:pretty}
+.pf-bar-w{margin-top:16px}
+.pf-bar{height:6px;background:#eceff1;border-radius:3px;position:relative;overflow:hidden}
+.pf-bar i{position:absolute;top:0;height:100%;background:#b0bec5;border-radius:3px}
+.pf-bar u{position:absolute;top:0;width:2px;height:100%;background:#c62828}
+.pf-bar-l{display:flex;justify-content:space-between;flex-wrap:wrap;font-size:11px;color:#90a4ae;margin-top:6px;gap:2px 10px;line-height:1.6}
+.pf-bar-l.none{margin-top:0}
+/* 担当者／状況／理由は「見出し｜中身」の2列で並べる＝縦に積むより軽く、見出しを目で拾いやすい */
+.pf-rows{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px 16px;align-items:start}
+.pf-rows .pf-sec{margin:0;line-height:22px}
+.pf-chips{display:flex;gap:6px;flex-wrap:wrap;min-width:0}
+.pf-chip{font-size:12px;line-height:16px;background:#eef2f7;color:#455a64;border-radius:11px;padding:3px 10px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* 注意・危険の理由は切れると意味を失うので省略しない。長ければ文節で折り返して次の行へ送る */
+.pf-chip.warn,.pf-chip.risk{max-width:100%;white-space:normal;overflow:visible;text-overflow:clip;line-height:1.5;text-wrap:pretty}
 .pf-chip.warn{background:#fff8e1;color:#8d6e00}
 .pf-chip.risk{background:#fdecea;color:#c62828}
-.pf-sec{font-size:9px;font-weight:800;color:#90a4ae;letter-spacing:.3px;margin-top:9px;white-space:nowrap}
-.pf-acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto;padding-top:11px}
+.pf-stline{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;min-height:22px}
+.pf-st{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.pf-st .n{font-size:12px;color:#607d8b;font-weight:700}
+.pf-acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto;padding-top:14px;border-top:1px solid #eef2f6}
+/* 日本語を文節ごとの箱にする（共通ルール②）。箱と箱のあいだでしか改行しない */
+.jp{display:inline-block}
 .pf-empty{grid-column:1/-1;text-align:center;color:#90a4ae;font-size:12px;padding:26px;background:#f7f9fc;border:1px dashed #cfd8dc;border-radius:8px}
 /* ===== キャパシティ・プランニング（Session20） ===== */
 .cap-note{background:#eef4fb;border:1px solid #c5d8ec;border-left:4px solid #1a3a5c;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#37474f;line-height:1.7;text-wrap:pretty}
@@ -512,7 +534,9 @@ td.today-cell{border-left:2px solid #ffa726!important;border-right:2px solid #ff
 #pf-back .pb-x{font-size:15px;line-height:1;opacity:.7;padding:0 2px;border-left:1px solid rgba(255,255,255,.3);margin-left:2px;padding-left:9px}
 #pf-back .pb-x:hover{opacity:1}
 @media(max-width:768px){ #pf-back{right:12px;bottom:12px;padding:10px 14px;font-size:12px} #pf-back .pb-job{display:none} }
-@media(max-width:768px){ .pf-cards{grid-template-columns:1fr} .pf-filters input{min-width:140px} }
+@media(max-width:768px){ .pf-cards{grid-template-columns:1fr;gap:14px} .pf-card{padding:16px 16px 14px} .pf-filters input{min-width:140px}
+  .pf-stats{gap:10px;margin-bottom:18px} .pf-stat{padding:10px 12px} .pf-grid{gap:8px} .pf-g{padding:8px 10px} .pf-g .g-v{font-size:15px} }
+@media(max-width:480px){ .pf-grid{grid-template-columns:1fr 1fr} .pf-grid .pf-g:nth-child(3):last-child{grid-column:1/-1} }
 
 /* ===== Report ===== */
 .report-controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
@@ -848,31 +872,31 @@ nav{padding-left:calc(20px + env(safe-area-inset-left));padding-right:calc(20px 
         担当者・チームの絞り込みは<b>表示する案件を選ぶだけ</b>で、案件の合計工数は常に参加者全員ぶんです（数字が合わなくなるのを防ぐため）。
       </div>
       <div class="pf-filters">
-        <label>担当者:</label>
-        <select id="pf-fA" onchange="renderPortfolio()"><option value="">全員</option></select>
-        <label>チーム:</label>
-        <select id="pf-team" onchange="renderPortfolio()"><option value="">全チーム</option></select>
-        <label>計上区分:</label>
+        <span class="pf-fg"><label>担当者:</label>
+        <select id="pf-fA" onchange="renderPortfolio()"><option value="">全員</option></select></span>
+        <span class="pf-fg"><label>チーム:</label>
+        <select id="pf-team" onchange="renderPortfolio()"><option value="">全チーム</option></select></span>
+        <span class="pf-fg"><label>計上区分:</label>
         <select id="pf-billable" onchange="toggleBillableFilter(this)">
           <option value="">全て</option>
           <option value="billable">Billableのみ</option>
           <option value="nonbillable">Non-billableのみ</option>
-        </select>
-        <label>リスク:</label>
+        </select></span>
+        <span class="pf-fg"><label>リスク:</label>
         <select id="pf-risk" onchange="renderPortfolio()">
           <option value="">全て</option>
           <option value="red">🔴 危険のみ</option>
           <option value="yellow">🟡 注意以上（🔴＋🟡）</option>
           <option value="green">🟢 順調のみ</option>
-        </select>
-        <label>並べ替え:</label>
+        </select></span>
+        <span class="pf-fg"><label>並べ替え:</label>
         <select id="pf-sort" onchange="renderPortfolio()">
           <option value="risk">リスクが高い順</option>
           <option value="rate">消化率が高い順</option>
           <option value="due">期限が近い順</option>
           <option value="over">超過が大きい順</option>
           <option value="job">Job No. 順</option>
-        </select>
+        </select></span>
         <input id="pf-q" type="search" placeholder="Job No.・件名で検索" oninput="renderPortfolio()">
       </div>
       <div id="pf-stats" class="pf-stats"></div>
@@ -1428,6 +1452,41 @@ let pendingAccounts = null, pendingTalents = null, pendingRates = null;
 const r2  = v => Math.round(v*100)/100;
 const pad = n => String(n).padStart(2,'0');
 function esc(s){ const d=document.createElement('div');d.textContent=s||'';return d.innerHTML; }
+// 【共通ルール②】日本語は文節で折り返す。word-break:auto-phrase は Chrome 専用で iPhone では効かないため、
+// 文節ごとに inline-block の箱（.jp）へ入れて「箱と箱のあいだ」でしか改行できないようにする。
+// Intl.Segmenter の単語を、ひらがなだけの語（助詞・送り仮名）や単位・閉じ括弧は前へ、開き括弧・接頭辞は後ろへくっつけて文節に近づける。
+// Intl.Segmenter が無い古い環境では分割せずそのまま返す（表示は崩れず、従来どおりの折り返しになるだけ）
+const JP_SEG=(typeof Intl!=='undefined'&&Intl.Segmenter)?new Intl.Segmenter('ja',{granularity:'word'}):null;
+function jpPhrases(str){
+  const s=String(str??'');
+  if(!JP_SEG||!s) return [s];
+  const out=[]; let glueNext=false;
+  for(const {segment:t} of JP_SEG.segment(s)){
+    if(/^\s+$/.test(t)){ out.push(t); glueNext=false; continue; }
+    const prev=out.length?out[out.length-1]:null;
+    const canJoin=prev!==null&&!/^\s+$/.test(prev);
+    const toPrev=canJoin&&(glueNext
+      ||/^[ぁ-ゟ]+$/.test(t)
+      ||/^[、。，．,.)）」』】〕…ー%％:：]/.test(t)
+      ||(/\d$/.test(prev)&&/^(件|日|人|時間|h|H|分|円|ヶ月|か月|月|%|％)/.test(t)));
+    if(toPrev) out[out.length-1]=prev+t; else out.push(t);
+    glueNext=/[（(「『【〔¥￥]$/.test(t)||/^[未非不再全各約最総]$/.test(t);
+  }
+  return out;
+}
+function jpw(str){ return jpPhrases(str).map(p=>/^\s*$/.test(p)?p:`<span class="jp">${esc(p)}</span>`).join(''); }
+// 静的HTML（説明文など）を後から文節化する。<code> の中は触らない。同じ要素へは1回だけ
+function jpWrapEl(el){
+  if(!el||el.dataset.jp) return;
+  const tw=document.createTreeWalker(el,NodeFilter.SHOW_TEXT);
+  const nodes=[]; while(tw.nextNode()) nodes.push(tw.currentNode);
+  nodes.forEach(n=>{
+    if(!n.nodeValue.trim()||n.parentElement.closest('code,.jp')) return;
+    const tpl=document.createElement('template'); tpl.innerHTML=jpw(n.nodeValue);
+    n.replaceWith(tpl.content);
+  });
+  el.dataset.jp='1';
+}
 function trunc(s,n){ return s&&s.length>n?s.slice(0,n)+'…':(s||''); }
 function groupBy(arr,key){ return arr.reduce((m,x)=>{ (m[x[key]]||(m[x[key]]=[])).push(x); return m; },{}); }
 
@@ -4206,6 +4265,7 @@ function renderPortfolio(){
     cardsEl.innerHTML='<div class="pf-empty">Backlog APIに接続してデータを取得してください</div>';
     return;
   }
+  jpWrapEl(document.querySelector('#sec-portfolio .pf-note'));
   const fin=pfCanFinance();
   const fa=document.getElementById('pf-fA')?.value||'';
   const fTeam=document.getElementById('pf-team')?.value||'';
@@ -4275,10 +4335,10 @@ function renderPortfolio(){
       const inRange=today>=g.startDs&&today<=g.endDs;
       bar=`<div class="pf-bar-w">
         <div class="pf-bar" title="案件期間 ${g.startDs} 〜 ${g.endDs}"><i style="left:0;width:100%"></i>${inRange?`<u style="left:${pos.toFixed(1)}%" title="本日 ${today}"></u>`:''}</div>
-        <div class="pf-bar-l"><span>${g.startDs}</span><span>${g.endDs}${g.daysTo!==null?`（${g.daysTo<0?`${-g.daysTo}日超過`:`あと${g.daysTo}日`}）`:''}</span></div>
+        <div class="pf-bar-l"><span>開始 ${g.startDs}</span><span>期限 ${g.endDs}${g.daysTo!==null?`（${g.daysTo<0?`${-g.daysTo}日超過`:`あと${g.daysTo}日`}）`:''}</span></div>
       </div>`;
     } else {
-      bar=`<div class="pf-bar-l" style="margin-top:6px"><span>開始・期限が未設定のタスクのみです</span></div>`;
+      bar=`<div class="pf-bar-w"><div class="pf-bar-l none"><span>${jpw('開始・期限が未設定のタスクのみです')}</span></div></div>`;
     }
     const mem=[...g.members].sort((a,b)=>a.localeCompare(b,'ja'));
     const memShown=mem.slice(0,6);
@@ -4287,8 +4347,8 @@ function renderPortfolio(){
       +(g.unassigned>0?`<span class="pf-chip warn">担当者未設定 ${g.unassigned}件</span>`:'')
       +(!mem.length&&!g.unassigned?'<span class="pf-chip">参加者なし</span>':'');
     const stHtml=Object.entries(g.statusCounts).sort((a,b)=>b[1]-a[1])
-      .map(([s,n])=>`${badge(s)}<span style="font-size:10px;color:#78909c;margin:0 6px 0 2px">${n}</span>`).join('');
-    const titles=g.tasks.slice(0,3).map(t=>t.title).join(' ／ ');
+      .map(([s,n])=>`<span class="pf-st">${badge(s)}<span class="n">${n}件</span></span>`).join('');
+    const topTasks=g.tasks.slice(0,3).map(t=>t.title||'（件名なし）');
     // 単価が1件も引けない案件は予算=実費=0 になる。ここで「¥0」と出すと
     // 「差異なし＝順調」と誤読されるため、必ず「—」＋理由を出す（Session19・実データで発覚）
     const noBudget=fin&&g.budget<=0;
@@ -4306,26 +4366,31 @@ function renderPortfolio(){
         <span class="pf-job">${esc(jobLbl)}</span>
         <span class="pf-sig ${g.risk}">${g.risk==='red'?'🔴 危険':g.risk==='yellow'?'🟡 注意':'🟢 順調'}</span>
       </div>
-      <div class="pf-sub">タスク ${g.tasks.length}件（完了 ${g.done} / 未完了 ${g.open}）${g.jobNos.size>1?` ・ 枝番 ${g.jobNos.size}種`:''}</div>
-      <div class="pf-sec" style="margin-top:2px">主なタスク${g.tasks.length>3?`（${g.tasks.length}件中3件）`:''}</div>
-      <div class="pf-name" title="${esc(titles)}">${esc(titles||'（件名なし）')}</div>
-      <div class="pf-gauge-l"><span>${esc(gBase)}</span><span>${pct}%</span></div>
-      <div class="pf-gauge"><i class="${gCls}" style="width:${Math.min(100,Math.max(0,pct))}%"></i></div>
-      <div class="pf-gauge-n">${g.useBudget?`実費 ${fmtYen(g.actual)} ／ 予算 ${fmtYen(g.budget)}`:`実績 ${g.actH.toFixed(1)}h ／ 予定 ${g.estH.toFixed(1)}h`}
-        ${rateWarn?`<br><span style="color:#e65100" title="担当者の役職が未登録、または担当者未設定のタスクは単価0として扱われます。設定タブでタレントの役職を登録すると金額に反映されます">${esc(rateWarn)}</span>`:''}</div>
-      <div class="pf-grid">
-        <div class="pf-g"><div class="g-l">予定h</div><div class="g-v">${g.estH.toFixed(1)}</div></div>
-        <div class="pf-g"><div class="g-l">実績h</div><div class="g-v ${g.actH>g.estH+0.05?'bad':g.actH>0&&g.actH<g.estH-0.05?'good':''}">${g.actH.toFixed(1)}</div></div>
-        ${fin?`<div class="pf-g" title="${esc(diffTip)}"><div class="g-l">差異</div><div class="g-v ${diffCls}">${diffStr}</div></div>`
-             :`<div class="pf-g"><div class="g-l">参加者</div><div class="g-v">${mem.length}人</div></div>`}
+      <div class="pf-sub">${jpw(`タスク ${g.tasks.length}件（完了 ${g.done} / 未完了 ${g.open}）${g.jobNos.size>1?` ・ 枝番 ${g.jobNos.size}種`:''}`)}</div>
+      <div class="pf-blk">
+        <div class="pf-sec">主なタスク${g.tasks.length>3?`（${g.tasks.length}件中3件）`:''}</div>
+        <ul class="pf-tasks">${topTasks.length?topTasks.map(t=>`<li title="${esc(t)}">${esc(t)}</li>`).join(''):'<li class="none">（タスクなし）</li>'}</ul>
       </div>
-      ${bar}
-      <div class="pf-sec">担当者</div>
-      <div class="pf-chips">${memHtml}</div>
-      <div class="pf-sec">状況</div>
-      <div style="margin:2px 0 0">${stHtml||'<span style="font-size:10px;color:#b0bec5">—</span>'}</div>
-      <div class="pf-sec">${g.risk==='red'?'危険の理由':g.risk==='yellow'?'注意の理由':'判定'}</div>
-      <div class="pf-chips">${g.why.map(w=>`<span class="pf-chip ${w.c}">${esc(w.t)}</span>`).join('')}</div>
+      <div class="pf-blk">
+        <div class="pf-gauge-l"><span>${jpw(gBase)}</span><span class="pct">${pct}%</span></div>
+        <div class="pf-gauge"><i class="${gCls}" style="width:${Math.min(100,Math.max(0,pct))}%"></i></div>
+        <div class="pf-gauge-n">${jpw(g.useBudget?`実費 ${fmtYen(g.actual)} ／ 予算 ${fmtYen(g.budget)}`:`実績 ${g.actH.toFixed(1)}h ／ 予定 ${g.estH.toFixed(1)}h`)}${rateWarn?`<span class="pf-rw" title="担当者の役職が未登録、または担当者未設定のタスクは単価0として扱われます。設定タブでタレントの役職を登録すると金額に反映されます">${jpw(rateWarn)}</span>`:''}</div>
+        <div class="pf-grid">
+          <div class="pf-g"><div class="g-l">予定h</div><div class="g-v">${g.estH.toFixed(1)}</div></div>
+          <div class="pf-g"><div class="g-l">実績h</div><div class="g-v ${g.actH>g.estH+0.05?'bad':g.actH>0&&g.actH<g.estH-0.05?'good':''}">${g.actH.toFixed(1)}</div></div>
+          ${fin?`<div class="pf-g" title="${esc(diffTip)}"><div class="g-l">差異</div><div class="g-v ${diffCls}">${diffStr}</div></div>`
+               :`<div class="pf-g"><div class="g-l">参加者</div><div class="g-v">${mem.length}人</div></div>`}
+        </div>
+        ${bar}
+      </div>
+      <div class="pf-blk last pf-rows">
+        <div class="pf-sec">担当者</div>
+        <div class="pf-chips">${memHtml}</div>
+        <div class="pf-sec">状況</div>
+        <div class="pf-stline">${stHtml||'<span style="font-size:12px;color:#b0bec5">—</span>'}</div>
+        <div class="pf-sec">${g.risk==='red'?'危険の理由':g.risk==='yellow'?'注意の理由':'判定'}</div>
+        <div class="pf-chips">${g.why.map(w=>`<span class="pf-chip ${w.c}">${jpw(w.t)}</span>`).join('')}</div>
+      </div>
       <div class="pf-acts">
         <button class="btn btn-secondary btn-sm" onclick="pfGoGantt('${esc(g.job)}')">📅 ガントで見る</button>
         ${fin?`<button class="btn btn-secondary btn-sm" onclick="pfGoEstimate('${esc(g.job)}')">💴 見積で見る</button>`:''}
