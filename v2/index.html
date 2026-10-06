@@ -655,7 +655,7 @@ nav{padding-left:calc(20px + env(safe-area-inset-left));padding-right:calc(20px 
       <label>パスワード</label>
       <input type="password" id="login-pass" autocomplete="current-password" placeholder="••••••">
     </div>
-    <label id="login-remember-row"><input type="checkbox" id="login-remember"><span>ログイン情報を記憶する</span></label>
+    <label id="login-remember-row" title="この端末にユーザー名だけを記憶します。パスワードは保存しません"><input type="checkbox" id="login-remember"><span>ユーザー名を記憶する</span></label>
     <button id="login-btn" onclick="login()">ログイン</button>
     <div id="login-err"></div>
     <div id="setup-notice">
@@ -1640,15 +1640,19 @@ async function saveCompanyHolidays(list){
       } finally { setLoad(false); }
     })();
   }
-  // ログイン情報の記憶（localStorage）を復元してプリフィル
+  // ユーザー名の記憶（localStorage）を復元してプリフィル。パスワードはどこにも保存しない（2026-10-05）
   try{
     const rem=JSON.parse(localStorage.getItem('bl_v2_remember')||'null');
+    // 旧版（〜2026-10-04）は {username,password} を平文で保存していた → パスワードだけ消し、ユーザー名は残す
+    if(rem&&typeof rem==='object'&&Object.prototype.hasOwnProperty.call(rem,'password')){
+      if(rem.username) localStorage.setItem('bl_v2_remember',JSON.stringify({username:rem.username}));
+      else localStorage.removeItem('bl_v2_remember');
+    }
     if(rem&&rem.username){
       document.getElementById('login-user').value=rem.username;
-      if(rem.password) document.getElementById('login-pass').value=rem.password;
       document.getElementById('login-remember').checked=true;
     }
-  }catch{}
+  }catch{ try{ localStorage.removeItem('bl_v2_remember'); }catch{} }   // 読めない値は残さない
   document.getElementById('login-user').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('login-pass').focus(); });
   document.getElementById('login-pass').addEventListener('keydown',e=>{ if(e.key==='Enter') login(); });
 })();
@@ -1670,9 +1674,9 @@ async function login(){
     if(data.role){
       currentUser={token:data.token,role:data.role,displayName:data.displayName||username,talentName:data.talentName||'',username:data.username||username};
       sessionStorage.setItem('bl_v2_user',JSON.stringify(currentUser));
-      // ログイン情報の記憶（localStorage）。チェックON時のみ保存、OFF時は消去
+      // ユーザー名の記憶（localStorage）。チェックON時のみユーザー名を保存、OFF時は消去。パスワードは保存しない
       try{
-        if(document.getElementById('login-remember').checked) localStorage.setItem('bl_v2_remember',JSON.stringify({username,password}));
+        if(document.getElementById('login-remember').checked) localStorage.setItem('bl_v2_remember',JSON.stringify({username}));
         else localStorage.removeItem('bl_v2_remember');
       }catch{}
       document.getElementById('login-overlay').style.display='none';
@@ -1710,13 +1714,13 @@ function logout(){
     useDemoTalents=false; useDemoRates=false;
     document.getElementById('login-overlay').style.display='flex';
     document.getElementById('login-err').textContent='';
-    // 記憶ONなら次回ログイン用に再プリフィル、OFFなら空に
+    // 記憶ONならユーザー名だけ再プリフィル（パスワードは毎回入力）、OFFなら空に
     let rem=null; try{ rem=JSON.parse(localStorage.getItem('bl_v2_remember')||'null'); }catch{}
     if(rem&&rem.username){
       document.getElementById('login-user').value=rem.username;
-      document.getElementById('login-pass').value=rem.password||'';
+      document.getElementById('login-pass').value='';
       document.getElementById('login-remember').checked=true;
-      document.getElementById('login-btn').focus();
+      document.getElementById('login-pass').focus();
     } else {
       document.getElementById('login-user').value='';
       document.getElementById('login-pass').value='';
