@@ -1608,7 +1608,7 @@ async function loadNationalHolidays(){
 }
 async function loadCompanyHolidays(){
   try{
-    const res=await fetch(`${WORKER_URL}/holidays/company`);
+    const res=await fetch(`${WORKER_URL}/holidays/company`,{headers:{Authorization:`Bearer ${currentUser?.token||''}`}});
     if(res.ok){ companyHolidaysCache=await res.json(); return; }
   }catch{}
   try{ companyHolidaysCache=JSON.parse(localStorage.getItem('bl_company_holidays')||'[]'); }catch{ companyHolidaysCache=[]; }
@@ -1700,34 +1700,40 @@ async function login(){
 }
 
 function logout(){
-  showConfirm('ログアウトしますか？', ()=>{
-    sessionStorage.removeItem('bl_v2_user');
-    sessionStorage.removeItem('bl_v2_data');
-    sessionStorage.removeItem('bl_v2_sim');
-    simMode=false; simMoves=[];
-    pfReturn=null; updatePfBackBtn();   // 案件PFの「戻る」も消す（Session18）
-    currentUser=null;
-    allRows=[]; allCols=[]; allMonths=[]; allWorkload={};
-    talents=[]; rates=[]; reassignments=[];
-    displayNameMap={}; talentRoleMap={}; showMgmtPeople=true; unlinkedAssignees=[];
-    ['show-mgmt-cb','gantt-mgmt-cb','wl-mgmt-cb','report-mgmt-cb','cap-mgmt-cb'].forEach(id=>{ const cb=document.getElementById(id); if(cb) cb.checked=true; });
-    useDemoTalents=false; useDemoRates=false;
-    document.getElementById('login-overlay').style.display='flex';
-    document.getElementById('login-err').textContent='';
-    // 記憶ONならユーザー名だけ再プリフィル（パスワードは毎回入力）、OFFなら空に
-    let rem=null; try{ rem=JSON.parse(localStorage.getItem('bl_v2_remember')||'null'); }catch{}
-    if(rem&&rem.username){
-      document.getElementById('login-user').value=rem.username;
-      document.getElementById('login-pass').value='';
-      document.getElementById('login-remember').checked=true;
-      document.getElementById('login-pass').focus();
-    } else {
-      document.getElementById('login-user').value='';
-      document.getElementById('login-pass').value='';
-      document.getElementById('login-remember').checked=false;
-      document.getElementById('login-user').focus();
-    }
-  }, 'ログアウト', false);
+  showConfirm('ログアウトしますか？', resetToLogin, 'ログアウト', false);
+}
+// ログインの有効期限（8時間）切れ：Worker が 401 を返したら確認なしでログイン画面へ戻す（2026-10-22）
+function sessionExpired(){
+  resetToLogin();
+  document.getElementById('login-err').textContent='ログインの有効期限が切れました。もう一度ログインしてください';
+}
+function resetToLogin(){
+  sessionStorage.removeItem('bl_v2_user');
+  sessionStorage.removeItem('bl_v2_data');
+  sessionStorage.removeItem('bl_v2_sim');
+  simMode=false; simMoves=[];
+  pfReturn=null; updatePfBackBtn();   // 案件PFの「戻る」も消す（Session18）
+  currentUser=null;
+  allRows=[]; allCols=[]; allMonths=[]; allWorkload={};
+  talents=[]; rates=[]; reassignments=[];
+  displayNameMap={}; talentRoleMap={}; showMgmtPeople=true; unlinkedAssignees=[];
+  ['show-mgmt-cb','gantt-mgmt-cb','wl-mgmt-cb','report-mgmt-cb','cap-mgmt-cb'].forEach(id=>{ const cb=document.getElementById(id); if(cb) cb.checked=true; });
+  useDemoTalents=false; useDemoRates=false;
+  document.getElementById('login-overlay').style.display='flex';
+  document.getElementById('login-err').textContent='';
+  // 記憶ONならユーザー名だけ再プリフィル（パスワードは毎回入力）、OFFなら空に
+  let rem=null; try{ rem=JSON.parse(localStorage.getItem('bl_v2_remember')||'null'); }catch{}
+  if(rem&&rem.username){
+    document.getElementById('login-user').value=rem.username;
+    document.getElementById('login-pass').value='';
+    document.getElementById('login-remember').checked=true;
+    document.getElementById('login-pass').focus();
+  } else {
+    document.getElementById('login-user').value='';
+    document.getElementById('login-pass').value='';
+    document.getElementById('login-remember').checked=false;
+    document.getElementById('login-user').focus();
+  }
 }
 
 async function applyRole(role){
@@ -1983,7 +1989,8 @@ async function loadSupportData(role){
   await loadDisplayNames();
   // タレント（全ロールで取得）
   try{
-    const res=await fetch(`${WORKER_URL}/talents`);
+    const res=await fetch(`${WORKER_URL}/talents`,{headers:{Authorization:`Bearer ${currentUser?.token||''}`}});
+    if(res.status===401){ sessionExpired(); return; }
     if(res.ok){
       const d=await res.json();
       talents = d.length ? d : DEMO_TALENTS;
@@ -2018,7 +2025,8 @@ async function loadData(){
   if(!currentUser){ toast('ログインしてください',true); return; }
   setLoad(true,'Backlog APIへ接続中…',20);
   try{
-    const res=await fetch(`${WORKER_URL}/issues`);
+    const res=await fetch(`${WORKER_URL}/issues`,{headers:{Authorization:`Bearer ${currentUser?.token||''}`}});
+    if(res.status===401){ sessionExpired(); return; }
     if(!res.ok){ const e=await res.json().catch(()=>({})); throw new Error(e.error||res.status); }
     const issues=await res.json();
     setLoad(true,`${issues.length}件を取得。分析・按分計算中…`,65);
@@ -2382,7 +2390,7 @@ function updateCapBadges(){
 }
 async function loadCompanySettings(){
   try{
-    const res=await fetch(`${WORKER_URL}/settings`);
+    const res=await fetch(`${WORKER_URL}/settings`,{headers:{Authorization:`Bearer ${currentUser?.token||''}`}});
     if(res.ok){ const s=await res.json(); if(s&&typeof s.capacity==='number'&&s.capacity>0) CAPACITY=s.capacity; }
   }catch{}
   updateCapBadges();
