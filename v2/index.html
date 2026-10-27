@@ -1705,7 +1705,7 @@ function logout(){
 // ログインの有効期限（8時間）切れ：Worker が 401 を返したら確認なしでログイン画面へ戻す（2026-10-22）
 function sessionExpired(){
   resetToLogin();
-  document.getElementById('login-err').textContent='ログインの有効期限が切れました。もう一度ログインしてください';
+  document.getElementById('login-err').innerHTML=jpw('ログインの有効期限が切れました。もう一度ログインしてください');   // 文節で折り返す（共通ルール②）
 }
 function resetToLogin(){
   sessionStorage.removeItem('bl_v2_user');
